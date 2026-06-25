@@ -17,6 +17,7 @@ Keep the main stack:
 - Database: PostgreSQL
 - AI search later: pgvector
 - Auth: Clerk
+- Social login: Google OAuth through Clerk
 - Background jobs later: Redis + worker
 - Mobile later: Expo React Native
 
@@ -298,6 +299,25 @@ Authentication requirements:
 - Map Clerk user to local `users` row.
 - Create local user on first login if needed.
 - Use `Authorization: Bearer <token>` for frontend/API calls.
+Google login requirements:
+
+- Configure Google login in Clerk, not directly in FastAPI.
+- Frontend receives a Clerk session after Google OAuth.
+- Frontend sends the Clerk JWT to FastAPI as `Authorization: Bearer <token>`.
+- Store only identity metadata in PostgreSQL: `clerk_user_id`, email, display name, avatar URL, and roles.
+- Do not store Google access tokens unless a future feature truly needs Google APIs.
+- If Google API access is needed later, store provider tokens only through Clerk/provider-managed flows or an encrypted secrets strategy.
+
+Google login flow:
+
+```text
+User clicks "Continue with Google" in Next.js
+  -> Clerk handles Google OAuth
+  -> Clerk creates/updates the user session
+  -> Next.js reads Clerk JWT
+  -> Next.js calls FastAPI with Bearer token
+  -> FastAPI verifies token and upserts local users row
+```
 
 Authorization policy requirements:
 
@@ -699,3 +719,4 @@ Connected to PostgreSQL communiti_dev
 GET /api/v1/meta/categories returns database rows
 GET /api/v1/events returns real PostgreSQL rows
 ```
+
