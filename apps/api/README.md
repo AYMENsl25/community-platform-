@@ -1,4 +1,4 @@
-﻿# COMMUNITI API
+# COMMUNITI API
 
 FastAPI backend for COMMUNITI.
 
@@ -15,8 +15,14 @@ copy .env.example .env
 Edit `.env` and set your real PostgreSQL password:
 
 ```text
-DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@localhost:5432/communiti_dev
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=communiti_dev
+DB_USER=postgres
+DB_PASSWORD=YOUR_PASSWORD
 ```
+
+Use the separate `DB_*` fields locally. They are safer than a full `DATABASE_URL` because passwords with `@`, `#`, `/`, or `:` do not need URL encoding.
 
 Run:
 
@@ -50,3 +56,13 @@ Authorization: Bearer <clerk_jwt>
 ```
 
 FastAPI will verify the token, map it to a local `users` row, and apply authorization policies.
+
+## Seed local data
+
+After the schema exists and `.env` has the correct DB password, run:
+
+```bash
+python -m app.scripts.seed_dev
+```
+
+This inserts idempotent demo users, clubs, events, registrations, and saved events.
