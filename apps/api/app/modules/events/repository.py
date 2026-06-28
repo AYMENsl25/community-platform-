@@ -1,7 +1,13 @@
-﻿from sqlalchemy import text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.events.schemas import EventCapacity, EventCard, EventDetail
+from app.modules.events.schemas import (
+    EventCapacity,
+    EventCard,
+    EventDetail,
+    EventRegistrationState,
+    SavedEventState,
+)
 
 
 async def list_public_events(
@@ -25,7 +31,9 @@ async def list_public_events(
         params["event_type"] = event_type
 
     if q:
-        filters.append("(title ILIKE :q OR description ILIKE :q OR location_name ILIKE :q)")
+        filters.append(
+            "(title ILIKE :q OR description ILIKE :q OR location_name ILIKE :q)"
+        )
         params["q"] = f"%{q}%"
 
     where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
@@ -109,7 +117,9 @@ async def get_event_by_id(session: AsyncSession, event_id: str) -> EventDetail |
     return EventDetail.model_validate(row._mapping) if row else None
 
 
-async def get_event_capacity_by_id(session: AsyncSession, event_id: str) -> EventCapacity | None:
+async def get_event_capacity_by_id(
+    session: AsyncSession, event_id: str
+) -> EventCapacity | None:
     result = await session.execute(
         text(
             """
@@ -129,3 +139,119 @@ async def get_event_capacity_by_id(session: AsyncSession, event_id: str) -> Even
     )
     row = result.first()
     return EventCapacity.model_validate(row._mapping) if row else None
+
+
+async def register_user_for_event(
+    session: AsyncSession, *, user_id: str, event_id: str
+) -> EventRegistrationState:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              id::text AS id,
+              event_id::text AS event_id,
+              user_id::text AS user_id,
+              status::text AS status,
+              waitlist_position,
+              note,
+              registered_at,
+              confirmed_at,
+              cancelled_at
+            FROM register_for_event(CAST(:user_id AS uuid), CAST(:event_id AS uuid))
+            """
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+    row = result.one()
+    return EventRegistrationState.model_validate(row._mapping)
+
+
+async def cancel_user_event_registration(
+    session: AsyncSession, *, user_id: str, event_id: str
+) -> None:
+    await session.execute(
+        text(
+            "SELECT cancel_event_registration(CAST(:user_id AS uuid), CAST(:event_id AS uuid))"
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+
+
+async def get_user_event_registration(
+    session: AsyncSession,
+    *,
+    user_id: str,
+    event_id: str,
+) -> EventRegistrationState | None:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              id::text AS id,
+              event_id::text AS event_id,
+              user_id::text AS user_id,
+              status::text AS status,
+              waitlist_position,
+              note,
+              registered_at,
+              confirmed_at,
+              cancelled_at
+            FROM event_registrations
+            WHERE user_id = CAST(:user_id AS uuid)
+              AND event_id = CAST(:event_id AS uuid)
+            LIMIT 1
+            """
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+    row = result.first()
+    return EventRegistrationState.model_validate(row._mapping) if row else None
+
+
+async def save_event_for_user(
+    session: AsyncSession, *, user_id: str, event_id: str
+) -> SavedEventState:
+    await session.execute(
+        text(
+            """
+            INSERT INTO saved_events (user_id, event_id)
+            VALUES (CAST(:user_id AS uuid), CAST(:event_id AS uuid))
+            ON CONFLICT (user_id, event_id) DO NOTHING
+            """
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              user_id::text AS user_id,
+              event_id::text AS event_id,
+              true AS saved,
+              created_at
+            FROM saved_events
+            WHERE user_id = CAST(:user_id AS uuid)
+              AND event_id = CAST(:event_id AS uuid)
+            LIMIT 1
+            """
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+    row = result.one()
+    return SavedEventState.model_validate(row._mapping)
+
+
+async def unsave_event_for_user(
+    session: AsyncSession, *, user_id: str, event_id: str
+) -> SavedEventState:
+    await session.execute(
+        text(
+            """
+            DELETE FROM saved_events
+            WHERE user_id = CAST(:user_id AS uuid)
+              AND event_id = CAST(:event_id AS uuid)
+            """
+        ),
+        {"user_id": user_id, "event_id": event_id},
+    )
+    return SavedEventState(user_id=user_id, event_id=event_id, saved=False)

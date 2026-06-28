@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -48,3 +48,22 @@ class EventCapacity(BaseModel):
     waitlist_count: int
     spots_left: int | None = None
     is_full: bool
+
+
+class EventRegistrationState(BaseModel):
+    id: str
+    event_id: str
+    user_id: str
+    status: str
+    waitlist_position: int | None = None
+    note: str | None = None
+    registered_at: datetime
+    confirmed_at: datetime | None = None
+    cancelled_at: datetime | None = None
+
+
+class SavedEventState(BaseModel):
+    user_id: str
+    event_id: str
+    saved: bool
+    created_at: datetime | None = None

@@ -1,9 +1,29 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import CurrentUser, require_authenticated_user
 from app.db.session import get_db_session
-from app.modules.events.schemas import EventCapacity, EventCard, EventDetail
-from app.modules.events.service import get_event_capacity, get_event_detail, list_events
+from app.modules.events.schemas import (
+    EventCapacity,
+    EventCard,
+    EventDetail,
+    EventRegistrationState,
+    SavedEventState,
+)
+from app.modules.events.service import (
+    EventActionFailedError,
+    EventNotFoundError,
+    EventRegistrationNotFoundError,
+    cancel_registration_action,
+    get_event_capacity,
+    get_event_detail,
+    list_events,
+    register_for_event_action,
+    save_event_action,
+    unsave_event_action,
+)
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -28,16 +48,109 @@ async def list_event_cards(
 
 
 @router.get("/{event_id}", response_model=EventDetail)
-async def get_event(event_id: str, session: AsyncSession = Depends(get_db_session)) -> EventDetail:
+async def get_event(
+    event_id: str, session: AsyncSession = Depends(get_db_session)
+) -> EventDetail:
     event = await get_event_detail(session, event_id)
     if event is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
     return event
 
 
 @router.get("/{event_id}/capacity", response_model=EventCapacity)
-async def get_capacity(event_id: str, session: AsyncSession = Depends(get_db_session)) -> EventCapacity:
+async def get_capacity(
+    event_id: str, session: AsyncSession = Depends(get_db_session)
+) -> EventCapacity:
     capacity = await get_event_capacity(session, event_id)
     if capacity is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
     return capacity
+
+
+@router.post("/{event_id}/register", response_model=EventRegistrationState)
+async def register_for_event(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> EventRegistrationState:
+    try:
+        return await register_for_event_action(
+            session, event_id=event_id, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event registration failed"
+        ) from exc
+
+
+@router.post("/{event_id}/cancel-registration", response_model=EventRegistrationState)
+async def cancel_event_registration(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> EventRegistrationState:
+    try:
+        return await cancel_registration_action(
+            session, event_id=event_id, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventRegistrationNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event registration not found"
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Event registration cancellation failed",
+        ) from exc
+
+
+@router.post("/{event_id}/save", response_model=SavedEventState)
+async def save_event(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> SavedEventState:
+    try:
+        return await save_event_action(
+            session, event_id=event_id, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event save failed"
+        ) from exc
+
+
+@router.delete("/{event_id}/save", response_model=SavedEventState)
+async def unsave_event(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> SavedEventState:
+    try:
+        return await unsave_event_action(
+            session, event_id=event_id, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event unsave failed"
+        ) from exc
