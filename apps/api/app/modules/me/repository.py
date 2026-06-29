@@ -4,8 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.me.schemas import (
     MyClubSummary,
     MyEventSummary,
+    MyNotificationSummary,
     MyRegistrationSummary,
     MySavedEventSummary,
+    NotificationReadState,
 )
 
 
@@ -141,3 +143,77 @@ async def list_user_saved_events(
         {"user_id": user_id},
     )
     return [MySavedEventSummary.model_validate(row._mapping) for row in result]
+
+
+async def list_user_notifications(
+    session: AsyncSession,
+    *,
+    user_id: str,
+    limit: int,
+    offset: int,
+    unread_only: bool,
+) -> list[MyNotificationSummary]:
+    unread_filter = "AND read_at IS NULL" if unread_only else ""
+    result = await session.execute(
+        text(
+            f"""
+            SELECT
+              id::text AS id,
+              kind::text AS kind,
+              title,
+              body,
+              entity_type,
+              entity_id::text AS entity_id,
+              read_at,
+              created_at,
+              (read_at IS NOT NULL) AS is_read
+            FROM notifications
+            WHERE user_id = CAST(:user_id AS uuid)
+            {unread_filter}
+            ORDER BY created_at DESC
+            LIMIT :limit OFFSET :offset
+            """
+        ),
+        {"user_id": user_id, "limit": limit, "offset": offset},
+    )
+    return [MyNotificationSummary.model_validate(row._mapping) for row in result]
+
+
+async def mark_user_notification_read(
+    session: AsyncSession,
+    *,
+    user_id: str,
+    notification_id: str,
+) -> NotificationReadState | None:
+    result = await session.execute(
+        text(
+            """
+            UPDATE notifications
+            SET read_at = COALESCE(read_at, now())
+            WHERE id = CAST(:notification_id AS uuid)
+              AND user_id = CAST(:user_id AS uuid)
+            RETURNING id::text AS id, read_at
+            """
+        ),
+        {"user_id": user_id, "notification_id": notification_id},
+    )
+    row = result.first()
+    return NotificationReadState.model_validate(row._mapping) if row else None
+
+
+async def mark_all_user_notifications_read(
+    session: AsyncSession, *, user_id: str
+) -> int:
+    result = await session.execute(
+        text(
+            """
+            UPDATE notifications
+            SET read_at = now()
+            WHERE user_id = CAST(:user_id AS uuid)
+              AND read_at IS NULL
+            RETURNING id
+            """
+        ),
+        {"user_id": user_id},
+    )
+    return len(result.fetchall())

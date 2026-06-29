@@ -65,3 +65,24 @@ class MySavedEventSummary(BaseModel):
     city: str | None = None
     saved_at: datetime
     cover_image_url: str | None = None
+
+
+class MyNotificationSummary(BaseModel):
+    id: str
+    kind: str
+    title: str
+    body: str
+    entity_type: str | None = None
+    entity_id: str | None = None
+    read_at: datetime | None = None
+    created_at: datetime
+    is_read: bool
+
+
+class NotificationReadState(BaseModel):
+    id: str
+    read_at: datetime
+
+
+class NotificationsReadAllState(BaseModel):
+    updated_count: int
