@@ -1,12 +1,17 @@
+import re
+
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import CurrentUser
+from app.modules.events.policies import can_manage_club
 from app.modules.events.repository import (
     cancel_user_event_registration,
+    get_club_management_context,
     get_event_by_id,
     get_event_capacity_by_id,
     get_user_event_registration,
+    insert_event,
     list_public_events,
     register_user_for_event,
     save_event_for_user,
@@ -15,6 +20,7 @@ from app.modules.events.repository import (
 from app.modules.events.schemas import (
     EventCapacity,
     EventCard,
+    EventCreate,
     EventDetail,
     EventRegistrationState,
     SavedEventState,
@@ -29,8 +35,17 @@ class EventRegistrationNotFoundError(Exception):
     pass
 
 
+class EventForbiddenError(Exception):
+    pass
+
+
 class EventActionFailedError(Exception):
     pass
+
+
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "event"
 
 
 async def list_events(
@@ -60,6 +75,46 @@ async def get_event_capacity(
     session: AsyncSession, event_id: str
 ) -> EventCapacity | None:
     return await get_event_capacity_by_id(session, event_id)
+
+
+async def create_event_action(
+    session: AsyncSession,
+    *,
+    payload: EventCreate,
+    current_user: CurrentUser,
+) -> EventDetail:
+    context = await get_club_management_context(
+        session, club_id=payload.club_id, user_id=current_user.id
+    )
+    if context is None:
+        raise EventNotFoundError
+    if not can_manage_club(
+        current_user,
+        owner_id=str(context["owner_id"]),
+        member_role=context.get("member_role"),
+        member_status=context.get("member_status"),
+    ):
+        raise EventForbiddenError
+
+    slug = payload.slug or slugify(payload.title)
+    try:
+        event_id = await insert_event(
+            session,
+            payload=payload,
+            created_by=current_user.id,
+            slug=slug,
+        )
+        event = await get_event_by_id(session, event_id)
+        if event is None:
+            raise EventNotFoundError
+        await session.commit()
+        return event
+    except EventNotFoundError:
+        await session.rollback()
+        raise
+    except SQLAlchemyError as exc:
+        await session.rollback()
+        raise EventActionFailedError(str(exc)) from exc
 
 
 async def register_for_event_action(

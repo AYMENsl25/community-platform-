@@ -1,9 +1,12 @@
+from typing import Any
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.events.schemas import (
     EventCapacity,
     EventCard,
+    EventCreate,
     EventDetail,
     EventRegistrationState,
     SavedEventState,
@@ -115,6 +118,100 @@ async def get_event_by_id(session: AsyncSession, event_id: str) -> EventDetail |
     )
     row = result.first()
     return EventDetail.model_validate(row._mapping) if row else None
+
+
+async def get_club_management_context(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    user_id: str,
+) -> dict[str, str | None] | None:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              c.owner_id::text AS owner_id,
+              cm.role::text AS member_role,
+              cm.status::text AS member_status
+            FROM clubs c
+            LEFT JOIN club_members cm
+              ON cm.club_id = c.id
+             AND cm.user_id = CAST(:user_id AS uuid)
+            WHERE c.id = CAST(:club_id AS uuid)
+              AND c.deleted_at IS NULL
+            LIMIT 1
+            """
+        ),
+        {"club_id": club_id, "user_id": user_id},
+    )
+    row = result.first()
+    return dict(row._mapping) if row else None
+
+
+async def insert_event(
+    session: AsyncSession,
+    *,
+    payload: EventCreate,
+    created_by: str,
+    slug: str,
+) -> str:
+    values: dict[str, Any] = payload.model_dump()
+    values.update({"created_by": created_by, "slug": slug})
+    result = await session.execute(
+        text(
+            """
+            INSERT INTO events (
+              club_id,
+              created_by,
+              title,
+              slug,
+              description,
+              event_type,
+              starts_at,
+              ends_at,
+              timezone,
+              location_name,
+              address,
+              city,
+              country,
+              lat,
+              lng,
+              capacity,
+              price_amount,
+              currency,
+              status,
+              requires_approval,
+              cover_image_url
+            )
+            VALUES (
+              CAST(:club_id AS uuid),
+              CAST(:created_by AS uuid),
+              :title,
+              :slug,
+              :description,
+              :event_type,
+              :starts_at,
+              :ends_at,
+              :timezone,
+              :location_name,
+              :address,
+              :city,
+              :country,
+              :lat,
+              :lng,
+              :capacity,
+              :price_amount,
+              :currency,
+              CAST(:status AS event_status),
+              :requires_approval,
+              :cover_image_url
+            )
+            RETURNING id::text AS id
+            """
+        ),
+        values,
+    )
+    return str(result.one()._mapping["id"])
 
 
 async def get_event_capacity_by_id(

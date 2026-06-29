@@ -8,15 +8,18 @@ from app.db.session import get_db_session
 from app.modules.events.schemas import (
     EventCapacity,
     EventCard,
+    EventCreate,
     EventDetail,
     EventRegistrationState,
     SavedEventState,
 )
 from app.modules.events.service import (
     EventActionFailedError,
+    EventForbiddenError,
     EventNotFoundError,
     EventRegistrationNotFoundError,
     cancel_registration_action,
+    create_event_action,
     get_event_capacity,
     get_event_detail,
     list_events,
@@ -45,6 +48,31 @@ async def list_event_cards(
         event_type=event_type,
         q=q,
     )
+
+
+@router.post("", response_model=EventDetail, status_code=status.HTTP_201_CREATED)
+async def create_event(
+    payload: EventCreate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> EventDetail:
+    try:
+        return await create_event_action(
+            session, payload=payload, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
+        ) from exc
+    except EventForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to create events for this club.",
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event creation failed"
+        ) from exc
 
 
 @router.get("/{event_id}", response_model=EventDetail)
