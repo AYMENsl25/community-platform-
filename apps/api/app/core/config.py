@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     clerk_issuer: str | None = None
     clerk_jwks_url: str | None = None
     clerk_audience: str | None = None
+    clerk_authorized_parties: str | None = None
 
     @property
     def sqlalchemy_database_url(self) -> str | URL:
@@ -46,7 +47,29 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+        return [
+            origin.strip()
+            for origin in self.allowed_origins.split(",")
+            if origin.strip()
+        ]
+
+    @property
+    def effective_clerk_jwks_url(self) -> str | None:
+        if self.clerk_jwks_url:
+            return self.clerk_jwks_url
+        if self.clerk_issuer:
+            return f"{self.clerk_issuer.rstrip('/')}/.well-known/jwks.json"
+        return None
+
+    @property
+    def clerk_authorized_party_list(self) -> list[str]:
+        if self.clerk_authorized_parties:
+            return [
+                origin.strip()
+                for origin in self.clerk_authorized_parties.split(",")
+                if origin.strip()
+            ]
+        return self.allowed_origin_list
 
 
 @lru_cache
