@@ -18,6 +18,7 @@ from app.modules.clubs.service import (
     ClubForbiddenError,
     ClubMembershipNotFoundError,
     ClubNotFoundError,
+    OrganizerApprovalRequiredError,
     create_club_action,
     delete_club_action,
     get_club_detail,
@@ -51,6 +52,11 @@ async def create_club(
         return await create_club_action(
             session, payload=payload, current_user=current_user
         )
+    except OrganizerApprovalRequiredError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organizer approval is required before creating clubs.",
+        ) from exc
     except ClubActionFailedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Club creation failed"

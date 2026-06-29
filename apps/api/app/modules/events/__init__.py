@@ -1,2 +1,1 @@
-﻿"""Event module."""
-
+"""Event module."""

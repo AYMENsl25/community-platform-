@@ -43,6 +43,21 @@ CREATE TABLE users (
   CONSTRAINT users_bio_len CHECK (bio IS NULL OR char_length(bio) <= 1000)
 );
 
+CREATE TABLE organizer_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'pending',
+  reason text,
+  admin_note text,
+  reviewed_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT organizer_requests_status_valid CHECK (status IN ('pending', 'approved', 'rejected')),
+  CONSTRAINT organizer_requests_reason_len CHECK (reason IS NULL OR char_length(reason) <= 1000),
+  CONSTRAINT organizer_requests_admin_note_len CHECK (admin_note IS NULL OR char_length(admin_note) <= 1000)
+);
+
 CREATE TABLE user_preferences (
   user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   interest_categories text[] NOT NULL DEFAULT '{}',
@@ -253,6 +268,10 @@ $$;
 
 CREATE TRIGGER users_set_updated_at
 BEFORE UPDATE ON users
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER organizer_requests_set_updated_at
+BEFORE UPDATE ON organizer_requests
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER user_preferences_set_updated_at
@@ -805,6 +824,8 @@ WHERE e.status = 'published'
 CREATE INDEX users_email_idx ON users (email);
 CREATE INDEX users_clerk_user_id_idx ON users (clerk_user_id);
 CREATE INDEX users_deleted_at_idx ON users (deleted_at);
+CREATE INDEX organizer_requests_status_idx ON organizer_requests (status, created_at DESC);
+CREATE INDEX organizer_requests_user_status_idx ON organizer_requests (user_id, status);
 
 CREATE INDEX clubs_owner_id_idx ON clubs (owner_id);
 CREATE INDEX clubs_category_id_idx ON clubs (category_id);

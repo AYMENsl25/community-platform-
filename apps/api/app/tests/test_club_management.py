@@ -1,4 +1,3 @@
-
 import pytest
 
 from app.core.security import CurrentUser
@@ -104,6 +103,11 @@ async def test_create_club_action_commits_owner_membership(
     current_user = make_user()
     club = make_club(current_user)
 
+    async def fake_user_has_approved_organizer_request(
+        *args: object, **kwargs: object
+    ) -> bool:
+        return True
+
     async def fake_insert_club(*args: object, **kwargs: object) -> str:
         return club.id
 
@@ -113,6 +117,11 @@ async def test_create_club_action_commits_owner_membership(
     async def fake_get_club_by_id(*args: object, **kwargs: object) -> ClubDetail:
         return club
 
+    monkeypatch.setattr(
+        service,
+        "user_has_approved_organizer_request",
+        fake_user_has_approved_organizer_request,
+    )
     monkeypatch.setattr(service, "insert_club", fake_insert_club)
     monkeypatch.setattr(
         service, "add_club_owner_membership", fake_add_club_owner_membership

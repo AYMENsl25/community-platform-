@@ -87,7 +87,7 @@ class EventCreate(BaseModel):
     capacity: int | None = Field(default=None, gt=0)
     price_amount: Decimal = Field(default=Decimal("0"), ge=0)
     currency: str = Field(default="SAR", min_length=3, max_length=3)
-    status: str = Field(default="draft", pattern="^(draft|published)$")
+    status: str = Field(default="published", pattern="^(draft|published)$")
     requires_approval: bool = False
     cover_image_url: str | None = Field(default=None, max_length=500)
 

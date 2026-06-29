@@ -45,7 +45,7 @@ class ClubCreate(BaseModel):
     city: str | None = Field(default="Riyadh", max_length=120)
     country: str | None = Field(default="Saudi Arabia", max_length=120)
     visibility: str = Field(default="public", pattern="^(public|private)$")
-    status: str = Field(default="draft", pattern="^(draft|published)$")
+    status: str = Field(default="published", pattern="^(draft|published)$")
 
 
 class ClubUpdate(BaseModel):

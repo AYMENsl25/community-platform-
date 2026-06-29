@@ -1,2 +1,1 @@
-﻿"""Club module."""
-
+"""Club module."""
