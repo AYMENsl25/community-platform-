@@ -90,3 +90,32 @@ class EventCreate(BaseModel):
     status: str = Field(default="draft", pattern="^(draft|published)$")
     requires_approval: bool = False
     cover_image_url: str | None = Field(default=None, max_length=500)
+
+
+class EventUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=160)
+    slug: str | None = Field(default=None, min_length=3, max_length=180)
+    description: str | None = Field(default=None, max_length=2000)
+    event_type: str | None = Field(default=None, min_length=2, max_length=80)
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+    timezone: str | None = Field(default=None, min_length=1, max_length=80)
+    location_name: str | None = Field(default=None, max_length=160)
+    address: str | None = Field(default=None, max_length=240)
+    city: str | None = Field(default=None, max_length=120)
+    country: str | None = Field(default=None, max_length=120)
+    lat: Decimal | None = None
+    lng: Decimal | None = None
+    capacity: int | None = Field(default=None, gt=0)
+    price_amount: Decimal | None = Field(default=None, ge=0)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    status: str | None = Field(
+        default=None, pattern="^(draft|published|cancelled|completed)$"
+    )
+    requires_approval: bool | None = None
+    cover_image_url: str | None = Field(default=None, max_length=500)
+
+
+class EventDeletionState(BaseModel):
+    event_id: str
+    deleted: bool

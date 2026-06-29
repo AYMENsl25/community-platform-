@@ -9,8 +9,10 @@ from app.modules.events.schemas import (
     EventCapacity,
     EventCard,
     EventCreate,
+    EventDeletionState,
     EventDetail,
     EventRegistrationState,
+    EventUpdate,
     SavedEventState,
 )
 from app.modules.events.service import (
@@ -20,12 +22,14 @@ from app.modules.events.service import (
     EventRegistrationNotFoundError,
     cancel_registration_action,
     create_event_action,
+    delete_event_action,
     get_event_capacity,
     get_event_detail,
     list_events,
     register_for_event_action,
     save_event_action,
     unsave_event_action,
+    update_event_action,
 )
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -85,6 +89,57 @@ async def get_event(
             status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
         )
     return event
+
+
+@router.patch("/{event_id}", response_model=EventDetail)
+async def update_event(
+    event_id: str,
+    payload: EventUpdate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> EventDetail:
+    try:
+        return await update_event_action(
+            session, event_id=event_id, payload=payload, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage this event.",
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event update failed"
+        ) from exc
+
+
+@router.delete("/{event_id}", response_model=EventDeletionState)
+async def delete_event(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> EventDeletionState:
+    try:
+        return await delete_event_action(
+            session, event_id=event_id, current_user=current_user
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage this event.",
+        ) from exc
+    except EventActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Event deletion failed"
+        ) from exc
 
 
 @router.get("/{event_id}/capacity", response_model=EventCapacity)

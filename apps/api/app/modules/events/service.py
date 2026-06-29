@@ -10,19 +10,24 @@ from app.modules.events.repository import (
     get_club_management_context,
     get_event_by_id,
     get_event_capacity_by_id,
+    get_event_management_context,
     get_user_event_registration,
     insert_event,
     list_public_events,
     register_user_for_event,
     save_event_for_user,
+    soft_delete_event_by_id,
     unsave_event_for_user,
+    update_event_by_id,
 )
 from app.modules.events.schemas import (
     EventCapacity,
     EventCard,
     EventCreate,
+    EventDeletionState,
     EventDetail,
     EventRegistrationState,
+    EventUpdate,
     SavedEventState,
 )
 
@@ -46,6 +51,18 @@ class EventActionFailedError(Exception):
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or "event"
+
+
+def can_manage_event_from_context(
+    current_user: CurrentUser,
+    context: dict[str, str | None],
+) -> bool:
+    return can_manage_club(
+        current_user,
+        owner_id=str(context["owner_id"]),
+        member_role=context.get("member_role"),
+        member_status=context.get("member_status"),
+    )
 
 
 async def list_events(
@@ -88,12 +105,7 @@ async def create_event_action(
     )
     if context is None:
         raise EventNotFoundError
-    if not can_manage_club(
-        current_user,
-        owner_id=str(context["owner_id"]),
-        member_role=context.get("member_role"),
-        member_status=context.get("member_status"),
-    ):
+    if not can_manage_event_from_context(current_user, context):
         raise EventForbiddenError
 
     slug = payload.slug or slugify(payload.title)
@@ -112,6 +124,59 @@ async def create_event_action(
     except EventNotFoundError:
         await session.rollback()
         raise
+    except SQLAlchemyError as exc:
+        await session.rollback()
+        raise EventActionFailedError(str(exc)) from exc
+
+
+async def update_event_action(
+    session: AsyncSession,
+    *,
+    event_id: str,
+    payload: EventUpdate,
+    current_user: CurrentUser,
+) -> EventDetail:
+    context = await get_event_management_context(
+        session, event_id=event_id, user_id=current_user.id
+    )
+    if context is None:
+        raise EventNotFoundError
+    if not can_manage_event_from_context(current_user, context):
+        raise EventForbiddenError
+
+    try:
+        await update_event_by_id(session, event_id=event_id, payload=payload)
+        event = await get_event_by_id(session, event_id)
+        if event is None:
+            raise EventNotFoundError
+        await session.commit()
+        return event
+    except EventNotFoundError:
+        await session.rollback()
+        raise
+    except SQLAlchemyError as exc:
+        await session.rollback()
+        raise EventActionFailedError(str(exc)) from exc
+
+
+async def delete_event_action(
+    session: AsyncSession,
+    *,
+    event_id: str,
+    current_user: CurrentUser,
+) -> EventDeletionState:
+    context = await get_event_management_context(
+        session, event_id=event_id, user_id=current_user.id
+    )
+    if context is None:
+        raise EventNotFoundError
+    if not can_manage_event_from_context(current_user, context):
+        raise EventForbiddenError
+
+    try:
+        await soft_delete_event_by_id(session, event_id=event_id)
+        await session.commit()
+        return EventDeletionState(event_id=event_id, deleted=True)
     except SQLAlchemyError as exc:
         await session.rollback()
         raise EventActionFailedError(str(exc)) from exc

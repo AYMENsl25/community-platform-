@@ -9,6 +9,7 @@ from app.modules.events.schemas import (
     EventCreate,
     EventDetail,
     EventRegistrationState,
+    EventUpdate,
     SavedEventState,
 )
 
@@ -148,6 +149,38 @@ async def get_club_management_context(
     return dict(row._mapping) if row else None
 
 
+async def get_event_management_context(
+    session: AsyncSession,
+    *,
+    event_id: str,
+    user_id: str,
+) -> dict[str, str | None] | None:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              e.id::text AS event_id,
+              e.club_id::text AS club_id,
+              c.owner_id::text AS owner_id,
+              cm.role::text AS member_role,
+              cm.status::text AS member_status
+            FROM events e
+            JOIN clubs c ON c.id = e.club_id
+            LEFT JOIN club_members cm
+              ON cm.club_id = c.id
+             AND cm.user_id = CAST(:user_id AS uuid)
+            WHERE e.id = CAST(:event_id AS uuid)
+              AND e.deleted_at IS NULL
+              AND c.deleted_at IS NULL
+            LIMIT 1
+            """
+        ),
+        {"event_id": event_id, "user_id": user_id},
+    )
+    row = result.first()
+    return dict(row._mapping) if row else None
+
+
 async def insert_event(
     session: AsyncSession,
     *,
@@ -212,6 +245,55 @@ async def insert_event(
         values,
     )
     return str(result.one()._mapping["id"])
+
+
+async def update_event_by_id(
+    session: AsyncSession,
+    *,
+    event_id: str,
+    payload: EventUpdate,
+) -> None:
+    values: dict[str, Any] = payload.model_dump(exclude_unset=True)
+    if not values:
+        return
+
+    assignments: list[str] = []
+    params: dict[str, Any] = {"event_id": event_id}
+    for field_name, field_value in values.items():
+        params[field_name] = field_value
+        if field_name == "status":
+            assignments.append("status = CAST(:status AS event_status)")
+        else:
+            assignments.append(f"{field_name} = :{field_name}")
+
+    assignments.append("updated_at = now()")
+    await session.execute(
+        text(
+            f"""
+            UPDATE events
+            SET {", ".join(assignments)}
+            WHERE id = CAST(:event_id AS uuid)
+              AND deleted_at IS NULL
+            """
+        ),
+        params,
+    )
+
+
+async def soft_delete_event_by_id(session: AsyncSession, *, event_id: str) -> None:
+    await session.execute(
+        text(
+            """
+            UPDATE events
+            SET deleted_at = now(),
+                status = 'cancelled',
+                updated_at = now()
+            WHERE id = CAST(:event_id AS uuid)
+              AND deleted_at IS NULL
+            """
+        ),
+        {"event_id": event_id},
+    )
 
 
 async def get_event_capacity_by_id(
