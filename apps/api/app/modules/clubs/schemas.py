@@ -1,4 +1,6 @@
-﻿from pydantic import BaseModel
+from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class ClubCard(BaseModel):
@@ -21,3 +23,13 @@ class ClubDetail(ClubCard):
     status: str
     owner_name: str
     owner_avatar_url: str | None = None
+
+
+class ClubMembershipState(BaseModel):
+    id: str
+    club_id: str
+    user_id: str
+    role: str
+    status: str
+    joined_at: datetime
+    left_at: datetime | None = None
