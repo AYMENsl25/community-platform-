@@ -5,13 +5,13 @@ import { Orbit, Search, SlidersHorizontal } from "lucide-react"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { EventCard } from "@/components/explore/event-card"
-import { CATEGORIES, EVENTS, WHENS, type EventCategory, type EventWhen } from "@/lib/events"
+import { CATEGORIES, WHENS, type CommunityEvent, type EventCategory, type EventWhen } from "@/lib/events"
 import { cn } from "@/lib/utils"
 
 type Sort = "Trending" | "Soonest" | "Fewest spots"
 const SORTS: Sort[] = ["Trending", "Soonest", "Fewest spots"]
 
-export function Explore() {
+export function Explore({ initialEvents }: { initialEvents: CommunityEvent[] }) {
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState<EventCategory | "All">("All")
   const [when, setWhen] = useState<EventWhen | "Any">("Any")
@@ -19,7 +19,7 @@ export function Explore() {
   const [sort, setSort] = useState<Sort>("Trending")
 
   const results = useMemo(() => {
-    let list = EVENTS.filter((e) => {
+    let list = initialEvents.filter((e) => {
       if (category !== "All" && e.category !== category) return false
       if (when !== "Any" && e.when !== when) return false
       if (freeOnly && e.price !== 0) return false
@@ -40,7 +40,7 @@ export function Explore() {
       return a.spots - b.spots
     })
     return list
-  }, [query, category, when, freeOnly, sort])
+  }, [initialEvents, query, category, when, freeOnly, sort])
 
   return (
     <div className="min-h-dvh">
