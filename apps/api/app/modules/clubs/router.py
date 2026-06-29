@@ -5,15 +5,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import CurrentUser, require_authenticated_user
 from app.db.session import get_db_session
-from app.modules.clubs.schemas import ClubCard, ClubDetail, ClubMembershipState
+from app.modules.clubs.schemas import (
+    ClubCard,
+    ClubCreate,
+    ClubDeletionState,
+    ClubDetail,
+    ClubMembershipState,
+    ClubUpdate,
+)
 from app.modules.clubs.service import (
     ClubActionFailedError,
+    ClubForbiddenError,
     ClubMembershipNotFoundError,
     ClubNotFoundError,
+    create_club_action,
+    delete_club_action,
     get_club_detail,
     join_club_action,
     leave_club_action,
     list_clubs,
+    update_club_action,
 )
 
 router = APIRouter(prefix="/clubs", tags=["clubs"])
@@ -28,6 +39,73 @@ async def list_club_cards(
     session: AsyncSession = Depends(get_db_session),
 ) -> list[ClubCard]:
     return await list_clubs(session, limit=limit, offset=offset, city=city, q=q)
+
+
+@router.post("", response_model=ClubDetail, status_code=status.HTTP_201_CREATED)
+async def create_club(
+    payload: ClubCreate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> ClubDetail:
+    try:
+        return await create_club_action(
+            session, payload=payload, current_user=current_user
+        )
+    except ClubActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Club creation failed"
+        ) from exc
+
+
+@router.patch("/{club_id}", response_model=ClubDetail)
+async def update_club(
+    club_id: str,
+    payload: ClubUpdate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> ClubDetail:
+    try:
+        return await update_club_action(
+            session, club_id=club_id, payload=payload, current_user=current_user
+        )
+    except ClubNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
+        ) from exc
+    except ClubForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage this club.",
+        ) from exc
+    except ClubActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Club update failed"
+        ) from exc
+
+
+@router.delete("/{club_id}", response_model=ClubDeletionState)
+async def delete_club(
+    club_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> ClubDeletionState:
+    try:
+        return await delete_club_action(
+            session, club_id=club_id, current_user=current_user
+        )
+    except ClubNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
+        ) from exc
+    except ClubForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to manage this club.",
+        ) from exc
+    except ClubActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Club deletion failed"
+        ) from exc
 
 
 @router.post("/{club_id}/join", response_model=ClubMembershipState)
