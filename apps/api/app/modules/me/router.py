@@ -9,6 +9,10 @@ from app.modules.me.schemas import (
     MyClubSummary,
     MyEventSummary,
     MyNotificationSummary,
+    MyPreferences,
+    MyPreferencesUpdate,
+    MyProfile,
+    MyProfileUpdate,
     MyRegistrationSummary,
     MySavedEventSummary,
     NotificationReadState,
@@ -17,16 +21,79 @@ from app.modules.me.schemas import (
 from app.modules.me.service import (
     NotificationActionFailedError,
     NotificationNotFoundError,
+    ProfileActionFailedError,
+    ProfileNotFoundError,
     get_my_clubs,
     get_my_events,
     get_my_notifications,
+    get_my_preferences,
+    get_my_profile,
     get_my_registrations,
     get_my_saved_events,
     mark_all_my_notifications_read,
     mark_my_notification_read,
+    update_my_preferences,
+    update_my_profile,
 )
 
 router = APIRouter(prefix="/me", tags=["me"])
+
+
+@router.get("/profile", response_model=MyProfile)
+async def get_profile(
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> MyProfile:
+    try:
+        return await get_my_profile(session, current_user)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found",
+        ) from exc
+
+
+@router.patch("/profile", response_model=MyProfile)
+async def update_profile(
+    payload: MyProfileUpdate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> MyProfile:
+    try:
+        return await update_my_profile(session, current_user, payload=payload)
+    except ProfileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile not found",
+        ) from exc
+    except ProfileActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Profile update failed",
+        ) from exc
+
+
+@router.get("/preferences", response_model=MyPreferences)
+async def get_preferences(
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> MyPreferences:
+    return await get_my_preferences(session, current_user)
+
+
+@router.patch("/preferences", response_model=MyPreferences)
+async def update_preferences(
+    payload: MyPreferencesUpdate,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> MyPreferences:
+    try:
+        return await update_my_preferences(session, current_user, payload=payload)
+    except ProfileActionFailedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Preferences update failed",
+        ) from exc
 
 
 @router.get("/clubs", response_model=list[MyClubSummary])

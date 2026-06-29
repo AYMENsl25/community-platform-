@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import CurrentUser
 from app.modules.me.repository import (
+    get_user_preferences,
+    get_user_profile,
     list_user_clubs,
     list_user_managed_events,
     list_user_notifications,
@@ -10,11 +12,17 @@ from app.modules.me.repository import (
     list_user_saved_events,
     mark_all_user_notifications_read,
     mark_user_notification_read,
+    update_user_preferences,
+    update_user_profile,
 )
 from app.modules.me.schemas import (
     MyClubSummary,
     MyEventSummary,
     MyNotificationSummary,
+    MyPreferences,
+    MyPreferencesUpdate,
+    MyProfile,
+    MyProfileUpdate,
     MyRegistrationSummary,
     MySavedEventSummary,
     NotificationReadState,
@@ -28,6 +36,68 @@ class NotificationNotFoundError(Exception):
 
 class NotificationActionFailedError(Exception):
     pass
+
+
+class ProfileNotFoundError(Exception):
+    pass
+
+
+class ProfileActionFailedError(Exception):
+    pass
+
+
+async def get_my_profile(session: AsyncSession, current_user: CurrentUser) -> MyProfile:
+    profile = await get_user_profile(session, user_id=current_user.id)
+    if profile is None:
+        raise ProfileNotFoundError
+    return profile
+
+
+async def update_my_profile(
+    session: AsyncSession,
+    current_user: CurrentUser,
+    *,
+    payload: MyProfileUpdate,
+) -> MyProfile:
+    try:
+        profile = await update_user_profile(
+            session, user_id=current_user.id, payload=payload
+        )
+        if profile is None:
+            raise ProfileNotFoundError
+        await session.commit()
+        return profile
+    except ProfileNotFoundError:
+        await session.rollback()
+        raise
+    except SQLAlchemyError as exc:
+        await session.rollback()
+        raise ProfileActionFailedError(str(exc)) from exc
+
+
+async def get_my_preferences(
+    session: AsyncSession, current_user: CurrentUser
+) -> MyPreferences:
+    preferences = await get_user_preferences(session, user_id=current_user.id)
+    await session.commit()
+    return preferences
+
+
+async def update_my_preferences(
+    session: AsyncSession,
+    current_user: CurrentUser,
+    *,
+    payload: MyPreferencesUpdate,
+) -> MyPreferences:
+    try:
+        preferences = await update_user_preferences(
+            session, user_id=current_user.id, payload=payload
+        )
+        await session.commit()
+        return preferences
+    except SQLAlchemyError as exc:
+        await session.rollback()
+        raise ProfileActionFailedError(str(exc)) from exc
 
 
 async def get_my_clubs(
