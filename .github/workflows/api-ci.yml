@@ -39,3 +39,6 @@ jobs:
 
       - name: Pytest
         run: python -m pytest
+
+      - name: Docker build
+        run: docker build -t communiti-api .

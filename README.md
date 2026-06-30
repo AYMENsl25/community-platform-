@@ -130,4 +130,20 @@ See [docs/security.md](docs/security.md) and [docs/cors-debugging.md](docs/cors-
 
 ## Deployment Notes
 
-The current MVP target is Vercel for the web app, a hosted FastAPI service for `apps/api`, and managed PostgreSQL. Production deployment still needs Docker packaging, migration automation, secret rotation, observability, and backup/restore rehearsal.
+The current MVP target is Vercel for the web app, a hosted FastAPI service for `apps/api`, and managed PostgreSQL.
+
+Build the API image from `apps/api`:
+
+```powershell
+cd apps/api
+docker build -t communiti-api .
+```
+
+Run database migrations with Alembic:
+
+```powershell
+cd apps/api
+.\.venv\Scripts\python.exe -m alembic -c alembic.ini upgrade head
+```
+
+See [docs/deployment.md](docs/deployment.md) for the production checklist.

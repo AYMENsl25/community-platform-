@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     db_password: str = Field(default="postgres", repr=False)
 
     allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    trusted_hosts: str = "localhost,127.0.0.1,testserver"
+    rate_limit_enabled: bool = True
+    rate_limit_requests_per_minute: int = 120
+    rate_limit_exempt_paths: str = "/health,/docs,/redoc,/openapi.json"
 
     clerk_issuer: str | None = None
     clerk_jwks_url: str | None = None
@@ -51,6 +55,18 @@ class Settings(BaseSettings):
             origin.strip()
             for origin in self.allowed_origins.split(",")
             if origin.strip()
+        ]
+
+    @property
+    def trusted_host_list(self) -> list[str]:
+        return [host.strip() for host in self.trusted_hosts.split(",") if host.strip()]
+
+    @property
+    def rate_limit_exempt_path_list(self) -> list[str]:
+        return [
+            path.strip()
+            for path in self.rate_limit_exempt_paths.split(",")
+            if path.strip()
         ]
 
     @property

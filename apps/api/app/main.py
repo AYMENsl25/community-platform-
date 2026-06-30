@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.core.cors import configure_cors
 from app.core.errors import configure_error_handlers
 from app.core.logging import configure_logging
+from app.core.middleware import configure_security_middleware
 
 
 def create_app() -> FastAPI:
@@ -18,6 +19,7 @@ def create_app() -> FastAPI:
     )
 
     configure_cors(app)
+    configure_security_middleware(app)
     configure_error_handlers(app)
     app.include_router(api_router, prefix=settings.api_v1_prefix)
 

@@ -43,8 +43,7 @@ The search path starts with relational text search. AI-ready search should add `
 
 ## Remaining Architecture Work
 
-- Add Alembic migration management.
-- Add a Dockerfile for API deployment.
+- Move future schema changes into Alembic revisions after the baseline migration.
 - Add generated TypeScript API client package from OpenAPI.
 - Add background worker structure before async jobs become necessary.
 - Add production observability: metrics, traces, error reporting, and slow query logging.

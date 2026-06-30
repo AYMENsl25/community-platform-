@@ -43,9 +43,13 @@ Current rules include:
 
 ## Remaining Security Work
 
-- Add rate limiting.
-- Add trusted host middleware for production.
-- Standardize error responses without leaking internals.
-- Add dependency vulnerability scanning.
-- Add audit logging for organizer/admin writes.
+- Triage Dependabot alerts and dependency update PRs.
+- Add actor-enriched audit logging for organizer/admin writes. The database currently has row-change triggers for clubs and events, but those trigger logs do not yet attach request context.
 - Add backup/restore and secret rotation runbooks.
+
+## Runtime Guardrails
+
+- Trusted host middleware is configured through `TRUSTED_HOSTS`.
+- In-process rate limiting is configured through `RATE_LIMIT_ENABLED` and `RATE_LIMIT_REQUESTS_PER_MINUTE`.
+- All responses get an `X-Request-ID` header.
+- Error responses use the standard `{ "error": { ... } }` shape and avoid leaking raw exceptions.

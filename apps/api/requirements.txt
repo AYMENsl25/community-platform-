@@ -6,3 +6,4 @@ asyncpg==0.30.0
 python-json-logger==3.2.1
 httpx==0.28.1
 PyJWT[crypto]==2.10.1
+alembic==1.14.0

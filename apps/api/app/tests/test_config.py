@@ -22,3 +22,13 @@ def test_settings_builds_database_url_from_db_fields() -> None:
     assert url.host == "localhost"
     assert url.port == 5432
     assert url.database == "communiti_dev"
+
+
+def test_settings_splits_security_lists() -> None:
+    settings = Settings(
+        trusted_hosts="example.com, api.example.com",
+        rate_limit_exempt_paths="/health, /docs",
+    )
+
+    assert settings.trusted_host_list == ["example.com", "api.example.com"]
+    assert settings.rate_limit_exempt_path_list == ["/health", "/docs"]

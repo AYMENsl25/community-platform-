@@ -1,6 +1,15 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.API_BASE_URL ?? "http://127.0.0.1:8000/api/v1"
 
+type CommunitiErrorBody = {
+  error?: {
+    code?: string
+    message?: string
+    request_id?: string
+  }
+  detail?: string
+}
+
 type CommunitiRequestInit = RequestInit & {
   next?: {
     revalidate?: number | false
@@ -26,8 +35,8 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let detail = `${response.status} ${response.statusText}`
     try {
-      const body = (await response.json()) as { detail?: string }
-      detail = body.detail ?? detail
+      const body = (await response.json()) as CommunitiErrorBody
+      detail = body.error?.message ?? body.detail ?? detail
     } catch {
       // Keep the HTTP status detail when the response is not JSON.
     }

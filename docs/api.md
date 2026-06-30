@@ -63,7 +63,7 @@ Local development can use `X-Communiti-User-Email` only when `ENVIRONMENT=develo
 
 ## Error Shape
 
-FastAPI validation errors currently use FastAPI defaults. Unhandled server errors are wrapped by the API error handler and include the request ID when available. The next hardening step is standardizing all domain errors into a single object shape:
+API errors use a standard object shape:
 
 ```json
 {
@@ -74,3 +74,5 @@ FastAPI validation errors currently use FastAPI defaults. Unhandled server error
   }
 }
 ```
+
+Validation errors include an additional `details` field with FastAPI validation details. Clients should display `error.message` and may log `error.code` plus `error.request_id`.
