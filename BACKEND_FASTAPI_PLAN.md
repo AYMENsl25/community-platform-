@@ -254,7 +254,7 @@ Requirements:
 
 Purpose:
 
-- Replace static frontend data from `communiti-platform-design 2/lib/events.ts`.
+- Replace static frontend data from `apps/web/lib/events.ts`.
 - Prove the backend can return real PostgreSQL rows.
 
 ## 8. Phase 3: Seed Data and Local QA

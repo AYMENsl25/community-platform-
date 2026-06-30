@@ -13,46 +13,68 @@ type RegistrationState = {
   waitlist_position: number | null
 }
 
+type JoinState = "idle" | "registering" | "registered" | "canceling" | "error"
+
+const DEV_MEMBER_HEADERS = {
+  "X-Communiti-User-Email": "member@communiti.local",
+}
+
 export function JoinButton({ eventId, className }: { eventId?: string; className?: string }) {
-  const [state, setState] = useState<"idle" | "joining" | "joined" | "error">("idle")
+  const [state, setState] = useState<JoinState>("idle")
 
   async function handleClick() {
-    if (state !== "idle") {
-      setState("idle")
+    if (state === "registering" || state === "canceling") return
+
+    if (state === "registered") {
+      if (!eventId) {
+        setState("idle")
+        return
+      }
+
+      setState("canceling")
+      try {
+        await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/cancel-registration`, {
+          headers: DEV_MEMBER_HEADERS,
+        })
+        setState("idle")
+      } catch (error) {
+        console.error("Event registration cancellation failed.", error)
+        setState("error")
+      }
       return
     }
 
-    setState("joining")
+    setState("registering")
     if (!eventId) {
-      window.setTimeout(() => setState("joined"), 550)
+      window.setTimeout(() => setState("registered"), 550)
       return
     }
 
     try {
       await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/register`, {
-        headers: {
-          "X-Communiti-User-Email": "member@communiti.local",
-        },
+        headers: DEV_MEMBER_HEADERS,
       })
-      setState("joined")
+      setState("registered")
     } catch (error) {
       console.error("Event registration failed.", error)
       setState("error")
     }
   }
 
-  const joined = state === "joined"
+  const registered = state === "registered"
+  const busy = state === "registering" || state === "canceling"
   const error = state === "error"
 
   return (
     <motion.button
       type="button"
       onClick={handleClick}
-      whileTap={{ scale: 0.94 }}
-      aria-label={joined ? "Leave experience" : "Join experience"}
+      disabled={busy}
+      whileTap={{ scale: busy ? 1 : 0.94 }}
+      aria-label={registered ? "Cancel event registration" : "Register for event"}
       className={cn(
-        "relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        joined
+        "relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait disabled:opacity-80",
+        registered
           ? "bg-primary text-primary-foreground"
           : error
             ? "bg-destructive text-destructive-foreground"
@@ -61,7 +83,7 @@ export function JoinButton({ eventId, className }: { eventId?: string; className
       )}
     >
       <AnimatePresence>
-        {joined &&
+        {registered &&
           PARTICLES.map((_, i) => {
             const angle = (i / PARTICLES.length) * Math.PI * 2
             return (
@@ -83,9 +105,9 @@ export function JoinButton({ eventId, className }: { eventId?: string; className
 
       <span className="relative z-10 inline-flex items-center gap-1.5">
         <AnimatePresence mode="wait" initial={false}>
-          {joined ? (
+          {registered ? (
             <motion.span
-              key="joined"
+              key="registered"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -93,7 +115,7 @@ export function JoinButton({ eventId, className }: { eventId?: string; className
               className="inline-flex items-center gap-1.5"
             >
               <Check className="size-4" aria-hidden="true" />
-              Joined
+              Registered
             </motion.span>
           ) : error ? (
             <motion.span
@@ -108,7 +130,7 @@ export function JoinButton({ eventId, className }: { eventId?: string; className
             </motion.span>
           ) : (
             <motion.span
-              key="join"
+              key="register"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
@@ -116,10 +138,10 @@ export function JoinButton({ eventId, className }: { eventId?: string; className
               className="inline-flex items-center gap-1.5"
             >
               <Plus
-                className={cn("size-4 transition-transform", state === "joining" && "rotate-90")}
+                className={cn("size-4 transition-transform", state === "registering" && "rotate-90")}
                 aria-hidden="true"
               />
-              {state === "joining" ? "Joining" : "Join"}
+              {state === "registering" ? "Registering" : state === "canceling" ? "Canceling" : "Register"}
             </motion.span>
           )}
         </AnimatePresence>
