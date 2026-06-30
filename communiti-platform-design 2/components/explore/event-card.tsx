@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { motion } from "motion/react"
 import { Flame, MapPin, Users } from "lucide-react"
 import { JoinButton } from "@/components/join-button"
@@ -16,7 +17,10 @@ export function EventCard({ event }: { event: CommunityEvent }) {
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="group relative flex flex-col overflow-hidden rounded-3xl border border-border bg-card"
     >
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <Link
+        href={`/explore/${event.id}`}
+        className="relative aspect-[16/10] overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <Image
           src={event.image || "/placeholder.svg"}
           alt={event.title}
@@ -41,11 +45,18 @@ export function EventCard({ event }: { event: CommunityEvent }) {
         <span className="absolute right-4 top-4 rounded-full bg-background/70 px-3 py-1 text-xs font-medium backdrop-blur">
           {event.price === 0 ? "Free" : `$${event.price}`}
         </span>
-      </div>
+      </Link>
 
       <div className="flex flex-1 flex-col p-5">
         <p className="text-xs font-medium text-primary">{event.date}</p>
-        <h3 className="mt-1.5 text-lg font-semibold tracking-tight">{event.title}</h3>
+        <h3 className="mt-1.5 text-lg font-semibold tracking-tight">
+          <Link
+            href={`/explore/${event.id}`}
+            className="transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {event.title}
+          </Link>
+        </h3>
         <p className="mt-1.5 text-pretty text-sm leading-relaxed text-muted-foreground">{event.blurb}</p>
 
         <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
@@ -63,7 +74,7 @@ export function EventCard({ event }: { event: CommunityEvent }) {
           <span className="text-xs font-medium text-muted-foreground">
             <span className="text-foreground">{event.spots}</span> spots left
           </span>
-          <JoinButton />
+          <JoinButton eventId={event.id} />
         </div>
       </div>
     </motion.article>

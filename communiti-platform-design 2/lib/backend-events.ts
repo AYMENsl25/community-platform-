@@ -1,5 +1,14 @@
 import { apiGet } from "@/lib/api"
-import { EVENTS, type CommunityEvent, type EventCategory, type EventWhen } from "@/lib/events"
+import {
+  EVENTS,
+  getEventById,
+  getEventsByOrganizer,
+  getOrganizer,
+  type CommunityEvent,
+  type EventCategory,
+  type EventWhen,
+  type Organizer,
+} from "@/lib/events"
 
 type ApiEventCard = {
   id: string
@@ -21,6 +30,21 @@ type ApiEventCard = {
   currency: string
   cover_image_url: string | null
   category_name: string | null
+}
+
+type ApiEventDetail = ApiEventCard & {
+  created_by: string
+  timezone: string
+  address: string | null
+  lat: string | null
+  lng: string | null
+  status: string
+  requires_approval: boolean
+  club_slug: string
+  club_logo_url: string | null
+  organizer_name: string
+  organizer_avatar_url: string | null
+  is_full: boolean
 }
 
 const CATEGORY_FALLBACK: EventCategory = "Social"
@@ -78,10 +102,21 @@ function eventTypeToImage(eventType: string): string {
   return "/experiences/book-club.png"
 }
 
-function mapApiEvent(event: ApiEventCard): CommunityEvent {
+function localImageOrFallback(value: string | null, fallback: string): string {
+  if (!value) return fallback
+  return value.startsWith("/") ? value : fallback
+}
+
+function toCoordinate(value: string | null | undefined, fallback: number): number {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function mapApiEvent(event: ApiEventCard | ApiEventDetail): CommunityEvent {
   const capacity = event.capacity ?? event.registered_count + 20
   const spots = Math.max(capacity - event.registered_count, 0)
-  const image = event.cover_image_url || eventTypeToImage(event.event_type)
+  const image = localImageOrFallback(event.cover_image_url, eventTypeToImage(event.event_type))
+  const detail = "club_slug" in event ? event : null
 
   return {
     id: event.id,
@@ -93,10 +128,10 @@ function mapApiEvent(event: ApiEventCard): CommunityEvent {
     date: formatDate(event.starts_at),
     duration: formatDuration(event.starts_at, event.ends_at),
     location: event.location_name || event.city || "Location TBA",
-    address: event.location_name || event.city || "Address TBA",
+    address: detail?.address || event.location_name || event.city || "Address TBA",
     city: event.city || "Riyadh",
-    lat: 24.7136,
-    lng: 46.6753,
+    lat: toCoordinate(detail?.lat, 24.7136),
+    lng: toCoordinate(detail?.lng, 46.6753),
     spots,
     price: Number(event.price_amount),
     attendees: event.registered_count,
@@ -108,6 +143,24 @@ function mapApiEvent(event: ApiEventCard): CommunityEvent {
   }
 }
 
+function mapApiOrganizer(event: ApiEventDetail): Organizer {
+  const poster = localImageOrFallback(event.cover_image_url, eventTypeToImage(event.event_type))
+
+  return {
+    id: event.club_id,
+    name: event.club_name,
+    handle: event.club_slug ? `@${event.club_slug}` : "@communiti",
+    logo: localImageOrFallback(event.club_logo_url || event.organizer_avatar_url, "/orgs/trailheads.png"),
+    verified: event.status === "published",
+    bio: `${event.organizer_name} hosts ${event.club_name} experiences for the COMMUNITI community.`,
+    members: Math.max(event.registered_count + 20, 20),
+    eventsHosted: 1,
+    rating: 4.8,
+    socials: {},
+    reel: [{ title: `${event.club_name} preview`, duration: "1:20", poster }],
+  }
+}
+
 export async function getExploreEvents(): Promise<CommunityEvent[]> {
   try {
     const events = await apiGet<ApiEventCard[]>("/events?limit=100")
@@ -115,5 +168,39 @@ export async function getExploreEvents(): Promise<CommunityEvent[]> {
   } catch (error) {
     console.warn("Using static events because the COMMUNITI API is unavailable.", error)
     return EVENTS
+  }
+}
+
+export async function getExploreEvent(
+  id: string,
+): Promise<{ event: CommunityEvent; organizer: Organizer; more: CommunityEvent[] } | null> {
+  try {
+    const eventDetail = await apiGet<ApiEventDetail>(`/events/${encodeURIComponent(id)}`)
+    const event = mapApiEvent(eventDetail)
+    const allEvents = await apiGet<ApiEventCard[]>("/events?limit=100")
+    const more = allEvents
+      .filter((item) => item.club_id === eventDetail.club_id && item.id !== eventDetail.id)
+      .slice(0, 3)
+      .map(mapApiEvent)
+
+    return {
+      event,
+      organizer: mapApiOrganizer(eventDetail),
+      more,
+    }
+  } catch (error) {
+    console.warn("Using static event detail because the COMMUNITI API is unavailable.", error)
+
+    const event = getEventById(id)
+    if (!event) return null
+
+    const organizer = getOrganizer(event.organizerId)
+    if (!organizer) return null
+
+    return {
+      event,
+      organizer,
+      more: getEventsByOrganizer(event.organizerId, event.id).slice(0, 3),
+    }
   }
 }

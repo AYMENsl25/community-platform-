@@ -172,7 +172,7 @@ export function EventDetail({
                 </p>
               </div>
               <div className="mt-4">
-                <JoinButton className="w-full py-3" />
+                <JoinButton eventId={event.id} className="w-full py-3" />
               </div>
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 {event.attendees} people are going. You can leave anytime.

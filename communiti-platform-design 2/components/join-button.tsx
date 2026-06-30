@@ -3,23 +3,46 @@
 import { AnimatePresence, motion } from "motion/react"
 import { Check, Plus } from "lucide-react"
 import { useState } from "react"
+import { apiPost } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 const PARTICLES = Array.from({ length: 8 })
 
-export function JoinButton({ className }: { className?: string }) {
-  const [state, setState] = useState<"idle" | "joining" | "joined">("idle")
+type RegistrationState = {
+  status: string
+  waitlist_position: number | null
+}
 
-  function handleClick() {
+export function JoinButton({ eventId, className }: { eventId?: string; className?: string }) {
+  const [state, setState] = useState<"idle" | "joining" | "joined" | "error">("idle")
+
+  async function handleClick() {
     if (state !== "idle") {
       setState("idle")
       return
     }
+
     setState("joining")
-    window.setTimeout(() => setState("joined"), 550)
+    if (!eventId) {
+      window.setTimeout(() => setState("joined"), 550)
+      return
+    }
+
+    try {
+      await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/register`, {
+        headers: {
+          "X-Communiti-User-Email": "member@communiti.local",
+        },
+      })
+      setState("joined")
+    } catch (error) {
+      console.error("Event registration failed.", error)
+      setState("error")
+    }
   }
 
   const joined = state === "joined"
+  const error = state === "error"
 
   return (
     <motion.button
@@ -29,11 +52,14 @@ export function JoinButton({ className }: { className?: string }) {
       aria-label={joined ? "Leave experience" : "Join experience"}
       className={cn(
         "relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        joined ? "bg-primary text-primary-foreground" : "bg-foreground text-background",
+        joined
+          ? "bg-primary text-primary-foreground"
+          : error
+            ? "bg-destructive text-destructive-foreground"
+            : "bg-foreground text-background",
         className,
       )}
     >
-      {/* success particle burst */}
       <AnimatePresence>
         {joined &&
           PARTICLES.map((_, i) => {
@@ -68,6 +94,17 @@ export function JoinButton({ className }: { className?: string }) {
             >
               <Check className="size-4" aria-hidden="true" />
               Joined
+            </motion.span>
+          ) : error ? (
+            <motion.span
+              key="error"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="inline-flex items-center gap-1.5"
+            >
+              Try again
             </motion.span>
           ) : (
             <motion.span
