@@ -374,7 +374,9 @@ async def seed_database(session: AsyncSession) -> None:
 
 
 async def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
     async with AsyncSessionLocal() as session:
         await seed_database(session)
     logger.info("Seed data inserted successfully.")

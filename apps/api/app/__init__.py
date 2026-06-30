@@ -1,2 +1,1 @@
-﻿"""COMMUNITI FastAPI backend."""
-
+"""COMMUNITI FastAPI backend."""

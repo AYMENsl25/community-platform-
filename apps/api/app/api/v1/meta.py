@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +22,9 @@ class TagResponse(BaseModel):
 
 
 @router.get("/categories", response_model=list[CategoryResponse])
-async def list_categories(session: AsyncSession = Depends(get_db_session)) -> list[CategoryResponse]:
+async def list_categories(
+    session: AsyncSession = Depends(get_db_session),
+) -> list[CategoryResponse]:
     result = await session.execute(
         text(
             """
@@ -36,7 +38,9 @@ async def list_categories(session: AsyncSession = Depends(get_db_session)) -> li
 
 
 @router.get("/tags", response_model=list[TagResponse])
-async def list_tags(session: AsyncSession = Depends(get_db_session)) -> list[TagResponse]:
+async def list_tags(
+    session: AsyncSession = Depends(get_db_session),
+) -> list[TagResponse]:
     result = await session.execute(
         text(
             """

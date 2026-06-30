@@ -1,2 +1,1 @@
-﻿"""Core API configuration."""
-
+"""Core API configuration."""
