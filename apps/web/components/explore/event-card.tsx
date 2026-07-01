@@ -5,7 +5,7 @@ import Link from "next/link"
 import { motion } from "motion/react"
 import { Flame, MapPin, Users } from "lucide-react"
 import { JoinButton } from "@/components/join-button"
-import type { CommunityEvent } from "@/lib/events"
+import { formatEventPrice, type CommunityEvent } from "@/lib/events"
 
 export function EventCard({ event }: { event: CommunityEvent }) {
   return (
@@ -43,7 +43,7 @@ export function EventCard({ event }: { event: CommunityEvent }) {
         </div>
 
         <span className="absolute right-4 top-4 rounded-full bg-background/70 px-3 py-1 text-xs font-medium backdrop-blur">
-          {event.price === 0 ? "Free" : `$${event.price}`}
+          {formatEventPrice(event.price, event.currency)}
         </span>
       </Link>
 
@@ -74,7 +74,7 @@ export function EventCard({ event }: { event: CommunityEvent }) {
           <span className="text-xs font-medium text-muted-foreground">
             <span className="text-foreground">{event.spots}</span> spots left
           </span>
-          <JoinButton eventId={event.id} />
+          <JoinButton eventId={event.id} eventTitle={event.title} price={event.price} currency={event.currency} />
         </div>
       </div>
     </motion.article>

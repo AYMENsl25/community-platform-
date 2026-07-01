@@ -42,12 +42,23 @@ export type CommunityEvent = {
   lng: number
   spots: number
   price: number // 0 = free
+  currency?: string
   attendees: number
   trending: boolean
   image: string
   highlights: string[]
   bring: string[]
   organizerId: string
+}
+
+export function formatEventPrice(price: number, currency = "USD"): string {
+  if (price === 0) return "Free"
+
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: Number.isInteger(price) ? 0 : 2,
+  }).format(price)
 }
 
 export const CATEGORIES: EventCategory[] = [

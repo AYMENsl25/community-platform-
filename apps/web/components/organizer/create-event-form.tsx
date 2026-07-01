@@ -1,10 +1,11 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs"
 import Link from "next/link"
-import { AlertCircle, CalendarPlus, CheckCircle2, Loader2 } from "lucide-react"
+import { AlertCircle, Building2, CalendarPlus, CheckCircle2, Loader2 } from "lucide-react"
 import { type FormEvent, useEffect, useMemo, useState } from "react"
-import { apiGet, apiPost } from "@/lib/api"
-import type { ClubCard } from "@/lib/backend-clubs"
+import { apiGet, apiPost, bearerHeaders } from "@/lib/api"
+import type { MyClubSummary } from "@/lib/backend-clubs"
 import { cn } from "@/lib/utils"
 
 type CreatedEvent = {
@@ -28,9 +29,9 @@ type FormState = {
   priceAmount: string
 }
 
-const DEV_ORGANIZER_HEADERS = {
-  "X-Communiti-User-Email": "organizer@communiti.local",
-}
+const CITY_SUGGESTIONS = ["Riyadh", "Jeddah", "Istanbul", "Ankara", "Dubai", "Doha", "London", "Paris"]
+const EVENT_TYPE_SUGGESTIONS = ["community", "sports", "technology", "outdoors", "wellness", "food", "music", "creative", "networking"]
+const MANAGER_ROLES = new Set(["owner", "admin"])
 
 function toDatetimeLocal(date: Date): string {
   const pad = (value: number) => value.toString().padStart(2, "0")
@@ -60,7 +61,8 @@ function createInitialForm(): FormState {
 }
 
 export function CreateEventForm() {
-  const [clubs, setClubs] = useState<ClubCard[]>([])
+  const { getToken } = useAuth()
+  const [clubs, setClubs] = useState<MyClubSummary[]>([])
   const [form, setForm] = useState<FormState>(() => createInitialForm())
   const [loadingClubs, setLoadingClubs] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -72,14 +74,20 @@ export function CreateEventForm() {
 
     async function loadClubs() {
       try {
-        const data = await apiGet<ClubCard[]>("/clubs?limit=100")
+        const token = await getToken()
+        const data = await apiGet<MyClubSummary[]>("/me/clubs", {
+          headers: bearerHeaders(token),
+        })
+        const manageableClubs = data.filter(
+          (club) => MANAGER_ROLES.has(club.member_role) && club.member_status === "active",
+        )
         if (!active) return
-        setClubs(data)
-        setForm((current) => ({ ...current, clubId: current.clubId || data[0]?.id || "" }))
+        setClubs(manageableClubs)
+        setForm((current) => ({ ...current, clubId: current.clubId || manageableClubs[0]?.id || "" }))
       } catch (loadError) {
         if (!active) return
         console.error("Club loading failed.", loadError)
-        setError("The API is not reachable yet, so clubs cannot be loaded for event creation.")
+        setError("We could not load your clubs. Sign in again or check that the API is running.")
       } finally {
         if (active) setLoadingClubs(false)
       }
@@ -89,7 +97,7 @@ export function CreateEventForm() {
     return () => {
       active = false
     }
-  }, [])
+  }, [getToken])
 
   const selectedClub = useMemo(() => clubs.find((club) => club.id === form.clubId), [clubs, form.clubId])
 
@@ -103,7 +111,7 @@ export function CreateEventForm() {
     setCreatedEvent(null)
 
     if (!form.clubId) {
-      setError("Choose a club before creating an event.")
+      setError("Create or choose a club before creating an event.")
       return
     }
 
@@ -114,11 +122,12 @@ export function CreateEventForm() {
 
     setSubmitting(true)
     try {
+      const token = await getToken()
       const payload = {
         club_id: form.clubId,
         title: form.title.trim(),
         description: form.description.trim() || null,
-        event_type: form.eventType,
+        event_type: form.eventType.trim().toLowerCase() || "community",
         starts_at: new Date(form.startsAt).toISOString(),
         ends_at: form.endsAt ? new Date(form.endsAt).toISOString() : null,
         timezone: "Asia/Riyadh",
@@ -135,7 +144,7 @@ export function CreateEventForm() {
 
       const event = await apiPost<CreatedEvent>("/events", {
         body: JSON.stringify(payload),
-        headers: DEV_ORGANIZER_HEADERS,
+        headers: bearerHeaders(token),
       })
 
       setCreatedEvent(event)
@@ -155,13 +164,16 @@ export function CreateEventForm() {
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">Organizer tool</p>
           <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Add a new event</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Publish a club event to Explore. During development this uses the seeded organizer account.
+            Publish an event under a club you own or administer.
           </p>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 px-3 py-1.5 text-xs text-muted-foreground">
-          <CalendarPlus className="size-3.5 text-primary" aria-hidden="true" />
-          Published by default
-        </span>
+        <Link
+          href="/organizer/clubs/new"
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-background/50 px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+        >
+          <Building2 className="size-3.5 text-primary" aria-hidden="true" />
+          Create club
+        </Link>
       </div>
 
       {error && (
@@ -183,122 +195,143 @@ export function CreateEventForm() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr]">
-        <Field label="Club">
-          <select
-            value={form.clubId}
-            onChange={(event) => updateField("clubId", event.target.value)}
-            disabled={loadingClubs || clubs.length === 0}
-            className={inputClassName}
-            required
-          >
-            {loadingClubs ? <option>Loading clubs...</option> : null}
-            {!loadingClubs && clubs.length === 0 ? <option>No clubs available</option> : null}
-            {clubs.map((club) => (
-              <option key={club.id} value={club.id}>
-                {club.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+      {!loadingClubs && clubs.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-border bg-background/40 p-5">
+          <h2 className="text-base font-semibold">Create your first club before adding events</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Every event belongs to a club. Once you create a club, you become its owner and can publish events for it.
+          </p>
+          <Link href="/organizer/clubs/new" className="mt-4 inline-flex rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground">
+            Create club
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1fr]">
+          <Field label="Club">
+            <select
+              value={form.clubId}
+              onChange={(event) => updateField("clubId", event.target.value)}
+              disabled={loadingClubs || clubs.length === 0}
+              className={inputClassName}
+              required
+            >
+              {loadingClubs ? <option>Loading clubs...</option> : null}
+              {clubs.map((club) => (
+                <option key={club.id} value={club.id}>
+                  {club.name}
+                </option>
+              ))}
+            </select>
+          </Field>
 
-        <Field label="Type">
-          <select
-            value={form.eventType}
-            onChange={(event) => updateField("eventType", event.target.value)}
-            className={inputClassName}
-          >
-            <option value="community">Community</option>
-            <option value="outdoors">Outdoors</option>
-            <option value="technology">Technology</option>
-            <option value="sports">Sports</option>
-            <option value="wellness">Wellness</option>
-            <option value="food">Food</option>
-            <option value="music">Music</option>
-          </select>
-        </Field>
+          <Field label="Type">
+            <input
+              list="event-type-suggestions"
+              value={form.eventType}
+              onChange={(event) => updateField("eventType", event.target.value)}
+              placeholder="Start typing, e.g. spo"
+              className={inputClassName}
+            />
+            <datalist id="event-type-suggestions">
+              {EVENT_TYPE_SUGGESTIONS.map((type) => (
+                <option key={type} value={type} />
+              ))}
+            </datalist>
+          </Field>
 
-        <Field label="Title" className="lg:col-span-2">
-          <input
-            value={form.title}
-            onChange={(event) => updateField("title", event.target.value)}
-            placeholder="AI Builders Night"
-            className={inputClassName}
-            required
-          />
-        </Field>
+          <Field label="Title" className="lg:col-span-2">
+            <input
+              value={form.title}
+              onChange={(event) => updateField("title", event.target.value)}
+              placeholder="AI Builders Night"
+              className={inputClassName}
+              required
+            />
+          </Field>
 
-        <Field label="Description" className="lg:col-span-2">
-          <textarea
-            value={form.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            placeholder="Tell people what will happen, who it is for, and what they should expect."
-            className={cn(inputClassName, "min-h-28 resize-y py-3")}
-          />
-        </Field>
+          <Field label="Description" className="lg:col-span-2">
+            <textarea
+              value={form.description}
+              onChange={(event) => updateField("description", event.target.value)}
+              placeholder="Tell people what will happen, who it is for, and what they should expect."
+              className={cn(inputClassName, "min-h-28 resize-y py-3")}
+            />
+          </Field>
 
-        <Field label="Starts at">
-          <input
-            type="datetime-local"
-            value={form.startsAt}
-            onChange={(event) => updateField("startsAt", event.target.value)}
-            className={inputClassName}
-            required
-          />
-        </Field>
+          <Field label="Starts at">
+            <input
+              type="datetime-local"
+              value={form.startsAt}
+              onChange={(event) => updateField("startsAt", event.target.value)}
+              className={inputClassName}
+              required
+            />
+          </Field>
 
-        <Field label="Ends at">
-          <input
-            type="datetime-local"
-            value={form.endsAt}
-            onChange={(event) => updateField("endsAt", event.target.value)}
-            className={inputClassName}
-          />
-        </Field>
+          <Field label="Ends at">
+            <input
+              type="datetime-local"
+              value={form.endsAt}
+              onChange={(event) => updateField("endsAt", event.target.value)}
+              className={inputClassName}
+            />
+          </Field>
 
-        <Field label="Location name">
-          <input
-            value={form.locationName}
-            onChange={(event) => updateField("locationName", event.target.value)}
-            placeholder="Innovation Hub Riyadh"
-            className={inputClassName}
-          />
-        </Field>
+          <Field label="Location name">
+            <input
+              value={form.locationName}
+              onChange={(event) => updateField("locationName", event.target.value)}
+              placeholder="Innovation Hub Riyadh"
+              className={inputClassName}
+            />
+          </Field>
 
-        <Field label="City">
-          <input value={form.city} onChange={(event) => updateField("city", event.target.value)} className={inputClassName} />
-        </Field>
+          <Field label="City">
+            <input
+              list="city-suggestions"
+              value={form.city}
+              onChange={(event) => updateField("city", event.target.value)}
+              placeholder="Start typing, e.g. ist"
+              className={inputClassName}
+            />
+            <datalist id="city-suggestions">
+              {CITY_SUGGESTIONS.map((city) => (
+                <option key={city} value={city} />
+              ))}
+            </datalist>
+          </Field>
 
-        <Field label="Address" className="lg:col-span-2">
-          <input
-            value={form.address}
-            onChange={(event) => updateField("address", event.target.value)}
-            placeholder="Building, district, or meeting point"
-            className={inputClassName}
-          />
-        </Field>
+          <Field label="Address" className="lg:col-span-2">
+            <input
+              value={form.address}
+              onChange={(event) => updateField("address", event.target.value)}
+              placeholder="Building, district, or meeting point"
+              className={inputClassName}
+            />
+          </Field>
 
-        <Field label="Capacity">
-          <input
-            type="number"
-            min="1"
-            value={form.capacity}
-            onChange={(event) => updateField("capacity", event.target.value)}
-            className={inputClassName}
-          />
-        </Field>
+          <Field label="Capacity">
+            <input
+              type="number"
+              min="1"
+              value={form.capacity}
+              onChange={(event) => updateField("capacity", event.target.value)}
+              className={inputClassName}
+            />
+          </Field>
 
-        <Field label="Price (SAR)">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.priceAmount}
-            onChange={(event) => updateField("priceAmount", event.target.value)}
-            className={inputClassName}
-          />
-        </Field>
-      </div>
+          <Field label="Price (SAR)">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.priceAmount}
+              onChange={(event) => updateField("priceAmount", event.target.value)}
+              className={inputClassName}
+            />
+          </Field>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
         <p className="text-xs text-muted-foreground">

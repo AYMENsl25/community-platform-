@@ -134,6 +134,7 @@ function mapApiEvent(event: ApiEventCard | ApiEventDetail): CommunityEvent {
     lng: toCoordinate(detail?.lng, 46.6753),
     spots,
     price: Number(event.price_amount),
+    currency: event.currency,
     attendees: event.registered_count,
     trending: event.registered_count >= 10,
     image,

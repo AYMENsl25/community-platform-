@@ -6,6 +6,7 @@ from app.modules.clubs.router import router as clubs_router
 from app.modules.events.router import router as events_router
 from app.modules.me.router import router as me_router
 from app.modules.organizer_requests.router import router as organizer_requests_router
+from app.modules.payments.router import router as payments_router
 from app.modules.recommendations.router import router as recommendations_router
 from app.modules.search.router import router as search_router
 
@@ -17,5 +18,6 @@ api_router.include_router(me_router)
 api_router.include_router(organizer_requests_router)
 api_router.include_router(clubs_router)
 api_router.include_router(events_router)
+api_router.include_router(payments_router)
 api_router.include_router(search_router)
 api_router.include_router(recommendations_router)

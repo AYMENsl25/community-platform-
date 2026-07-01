@@ -72,10 +72,7 @@ def extract_clerk_identity(payload: dict[str, Any]) -> ClerkIdentity:
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is missing subject."
         )
     if not email:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token is missing email claim. Add email to the Clerk JWT template.",
-        )
+        email = f"{clerk_user_id}@clerk.local"
 
     display_name = str(
         payload.get("name")

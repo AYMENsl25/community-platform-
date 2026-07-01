@@ -61,10 +61,35 @@ Open `http://127.0.0.1:8000/docs`.
 ```powershell
 cd apps/web
 pnpm install
+Copy-Item .env.example .env.local
 pnpm dev
 ```
 
 The frontend expects the API at `http://127.0.0.1:8000/api/v1` by default.
+
+## Clerk And Google Auth Setup
+
+Create a Clerk application, then copy the keys into `apps/web/.env.local`:
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/explore
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/account/onboarding
+```
+
+In the Clerk dashboard, enable Google as a social connection. For development, Clerk can use its shared OAuth credentials. For production, create a Google OAuth web client in Google Cloud, then paste its Client ID and Client Secret into the Clerk Google connection.
+
+FastAPI does not receive Google passwords or Google OAuth secrets. The browser signs in with Clerk, the frontend sends a Clerk JWT as `Authorization: Bearer <token>`, and the API verifies that JWT using `apps/api/.env`:
+
+```env
+CLERK_ISSUER=https://your-clerk-frontend-api.clerk.accounts.dev
+CLERK_AUTHORIZED_PARTIES=http://localhost:3000,http://127.0.0.1:3000
+```
+
+Protected frontend routes currently include organizer tools such as `/organizer/events/new` and `/organizer/clubs/new`. Public browsing stays open, and clicking Register while signed out sends the user to Clerk sign-in before returning to complete the registration.
 
 ## Seed Data
 

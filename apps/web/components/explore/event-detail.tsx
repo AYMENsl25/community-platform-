@@ -19,7 +19,7 @@ import { JoinButton } from "@/components/join-button"
 import { VideoPlayer } from "@/components/explore/video-player"
 import { OrganizerPanel } from "@/components/explore/organizer-panel"
 import { EventCard } from "@/components/explore/event-card"
-import type { CommunityEvent, Organizer } from "@/lib/events"
+import { formatEventPrice, type CommunityEvent, type Organizer } from "@/lib/events"
 
 const EventMap = dynamic(() => import("@/components/explore/event-map"), {
   ssr: false,
@@ -63,7 +63,7 @@ export function EventDetail({
                 {event.category}
               </span>
               <span className="rounded-full bg-background/70 px-3 py-1 text-xs font-medium backdrop-blur">
-                {event.price === 0 ? "Free" : `$${event.price}`}
+                {formatEventPrice(event.price, event.currency)}
               </span>
             </div>
             <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-5xl">{event.title}</h1>
@@ -165,14 +165,21 @@ export function EventDetail({
             <div className="rounded-3xl border border-border bg-card p-6">
               <div className="flex items-baseline justify-between">
                 <p className="text-2xl font-semibold tracking-tight">
-                  {event.price === 0 ? "Free" : `$${event.price}`}
+                  {formatEventPrice(event.price, event.currency)}
                 </p>
                 <p className="text-xs font-medium text-muted-foreground">
                   <span className="text-foreground">{event.spots}</span> spots left
                 </p>
               </div>
               <div className="mt-4">
-                <JoinButton eventId={event.id} className="w-full py-3" />
+                <JoinButton
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  price={event.price}
+                  currency={event.currency}
+                  paymentLayout="panel"
+                  className="w-full py-3"
+                />
               </div>
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 {event.attendees} people are going. You can leave anytime.

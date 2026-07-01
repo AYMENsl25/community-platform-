@@ -45,9 +45,9 @@ GET /api/v1/meta/categories
 GET /api/v1/meta/tags
 ```
 
-## Authentication Plan
+## Authentication
 
-Google login will be handled through Clerk.
+Google login is handled through Clerk.
 
 The frontend will use Clerk's Google OAuth flow, then send a Clerk JWT to this API:
 
@@ -55,7 +55,18 @@ The frontend will use Clerk's Google OAuth flow, then send a Clerk JWT to this A
 Authorization: Bearer <clerk_jwt>
 ```
 
-FastAPI will verify the token, map it to a local `users` row, and apply authorization policies.
+FastAPI verifies the token, maps it to a local `users` row, and applies authorization policies.
+
+Required API environment fields:
+
+```text
+CLERK_ISSUER=https://your-clerk-frontend-api.clerk.accounts.dev
+CLERK_JWKS_URL=
+CLERK_AUDIENCE=
+CLERK_AUTHORIZED_PARTIES=http://localhost:3000,http://127.0.0.1:3000
+```
+
+Leave `CLERK_JWKS_URL` empty unless you need to override Clerk's default JWKS URL. Google OAuth Client ID and Client Secret belong in the Clerk dashboard, not in the FastAPI `.env`.
 
 ## Seed local data
 

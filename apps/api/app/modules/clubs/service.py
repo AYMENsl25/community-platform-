@@ -18,9 +18,6 @@ from app.modules.clubs.repository import (
     soft_delete_club_by_id,
     update_club_by_id,
 )
-from app.modules.organizer_requests.repository import (
-    user_has_approved_organizer_request,
-)
 from app.modules.clubs.schemas import (
     ClubCard,
     ClubCreate,
@@ -40,10 +37,6 @@ class ClubMembershipNotFoundError(Exception):
 
 
 class ClubForbiddenError(Exception):
-    pass
-
-
-class OrganizerApprovalRequiredError(Exception):
     pass
 
 
@@ -89,14 +82,6 @@ async def create_club_action(
     payload: ClubCreate,
     current_user: CurrentUser,
 ) -> ClubDetail:
-    if (
-        current_user.platform_role != "admin"
-        and not await user_has_approved_organizer_request(
-            session, user_id=current_user.id
-        )
-    ):
-        raise OrganizerApprovalRequiredError
-
     slug = payload.slug or slugify(payload.name)
     try:
         club_id = await insert_club(

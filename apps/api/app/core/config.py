@@ -1,13 +1,16 @@
 from functools import lru_cache
+from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
+
+API_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=API_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -34,6 +37,26 @@ class Settings(BaseSettings):
     clerk_jwks_url: str | None = None
     clerk_audience: str | None = None
     clerk_authorized_parties: str | None = None
+
+    web_base_url: str = "http://127.0.0.1:3000"
+    payment_provider: str = "moyasar"
+    moyasar_secret_key: str | None = Field(default=None, repr=False)
+    moyasar_api_base_url: str = "https://api.moyasar.com/v1"
+
+    @field_validator(
+        "database_url",
+        "clerk_issuer",
+        "clerk_jwks_url",
+        "clerk_audience",
+        "clerk_authorized_parties",
+        "moyasar_secret_key",
+        mode="before",
+    )
+    @classmethod
+    def empty_string_to_none(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @property
     def sqlalchemy_database_url(self) -> str | URL:
@@ -86,6 +109,10 @@ class Settings(BaseSettings):
                 if origin.strip()
             ]
         return self.allowed_origin_list
+
+    @property
+    def normalized_web_base_url(self) -> str:
+        return self.web_base_url.rstrip("/")
 
 
 @lru_cache

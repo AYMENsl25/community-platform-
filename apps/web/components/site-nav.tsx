@@ -1,8 +1,9 @@
 "use client"
 
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { CalendarPlus, Orbit, UserPlus } from "lucide-react"
+import { CalendarPlus, LogIn, Orbit, UserPlus } from "lucide-react"
 import { MagneticButton } from "@/components/magnetic-button"
 import { cn } from "@/lib/utils"
 
@@ -10,10 +11,12 @@ const links = [
   { label: "Discover", href: "/#discover" },
   { label: "How it works", href: "/#how" },
   { label: "Explore", href: "/explore" },
+  { label: "Clubs", href: "/clubs" },
   { label: "Manifesto", href: "/#manifesto" },
 ]
 
 export function SiteNav() {
+  const { isLoaded, isSignedIn } = useUser()
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -65,6 +68,26 @@ export function SiteNav() {
             <UserPlus className="size-4" aria-hidden="true" />
             Register
           </MagneticButton>
+          {isLoaded && !isSignedIn ? (
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="hidden items-center justify-center gap-1.5 rounded-full border border-border bg-background/50 px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/50 hover:text-primary sm:inline-flex"
+              >
+                <LogIn className="size-4" aria-hidden="true" />
+                Sign in
+              </button>
+            </SignInButton>
+          ) : null}
+          {isLoaded && isSignedIn ? (
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "size-9 border border-border",
+                },
+              }}
+            />
+          ) : null}
         </div>
       </nav>
     </header>

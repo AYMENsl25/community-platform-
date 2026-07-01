@@ -32,3 +32,19 @@ def test_settings_splits_security_lists() -> None:
 
     assert settings.trusted_host_list == ["example.com", "api.example.com"]
     assert settings.rate_limit_exempt_path_list == ["/health", "/docs"]
+
+
+def test_settings_normalizes_blank_optional_env_values() -> None:
+    settings = Settings(
+        database_url="",
+        clerk_issuer="",
+        clerk_jwks_url="",
+        clerk_audience="",
+        clerk_authorized_parties="",
+    )
+
+    assert settings.database_url is None
+    assert settings.clerk_issuer is None
+    assert settings.clerk_jwks_url is None
+    assert settings.clerk_audience is None
+    assert settings.clerk_authorized_parties is None

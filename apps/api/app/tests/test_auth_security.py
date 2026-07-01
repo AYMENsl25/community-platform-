@@ -33,9 +33,17 @@ def test_extract_clerk_identity_uses_supported_claims() -> None:
     assert identity.avatar_url == "https://example.com/avatar.png"
 
 
-def test_extract_clerk_identity_requires_email_claim() -> None:
+def test_extract_clerk_identity_uses_local_fallback_without_email_claim() -> None:
+    identity = extract_clerk_identity({"sub": "user_123"})
+
+    assert identity.clerk_user_id == "user_123"
+    assert identity.email == "user_123@clerk.local"
+    assert identity.display_name == "user_123"
+
+
+def test_extract_clerk_identity_requires_subject() -> None:
     with pytest.raises(HTTPException) as exc_info:
-        extract_clerk_identity({"sub": "user_123"})
+        extract_clerk_identity({"email": "member@example.com"})
 
     assert exc_info.value.status_code == 401
 
