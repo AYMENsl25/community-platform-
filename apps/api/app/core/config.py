@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     web_base_url: str = "http://127.0.0.1:3000"
     payment_provider: str = "moyasar"
     moyasar_secret_key: str | None = Field(default=None, repr=False)
+    moyasar_webhook_secret: str | None = Field(default=None, repr=False)
     moyasar_api_base_url: str = "https://api.moyasar.com/v1"
 
     @field_validator(
@@ -50,6 +51,7 @@ class Settings(BaseSettings):
         "clerk_audience",
         "clerk_authorized_parties",
         "moyasar_secret_key",
+        "moyasar_webhook_secret",
         mode="before",
     )
     @classmethod
