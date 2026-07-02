@@ -55,11 +55,33 @@ class EventRegistrationState(BaseModel):
     event_id: str
     user_id: str
     status: str
+    payment_required: bool = False
+    payment_status: str = "not_required"
+    payment_id: str | None = None
+    checkout_id: str | None = None
+    idempotency_key: str | None = None
     waitlist_position: int | None = None
     note: str | None = None
     registered_at: datetime
     confirmed_at: datetime | None = None
     cancelled_at: datetime | None = None
+
+
+class EventRegistrationAttendee(BaseModel):
+    registration_id: str
+    event_id: str
+    user_id: str
+    display_name: str
+    email: str
+    avatar_url: str | None = None
+    registration_status: str
+    payment_required: bool = False
+    payment_status: str = "not_required"
+    payment_id: str | None = None
+    amount: Decimal | None = None
+    currency: str | None = None
+    registered_at: datetime
+    confirmed_at: datetime | None = None
 
 
 class SavedEventState(BaseModel):

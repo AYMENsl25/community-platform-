@@ -253,14 +253,21 @@ async def list_user_registrations(
               ev.slug,
               ev.event_type,
               ev.starts_at,
-              urev.registration_status::text AS registration_status,
-              urev.registered_at,
+              er.status::text AS registration_status,
+              er.payment_required,
+              er.payment_status,
+              er.payment_id::text AS payment_id,
+              ev.price_amount,
+              ev.currency,
+              er.registered_at,
               ev.city,
               ev.cover_image_url
-            FROM user_registered_events_view urev
-            JOIN events ev ON ev.id = urev.id
+            FROM event_registrations er
+            JOIN events ev ON ev.id = er.event_id
             JOIN clubs c ON c.id = ev.club_id
-            WHERE urev.user_id = CAST(:user_id AS uuid)
+            WHERE er.user_id = CAST(:user_id AS uuid)
+              AND er.status IN ('pending', 'confirmed', 'waitlisted')
+              AND ev.deleted_at IS NULL
             ORDER BY ev.starts_at ASC
             """
         ),

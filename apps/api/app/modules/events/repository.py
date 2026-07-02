@@ -8,6 +8,7 @@ from app.modules.events.schemas import (
     EventCard,
     EventCreate,
     EventDetail,
+    EventRegistrationAttendee,
     EventRegistrationState,
     EventUpdate,
     SavedEventState,
@@ -296,6 +297,44 @@ async def soft_delete_event_by_id(session: AsyncSession, *, event_id: str) -> No
     )
 
 
+async def list_event_registration_attendees(
+    session: AsyncSession,
+    *,
+    event_id: str,
+) -> list[EventRegistrationAttendee]:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              er.id::text AS registration_id,
+              er.event_id::text AS event_id,
+              er.user_id::text AS user_id,
+              u.display_name,
+              u.email,
+              u.avatar_url,
+              er.status::text AS registration_status,
+              er.payment_required,
+              er.payment_status,
+              er.payment_id::text AS payment_id,
+              ep.amount,
+              COALESCE(ep.currency, e.currency)::text AS currency,
+              er.registered_at,
+              er.confirmed_at
+            FROM event_registrations er
+            JOIN events e ON e.id = er.event_id
+            JOIN users u ON u.id = er.user_id
+            LEFT JOIN event_payments ep ON ep.id = er.payment_id
+            WHERE er.event_id = CAST(:event_id AS uuid)
+              AND er.status IN ('pending', 'confirmed', 'waitlisted')
+              AND u.deleted_at IS NULL
+            ORDER BY er.registered_at ASC
+            """
+        ),
+        {"event_id": event_id},
+    )
+    return [EventRegistrationAttendee.model_validate(row._mapping) for row in result]
+
+
 async def get_event_capacity_by_id(
     session: AsyncSession, event_id: str
 ) -> EventCapacity | None:
@@ -331,6 +370,11 @@ async def register_user_for_event(
               event_id::text AS event_id,
               user_id::text AS user_id,
               status::text AS status,
+              payment_required,
+              payment_status,
+              payment_id::text AS payment_id,
+              checkout_id,
+              idempotency_key,
               waitlist_position,
               note,
               registered_at,
@@ -370,6 +414,11 @@ async def get_user_event_registration(
               event_id::text AS event_id,
               user_id::text AS user_id,
               status::text AS status,
+              payment_required,
+              payment_status,
+              payment_id::text AS payment_id,
+              checkout_id,
+              idempotency_key,
               waitlist_position,
               note,
               registered_at,
@@ -385,6 +434,128 @@ async def get_user_event_registration(
     )
     row = result.first()
     return EventRegistrationState.model_validate(row._mapping) if row else None
+
+
+async def apply_event_registration_payment_state(
+    session: AsyncSession,
+    *,
+    user_id: str,
+    event_id: str,
+    payment_status: str | None = None,
+    payment_id: str | None = None,
+    checkout_id: str | None = None,
+    idempotency_key: str | None = None,
+) -> EventRegistrationState:
+    result = await session.execute(
+        text(
+            """
+            UPDATE event_registrations er
+            SET payment_required = (e.price_amount > 0),
+                payment_status = CASE
+                  WHEN e.price_amount <= 0 THEN 'not_required'
+                  WHEN CAST(:payment_status AS text) IS NOT NULL THEN CAST(:payment_status AS text)
+                  WHEN er.payment_status = 'not_required' THEN 'unpaid'
+                  ELSE er.payment_status
+                END,
+                status = CASE
+                  WHEN e.price_amount > 0
+                   AND COALESCE(CAST(:payment_status AS text), er.payment_status) <> 'paid'
+                   AND er.status = 'confirmed'
+                    THEN 'pending'::event_registration_status
+                  ELSE er.status
+                END,
+                confirmed_at = CASE
+                  WHEN e.price_amount > 0
+                   AND COALESCE(CAST(:payment_status AS text), er.payment_status) <> 'paid'
+                    THEN NULL
+                  ELSE er.confirmed_at
+                END,
+                payment_id = COALESCE(CAST(:payment_id AS uuid), er.payment_id),
+                checkout_id = COALESCE(CAST(:checkout_id AS text), er.checkout_id),
+                idempotency_key = COALESCE(CAST(:idempotency_key AS text), er.idempotency_key),
+                updated_at = now()
+            FROM events e
+            WHERE e.id = er.event_id
+              AND er.user_id = CAST(:user_id AS uuid)
+              AND er.event_id = CAST(:event_id AS uuid)
+            RETURNING
+              er.id::text AS id,
+              er.event_id::text AS event_id,
+              er.user_id::text AS user_id,
+              er.status::text AS status,
+              er.payment_required,
+              er.payment_status,
+              er.payment_id::text AS payment_id,
+              er.checkout_id,
+              er.idempotency_key,
+              er.waitlist_position,
+              er.note,
+              er.registered_at,
+              er.confirmed_at,
+              er.cancelled_at
+            """
+        ),
+        {
+            "user_id": user_id,
+            "event_id": event_id,
+            "payment_status": payment_status,
+            "payment_id": payment_id,
+            "checkout_id": checkout_id,
+            "idempotency_key": idempotency_key,
+        },
+    )
+    row = result.one()
+    return EventRegistrationState.model_validate(row._mapping)
+
+
+async def mark_event_registration_paid(
+    session: AsyncSession,
+    *,
+    user_id: str,
+    event_id: str,
+    payment_id: str,
+    idempotency_key: str | None = None,
+) -> EventRegistrationState:
+    result = await session.execute(
+        text(
+            """
+            UPDATE event_registrations
+            SET status = 'confirmed',
+                payment_required = true,
+                payment_status = 'paid',
+                payment_id = CAST(:payment_id AS uuid),
+                idempotency_key = COALESCE(CAST(:idempotency_key AS text), idempotency_key),
+                confirmed_at = COALESCE(confirmed_at, now()),
+                cancelled_at = NULL,
+                updated_at = now()
+            WHERE user_id = CAST(:user_id AS uuid)
+              AND event_id = CAST(:event_id AS uuid)
+            RETURNING
+              id::text AS id,
+              event_id::text AS event_id,
+              user_id::text AS user_id,
+              status::text AS status,
+              payment_required,
+              payment_status,
+              payment_id::text AS payment_id,
+              checkout_id,
+              idempotency_key,
+              waitlist_position,
+              note,
+              registered_at,
+              confirmed_at,
+              cancelled_at
+            """
+        ),
+        {
+            "user_id": user_id,
+            "event_id": event_id,
+            "payment_id": payment_id,
+            "idempotency_key": idempotency_key,
+        },
+    )
+    row = result.one()
+    return EventRegistrationState.model_validate(row._mapping)
 
 
 async def save_event_for_user(

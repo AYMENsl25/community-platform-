@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
@@ -23,6 +24,37 @@ class ClubDetail(ClubCard):
     status: str
     owner_name: str
     owner_avatar_url: str | None = None
+
+
+class ClubMemberPreview(BaseModel):
+    user_id: str
+    display_name: str
+    avatar_url: str | None = None
+    role: str
+    joined_at: datetime
+
+
+class ClubEventSummary(BaseModel):
+    id: str
+    title: str
+    slug: str
+    event_type: str
+    starts_at: datetime
+    ends_at: datetime | None = None
+    city: str | None = None
+    registered_count: int
+    waitlist_count: int
+    price_amount: Decimal
+    currency: str
+    cover_image_url: str | None = None
+
+
+class ClubViewerState(BaseModel):
+    club_id: str
+    is_member: bool
+    member_role: str | None = None
+    member_status: str | None = None
+    joined_at: datetime | None = None
 
 
 class ClubMembershipState(BaseModel):

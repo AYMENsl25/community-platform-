@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import CurrentUser
 from app.modules.events.policies import can_manage_club
 from app.modules.events.repository import (
+    apply_event_registration_payment_state,
     cancel_user_event_registration,
     get_club_management_context,
     get_event_by_id,
@@ -13,6 +14,7 @@ from app.modules.events.repository import (
     get_event_management_context,
     get_user_event_registration,
     insert_event,
+    list_event_registration_attendees,
     list_public_events,
     register_user_for_event,
     save_event_for_user,
@@ -26,6 +28,7 @@ from app.modules.events.schemas import (
     EventCreate,
     EventDeletionState,
     EventDetail,
+    EventRegistrationAttendee,
     EventRegistrationState,
     EventUpdate,
     SavedEventState,
@@ -82,6 +85,24 @@ async def list_events(
         event_type=event_type,
         q=q,
     )
+
+
+async def list_event_attendees_action(
+    session: AsyncSession,
+    *,
+    event_id: str,
+    current_user: CurrentUser,
+) -> list[EventRegistrationAttendee]:
+    context = await get_event_management_context(
+        session,
+        event_id=event_id,
+        user_id=current_user.id,
+    )
+    if context is None:
+        raise EventNotFoundError
+    if not can_manage_event_from_context(current_user, context):
+        raise EventForbiddenError
+    return await list_event_registration_attendees(session, event_id=event_id)
 
 
 async def get_event_detail(session: AsyncSession, event_id: str) -> EventDetail | None:
@@ -182,18 +203,34 @@ async def delete_event_action(
         raise EventActionFailedError(str(exc)) from exc
 
 
+def normalize_idempotency_key(idempotency_key: str | None) -> str | None:
+    if idempotency_key is None:
+        return None
+    normalized = idempotency_key.strip()
+    if not normalized:
+        return None
+    return normalized[:160]
+
+
 async def register_for_event_action(
     session: AsyncSession,
     *,
     event_id: str,
     current_user: CurrentUser,
+    idempotency_key: str | None = None,
 ) -> EventRegistrationState:
     if await get_event_by_id(session, event_id) is None:
         raise EventNotFoundError
 
     try:
-        registration = await register_user_for_event(
+        await register_user_for_event(
             session, user_id=current_user.id, event_id=event_id
+        )
+        registration = await apply_event_registration_payment_state(
+            session,
+            user_id=current_user.id,
+            event_id=event_id,
+            idempotency_key=normalize_idempotency_key(idempotency_key),
         )
         await session.commit()
         return registration

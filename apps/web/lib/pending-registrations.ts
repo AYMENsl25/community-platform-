@@ -56,7 +56,10 @@ export async function syncPendingRegistrations(getToken: () => Promise<string | 
   for (const item of pending) {
     try {
       await apiPost<RegistrationState>(`/events/${encodeURIComponent(item.eventId)}/register`, {
-        headers: bearerHeaders(token),
+        headers: {
+          ...bearerHeaders(token),
+          "Idempotency-Key": getPendingRegistrationIdempotencyKey(item.eventId),
+        },
       })
       synced.push(item.eventId)
     } catch (error) {
@@ -70,4 +73,18 @@ export async function syncPendingRegistrations(getToken: () => Promise<string | 
   }
 
   return synced
+}
+
+function pendingRegistrationIdempotencyStorageKey(eventId: string): string {
+  return `communiti:event-idempotency:${eventId}`
+}
+
+function getPendingRegistrationIdempotencyKey(eventId: string): string {
+  const storageKey = pendingRegistrationIdempotencyStorageKey(eventId)
+  const existing = window.localStorage.getItem(storageKey)
+  if (existing) return existing
+
+  const generated = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${eventId}-${Date.now()}`
+  window.localStorage.setItem(storageKey, generated)
+  return generated
 }

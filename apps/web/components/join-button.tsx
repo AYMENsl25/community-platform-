@@ -2,7 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs"
 import { AnimatePresence, motion } from "motion/react"
-import { Check, CreditCard, Plus, ShieldCheck } from "lucide-react"
+import { Check, Clock, CreditCard, Plus, ShieldCheck } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { apiPost, bearerHeaders } from "@/lib/api"
 import { formatEventPrice } from "@/lib/events"
@@ -14,10 +14,11 @@ const PARTICLES = Array.from({ length: 8 })
 
 type RegistrationState = {
   status: string
+  payment_status?: string
   waitlist_position: number | null
 }
 
-type JoinState = "idle" | "payment" | "registering" | "registered" | "canceling" | "error"
+type JoinState = "idle" | "payment" | "registering" | "registered" | "pending-payment" | "canceling" | "error"
 type SyncState = "idle" | "synced" | "local" | "failed"
 
 export function JoinButton({
@@ -48,6 +49,12 @@ export function JoinButton({
     queuePendingRegistration({ eventId, eventTitle })
   }, [eventId, eventTitle, isSignedIn])
 
+  const saveLocalPaymentPending = useCallback(() => {
+    if (!eventId) return
+    window.localStorage.setItem(registrationStorageKey(eventId), "pending-payment")
+    window.localStorage.setItem(registrationSyncStorageKey(eventId), "payment")
+  }, [eventId])
+
   const completeRegistration = useCallback(async () => {
     if (!eventId) {
       window.setTimeout(() => setState("registered"), 550)
@@ -65,9 +72,20 @@ export function JoinButton({
 
     try {
       const token = await getToken()
-      await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/register`, {
-        headers: bearerHeaders(token),
+      const registration = await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/register`, {
+        headers: {
+          ...bearerHeaders(token),
+          "Idempotency-Key": getEventIdempotencyKey(eventId),
+        },
       })
+
+      if (registration.payment_status === "pending" || registration.payment_status === "unpaid") {
+        saveLocalPaymentPending()
+        setState("pending-payment")
+        setSyncState("local")
+        return
+      }
+
       window.localStorage.setItem(registrationStorageKey(eventId), "registered")
       window.localStorage.removeItem(registrationSyncStorageKey(eventId))
       removePendingRegistration(eventId)
@@ -76,7 +94,7 @@ export function JoinButton({
       console.warn("Event registration saved locally because API sync failed.", error)
       setSyncState("local")
     }
-  }, [eventId, getToken, isSignedIn, saveLocalRegistration])
+  }, [eventId, getToken, isSignedIn, saveLocalPaymentPending, saveLocalRegistration])
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return
@@ -100,9 +118,13 @@ export function JoinButton({
     if (!eventId) return
 
     const syncTimer = window.setTimeout(() => {
-      if (window.localStorage.getItem(registrationStorageKey(eventId)) === "registered") {
+      const localState = window.localStorage.getItem(registrationStorageKey(eventId))
+      if (localState === "registered") {
         setState("registered")
         setSyncState(window.localStorage.getItem(registrationSyncStorageKey(eventId)) ? "local" : "synced")
+      } else if (localState === "pending-payment") {
+        setState("pending-payment")
+        setSyncState("local")
       }
     }, 0)
 
@@ -112,7 +134,12 @@ export function JoinButton({
   async function handleClick() {
     if (state === "registering" || state === "canceling" || !isLoaded) return
 
-    if (state === "registered") {
+    if (state === "registered" || state === "pending-payment") {
+      if (state === "pending-payment") {
+        setState("payment")
+        return
+      }
+
       if (!eventId) {
         setState("idle")
         return
@@ -132,7 +159,10 @@ export function JoinButton({
       try {
         const token = await getToken()
         await apiPost<RegistrationState>(`/events/${encodeURIComponent(eventId)}/cancel-registration`, {
-          headers: bearerHeaders(token),
+          headers: {
+            ...bearerHeaders(token),
+            "Idempotency-Key": getEventIdempotencyKey(eventId),
+          },
         })
       } catch (error) {
         console.warn("Event registration cancellation could not sync with the API.", error)
@@ -159,15 +189,24 @@ export function JoinButton({
           eventId,
           token,
           returnPath: window.location.pathname,
+          idempotencyKey: getEventIdempotencyKey(eventId),
         })
 
+        saveLocalPaymentPending()
+        setSyncState("local")
+
         if (checkout.checkout_url) {
-          queuePendingRegistration({ eventId, eventTitle })
           window.location.assign(checkout.checkout_url)
           return
         }
+
+        setState("pending-payment")
+        return
       } catch (error) {
-        console.warn("Payment checkout unavailable; falling back to local registration.", error)
+        console.warn("Payment checkout unavailable.", error)
+        setState("error")
+        setSyncState("failed")
+        return
       }
     }
 
@@ -175,11 +214,13 @@ export function JoinButton({
   }
 
   const registered = state === "registered"
+  const pendingPayment = state === "pending-payment"
   const payment = state === "payment"
   const busy = state === "registering" || state === "canceling" || !isLoaded
   const error = state === "error"
-  const helperText =
-    registered && syncState === "local"
+  const helperText = pendingPayment
+    ? "Payment pending. Your spot is not confirmed until payment succeeds."
+    : registered && syncState === "local"
       ? isSignedIn
         ? "Registered here. We will sync when the API is online."
         : "Registered on this device. Sign in later to sync your account."
@@ -194,16 +235,18 @@ export function JoinButton({
         onClick={handleClick}
         disabled={busy}
         whileTap={{ scale: busy ? 1 : 0.94 }}
-        aria-label={registered ? "Cancel event registration" : "Register for event"}
+        aria-label={registered ? "Cancel event registration" : pendingPayment ? "Resume event payment" : "Register for event"}
         className={cn(
           "relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-wait disabled:opacity-80",
           registered
             ? "bg-primary text-primary-foreground"
-            : error
-              ? "bg-destructive text-destructive-foreground"
-              : payment
-                ? "bg-primary text-primary-foreground"
-                : "bg-foreground text-background",
+            : pendingPayment
+              ? "bg-amber-500 text-white"
+              : error
+                ? "bg-destructive text-destructive-foreground"
+                : payment
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-foreground text-background",
           className,
         )}
       >
@@ -241,6 +284,18 @@ export function JoinButton({
               >
                 <Check className="size-4" aria-hidden="true" />
                 Registered
+              </motion.span>
+            ) : pendingPayment ? (
+              <motion.span
+                key="pending-payment"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="inline-flex items-center gap-1.5"
+              >
+                <Clock className="size-4" aria-hidden="true" />
+                Payment pending
               </motion.span>
             ) : error ? (
               <motion.span
@@ -337,4 +392,18 @@ function registrationStorageKey(eventId: string): string {
 
 function registrationSyncStorageKey(eventId: string): string {
   return `communiti:registered-event-sync:${eventId}`
+}
+
+function idempotencyStorageKey(eventId: string): string {
+  return `communiti:event-idempotency:${eventId}`
+}
+
+function getEventIdempotencyKey(eventId: string): string {
+  const storageKey = idempotencyStorageKey(eventId)
+  const existing = window.localStorage.getItem(storageKey)
+  if (existing) return existing
+
+  const generated = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${eventId}-${Date.now()}`
+  window.localStorage.setItem(storageKey, generated)
+  return generated
 }

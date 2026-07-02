@@ -23,6 +23,29 @@ export type ClubDetail = ClubCard & {
   owner_avatar_url: string | null
 }
 
+
+export type ClubMemberPreview = {
+  user_id: string
+  display_name: string
+  avatar_url: string | null
+  role: string
+  joined_at: string
+}
+
+export type ClubEventSummary = {
+  id: string
+  title: string
+  slug: string
+  event_type: string
+  starts_at: string
+  ends_at: string | null
+  city: string | null
+  registered_count: number
+  waitlist_count: number
+  price_amount: string
+  currency: string
+  cover_image_url: string | null
+}
 export type MyClubSummary = ClubCard & {
   visibility: string
   status: string
@@ -76,5 +99,23 @@ export async function getClub(slug: string): Promise<ClubDetail | null> {
       owner_name: organizer.name,
       owner_avatar_url: organizer.logo,
     }
+  }
+}
+
+export async function getClubMembers(clubId: string): Promise<ClubMemberPreview[]> {
+  try {
+    return await apiGet<ClubMemberPreview[]>(`/clubs/${encodeURIComponent(clubId)}/members?limit=6`)
+  } catch (error) {
+    console.warn("Using empty member preview because the COMMUNITI API is unavailable.", error)
+    return []
+  }
+}
+
+export async function getClubUpcomingEvents(clubId: string): Promise<ClubEventSummary[]> {
+  try {
+    return await apiGet<ClubEventSummary[]>(`/clubs/${encodeURIComponent(clubId)}/events?limit=6`)
+  } catch (error) {
+    console.warn("Using empty club events because the COMMUNITI API is unavailable.", error)
+    return []
   }
 }

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import CurrentUser, require_authenticated_user
@@ -11,6 +11,7 @@ from app.modules.events.schemas import (
     EventCreate,
     EventDeletionState,
     EventDetail,
+    EventRegistrationAttendee,
     EventRegistrationState,
     EventUpdate,
     SavedEventState,
@@ -25,6 +26,7 @@ from app.modules.events.service import (
     delete_event_action,
     get_event_capacity,
     get_event_detail,
+    list_event_attendees_action,
     list_events,
     register_for_event_action,
     save_event_action,
@@ -142,6 +144,29 @@ async def delete_event(
         ) from exc
 
 
+@router.get("/{event_id}/registrations", response_model=list[EventRegistrationAttendee])
+async def list_event_registrations(
+    event_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> list[EventRegistrationAttendee]:
+    try:
+        return await list_event_attendees_action(
+            session,
+            event_id=event_id,
+            current_user=current_user,
+        )
+    except EventNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        ) from exc
+    except EventForbiddenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to see event registrations.",
+        ) from exc
+
+
 @router.get("/{event_id}/capacity", response_model=EventCapacity)
 async def get_capacity(
     event_id: str, session: AsyncSession = Depends(get_db_session)
@@ -158,11 +183,15 @@ async def get_capacity(
 async def register_for_event(
     event_id: str,
     current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     session: AsyncSession = Depends(get_db_session),
 ) -> EventRegistrationState:
     try:
         return await register_for_event_action(
-            session, event_id=event_id, current_user=current_user
+            session,
+            event_id=event_id,
+            current_user=current_user,
+            idempotency_key=idempotency_key,
         )
     except EventNotFoundError as exc:
         raise HTTPException(

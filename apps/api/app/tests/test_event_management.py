@@ -5,7 +5,11 @@ import pytest
 
 from app.core.security import CurrentUser
 from app.modules.events import service
-from app.modules.events.schemas import EventDetail, EventUpdate
+from app.modules.events.schemas import (
+    EventDetail,
+    EventRegistrationAttendee,
+    EventUpdate,
+)
 
 
 class FakeSession:
@@ -171,3 +175,94 @@ async def test_delete_event_action_soft_deletes_for_club_owner(
     assert result.deleted is True
     assert fake_session.committed is True
     assert fake_session.rolled_back is False
+
+
+@pytest.mark.asyncio
+async def test_list_event_attendees_action_requires_manager(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_session = FakeSession()
+    current_user = CurrentUser(
+        id="11111111-1111-1111-1111-111111111111",
+        clerk_user_id="seed_user_member_1",
+        email="member@communiti.local",
+    )
+
+    async def fake_get_event_management_context(
+        *args: object, **kwargs: object
+    ) -> dict[str, str | None]:
+        return {
+            "owner_id": "someone-else",
+            "member_role": "member",
+            "member_status": "active",
+        }
+
+    monkeypatch.setattr(
+        service, "get_event_management_context", fake_get_event_management_context
+    )
+
+    with pytest.raises(service.EventForbiddenError):
+        await service.list_event_attendees_action(
+            fake_session,  # type: ignore[arg-type]
+            event_id="22222222-2222-2222-2222-222222222222",
+            current_user=current_user,
+        )
+
+
+@pytest.mark.asyncio
+async def test_list_event_attendees_action_returns_payment_states(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_session = FakeSession()
+    current_user = CurrentUser(
+        id="11111111-1111-1111-1111-111111111111",
+        clerk_user_id="seed_user_organizer_1",
+        email="organizer@communiti.local",
+    )
+    attendees = [
+        EventRegistrationAttendee(
+            registration_id="22222222-2222-2222-2222-222222222222",
+            event_id="33333333-3333-3333-3333-333333333333",
+            user_id="44444444-4444-4444-4444-444444444444",
+            display_name="Member One",
+            email="member@communiti.local",
+            registration_status="confirmed",
+            payment_required=True,
+            payment_status="paid",
+            amount=Decimal("25.00"),
+            currency="SAR",
+            registered_at=datetime.now(UTC),
+        )
+    ]
+
+    async def fake_get_event_management_context(
+        *args: object, **kwargs: object
+    ) -> dict[str, str | None]:
+        return {
+            "owner_id": current_user.id,
+            "member_role": "owner",
+            "member_status": "active",
+        }
+
+    async def fake_list_event_registration_attendees(
+        *args: object, **kwargs: object
+    ) -> list[EventRegistrationAttendee]:
+        return attendees
+
+    monkeypatch.setattr(
+        service, "get_event_management_context", fake_get_event_management_context
+    )
+    monkeypatch.setattr(
+        service,
+        "list_event_registration_attendees",
+        fake_list_event_registration_attendees,
+    )
+
+    result = await service.list_event_attendees_action(
+        fake_session,  # type: ignore[arg-type]
+        event_id="33333333-3333-3333-3333-333333333333",
+        current_user=current_user,
+    )
+
+    assert result == attendees
+    assert result[0].payment_status == "paid"

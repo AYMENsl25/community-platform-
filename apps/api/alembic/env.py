@@ -14,9 +14,16 @@ if config.config_file_name is not None:
 target_metadata = None
 
 
+def database_url_for_alembic() -> str:
+    url = settings.sqlalchemy_database_url
+    render = getattr(url, "render_as_string", None)
+    if callable(render):
+        return str(render(hide_password=False))
+    return str(url)
+
 def run_migrations_offline() -> None:
     context.configure(
-        url=str(settings.sqlalchemy_database_url),
+        url=database_url_for_alembic(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -35,7 +42,7 @@ def do_run_migrations(connection) -> None:
 
 async def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = str(settings.sqlalchemy_database_url)
+    configuration["sqlalchemy.url"] = database_url_for_alembic()
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
@@ -54,3 +61,5 @@ else:
     import asyncio
 
     asyncio.run(run_migrations_online())
+
+

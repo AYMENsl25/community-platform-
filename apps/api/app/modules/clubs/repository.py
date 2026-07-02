@@ -7,8 +7,11 @@ from app.modules.clubs.schemas import (
     ClubCard,
     ClubCreate,
     ClubDetail,
+    ClubEventSummary,
+    ClubMemberPreview,
     ClubMembershipState,
     ClubUpdate,
+    ClubViewerState,
 )
 
 
@@ -257,6 +260,109 @@ async def soft_delete_club_by_id(session: AsyncSession, *, club_id: str) -> None
         ),
         {"club_id": club_id},
     )
+
+
+async def list_club_member_preview(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    limit: int,
+) -> list[ClubMemberPreview]:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              u.id::text AS user_id,
+              u.display_name,
+              u.avatar_url,
+              cm.role::text AS role,
+              cm.joined_at
+            FROM club_members cm
+            JOIN users u ON u.id = cm.user_id
+            WHERE cm.club_id = CAST(:club_id AS uuid)
+              AND cm.status = 'active'
+              AND u.deleted_at IS NULL
+            ORDER BY
+              CASE cm.role
+                WHEN 'owner' THEN 0
+                WHEN 'admin' THEN 1
+                ELSE 2
+              END,
+              cm.joined_at ASC
+            LIMIT :limit
+            """
+        ),
+        {"club_id": club_id, "limit": limit},
+    )
+    return [ClubMemberPreview.model_validate(row._mapping) for row in result]
+
+
+async def list_club_upcoming_events(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    limit: int,
+) -> list[ClubEventSummary]:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              id::text AS id,
+              title,
+              slug,
+              event_type,
+              starts_at,
+              ends_at,
+              city,
+              registered_count,
+              waitlist_count,
+              price_amount,
+              currency,
+              cover_image_url
+            FROM event_detail_view
+            WHERE club_id = CAST(:club_id AS uuid)
+              AND status = 'published'
+              AND starts_at >= now()
+            ORDER BY starts_at ASC
+            LIMIT :limit
+            """
+        ),
+        {"club_id": club_id, "limit": limit},
+    )
+    return [ClubEventSummary.model_validate(row._mapping) for row in result]
+
+
+async def get_club_viewer_state(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    user_id: str,
+) -> ClubViewerState:
+    result = await session.execute(
+        text(
+            """
+            SELECT
+              CAST(:club_id AS uuid)::text AS club_id,
+              cm.role::text AS member_role,
+              cm.status::text AS member_status,
+              cm.joined_at,
+              COALESCE(cm.status = 'active', false) AS is_member
+            FROM clubs c
+            LEFT JOIN club_members cm
+              ON cm.club_id = c.id
+             AND cm.user_id = CAST(:user_id AS uuid)
+             AND cm.status IN ('active', 'pending')
+            WHERE c.id = CAST(:club_id AS uuid)
+              AND c.deleted_at IS NULL
+            LIMIT 1
+            """
+        ),
+        {"club_id": club_id, "user_id": user_id},
+    )
+    row = result.first()
+    if row is None:
+        return ClubViewerState(club_id=club_id, is_member=False)
+    return ClubViewerState.model_validate(row._mapping)
 
 
 async def join_club_for_user(

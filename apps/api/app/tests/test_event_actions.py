@@ -45,11 +45,20 @@ async def test_register_for_event_action_commits_database_function_result(
     ) -> EventRegistrationState:
         return registration
 
+    async def fake_apply_event_registration_payment_state(
+        *args: object, **kwargs: object
+    ) -> EventRegistrationState:
+        return registration
+
     monkeypatch.setattr(service, "get_event_by_id", fake_get_event_by_id)
     monkeypatch.setattr(
         service, "register_user_for_event", fake_register_user_for_event
     )
-
+    monkeypatch.setattr(
+        service,
+        "apply_event_registration_payment_state",
+        fake_apply_event_registration_payment_state,
+    )
     result = await service.register_for_event_action(
         fake_session,  # type: ignore[arg-type]
         event_id=registration.event_id,

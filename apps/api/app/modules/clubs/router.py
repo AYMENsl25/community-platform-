@@ -10,8 +10,11 @@ from app.modules.clubs.schemas import (
     ClubCreate,
     ClubDeletionState,
     ClubDetail,
+    ClubEventSummary,
+    ClubMemberPreview,
     ClubMembershipState,
     ClubUpdate,
+    ClubViewerState,
 )
 from app.modules.clubs.service import (
     ClubActionFailedError,
@@ -21,6 +24,9 @@ from app.modules.clubs.service import (
     create_club_action,
     delete_club_action,
     get_club_detail,
+    get_club_events,
+    get_club_members,
+    get_my_club_membership_state,
     join_club_action,
     leave_club_action,
     list_clubs,
@@ -149,6 +155,52 @@ async def leave_club(
     except ClubActionFailedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="Club leave failed"
+        ) from exc
+
+
+@router.get("/{club_id}/members", response_model=list[ClubMemberPreview])
+async def list_club_members_preview(
+    club_id: str,
+    limit: int = Query(default=6, ge=1, le=24),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[ClubMemberPreview]:
+    try:
+        return await get_club_members(session, club_id=club_id, limit=limit)
+    except ClubNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
+        ) from exc
+
+
+@router.get("/{club_id}/events", response_model=list[ClubEventSummary])
+async def list_club_events_preview(
+    club_id: str,
+    limit: int = Query(default=6, ge=1, le=24),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[ClubEventSummary]:
+    try:
+        return await get_club_events(session, club_id=club_id, limit=limit)
+    except ClubNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
+        ) from exc
+
+
+@router.get("/{club_id}/membership", response_model=ClubViewerState)
+async def get_club_membership_state(
+    club_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_authenticated_user)],
+    session: AsyncSession = Depends(get_db_session),
+) -> ClubViewerState:
+    try:
+        return await get_my_club_membership_state(
+            session,
+            club_id=club_id,
+            current_user=current_user,
+        )
+    except ClubNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Club not found"
         ) from exc
 
 

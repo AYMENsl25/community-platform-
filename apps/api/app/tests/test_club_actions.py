@@ -4,7 +4,7 @@ import pytest
 
 from app.core.security import CurrentUser
 from app.modules.clubs import service
-from app.modules.clubs.schemas import ClubMembershipState
+from app.modules.clubs.schemas import ClubMembershipState, ClubViewerState
 
 
 class FakeSession:
@@ -133,3 +133,42 @@ async def test_join_club_action_raises_when_club_missing(
 
     assert fake_session.committed is False
     assert fake_session.rolled_back is False
+
+
+@pytest.mark.asyncio
+async def test_get_my_club_membership_state_reads_backend_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_session = FakeSession()
+    current_user = CurrentUser(
+        id="11111111-1111-1111-1111-111111111111",
+        clerk_user_id="seed_user_member_1",
+        email="member@communiti.local",
+    )
+    viewer_state = ClubViewerState(
+        club_id="33333333-3333-3333-3333-333333333333",
+        is_member=True,
+        member_role="member",
+        member_status="active",
+        joined_at=datetime.now(UTC),
+    )
+
+    async def fake_get_club_by_id(*args: object, **kwargs: object) -> object:
+        return object()
+
+    async def fake_get_club_viewer_state(
+        *args: object, **kwargs: object
+    ) -> ClubViewerState:
+        return viewer_state
+
+    monkeypatch.setattr(service, "get_club_by_id", fake_get_club_by_id)
+    monkeypatch.setattr(service, "get_club_viewer_state", fake_get_club_viewer_state)
+
+    result = await service.get_my_club_membership_state(
+        fake_session,  # type: ignore[arg-type]
+        club_id=viewer_state.club_id,
+        current_user=current_user,
+    )
+
+    assert result == viewer_state
+    assert result.is_member is True

@@ -91,6 +91,11 @@ class MyRegistrationSummary(BaseModel):
     event_type: str
     starts_at: datetime
     registration_status: str
+    payment_required: bool = False
+    payment_status: str = "not_required"
+    payment_id: str | None = None
+    price_amount: Decimal
+    currency: str
     registered_at: datetime
     city: str | None = None
     cover_image_url: str | None = None

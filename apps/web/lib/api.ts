@@ -79,3 +79,21 @@ export async function apiPost<T>(path: string, init?: RequestInit): Promise<T> {
     },
   })
 }
+
+export async function apiPatch<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, {
+    ...init,
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+  })
+}
+
+export async function apiDelete<T>(path: string, init?: RequestInit): Promise<T> {
+  return apiRequest<T>(path, {
+    ...init,
+    method: "DELETE",
+  })
+}

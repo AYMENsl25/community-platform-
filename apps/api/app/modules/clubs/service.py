@@ -10,10 +10,13 @@ from app.modules.clubs.repository import (
     get_club_by_id,
     get_club_by_slug,
     get_club_management_context,
+    get_club_viewer_state,
     get_user_club_membership,
     insert_club,
     join_club_for_user,
     leave_club_for_user,
+    list_club_member_preview,
+    list_club_upcoming_events,
     list_public_clubs,
     soft_delete_club_by_id,
     update_club_by_id,
@@ -23,8 +26,11 @@ from app.modules.clubs.schemas import (
     ClubCreate,
     ClubDeletionState,
     ClubDetail,
+    ClubEventSummary,
+    ClubMemberPreview,
     ClubMembershipState,
     ClubUpdate,
+    ClubViewerState,
 )
 
 
@@ -74,6 +80,43 @@ async def list_clubs(
 
 async def get_club_detail(session: AsyncSession, slug: str) -> ClubDetail | None:
     return await get_club_by_slug(session, slug)
+
+
+async def get_club_members(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    limit: int,
+) -> list[ClubMemberPreview]:
+    if await get_club_by_id(session, club_id) is None:
+        raise ClubNotFoundError
+    return await list_club_member_preview(session, club_id=club_id, limit=limit)
+
+
+async def get_club_events(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    limit: int,
+) -> list[ClubEventSummary]:
+    if await get_club_by_id(session, club_id) is None:
+        raise ClubNotFoundError
+    return await list_club_upcoming_events(session, club_id=club_id, limit=limit)
+
+
+async def get_my_club_membership_state(
+    session: AsyncSession,
+    *,
+    club_id: str,
+    current_user: CurrentUser,
+) -> ClubViewerState:
+    if await get_club_by_id(session, club_id) is None:
+        raise ClubNotFoundError
+    return await get_club_viewer_state(
+        session,
+        club_id=club_id,
+        user_id=current_user.id,
+    )
 
 
 async def create_club_action(

@@ -6,6 +6,7 @@ from app.core.cors import configure_cors
 from app.core.errors import configure_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import configure_security_middleware
+from app.core.observability import configure_observability
 
 
 def create_app() -> FastAPI:
@@ -18,6 +19,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
+    configure_observability(app)
     configure_cors(app)
     configure_security_middleware(app)
     configure_error_handlers(app)

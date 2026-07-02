@@ -3,10 +3,15 @@
 import { useAuth, useClerk } from "@clerk/nextjs"
 import { Check, Loader2, LogIn, UserRoundPlus } from "lucide-react"
 import { useEffect, useState } from "react"
-import { apiPost, bearerHeaders } from "@/lib/api"
+import { apiGet, apiPost, bearerHeaders } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 type JoinState = "idle" | "joining" | "joined" | "leaving" | "error"
+
+type ClubViewerState = {
+  is_member: boolean
+  member_status: string | null
+}
 
 export function ClubJoinButton({ clubId, className }: { clubId: string; className?: string }) {
   const { isLoaded, isSignedIn, getToken } = useAuth()
@@ -14,14 +19,40 @@ export function ClubJoinButton({ clubId, className }: { clubId: string; classNam
   const [state, setState] = useState<JoinState>("idle")
 
   useEffect(() => {
+    let active = true
     const syncTimer = window.setTimeout(() => {
       if (window.localStorage.getItem(clubStorageKey(clubId)) === "joined") {
         setState("joined")
       }
     }, 0)
 
-    return () => window.clearTimeout(syncTimer)
-  }, [clubId])
+    async function loadMembership() {
+      if (!isLoaded || !isSignedIn) return
+      try {
+        const token = await getToken()
+        const membership = await apiGet<ClubViewerState>(`/clubs/${encodeURIComponent(clubId)}/membership`, {
+          headers: bearerHeaders(token),
+        })
+        if (!active) return
+        if (membership.is_member && membership.member_status === "active") {
+          window.localStorage.setItem(clubStorageKey(clubId), "joined")
+          setState("joined")
+        } else {
+          window.localStorage.removeItem(clubStorageKey(clubId))
+          setState("idle")
+        }
+      } catch (error) {
+        console.warn("Club membership state could not be loaded.", error)
+      }
+    }
+
+    void loadMembership()
+
+    return () => {
+      active = false
+      window.clearTimeout(syncTimer)
+    }
+  }, [clubId, getToken, isLoaded, isSignedIn])
 
   async function handleClick() {
     if (!isLoaded || state === "joining" || state === "leaving") return

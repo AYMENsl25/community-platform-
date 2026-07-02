@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     moyasar_webhook_secret: str | None = Field(default=None, repr=False)
     moyasar_api_base_url: str = "https://api.moyasar.com/v1"
 
+    sentry_dsn: str | None = Field(default=None, repr=False)
+    sentry_traces_sample_rate: float = 0.05
+    metrics_enabled: bool = True
+    slow_request_threshold_ms: int = 1000
+    db_slow_query_threshold_ms: int = 250
+    otel_exporter_otlp_endpoint: str | None = None
+    metrics_export_url: str | None = None
+
     @field_validator(
         "database_url",
         "clerk_issuer",
@@ -52,6 +60,9 @@ class Settings(BaseSettings):
         "clerk_authorized_parties",
         "moyasar_secret_key",
         "moyasar_webhook_secret",
+        "sentry_dsn",
+        "otel_exporter_otlp_endpoint",
+        "metrics_export_url",
         mode="before",
     )
     @classmethod
