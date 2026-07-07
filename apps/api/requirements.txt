@@ -1,4 +1,4 @@
-fastapi==0.115.6
+fastapi==0.139.0
 uvicorn[standard]==0.34.0
 pydantic-settings==2.14.2
 SQLAlchemy==2.0.36
