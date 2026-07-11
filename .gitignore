@@ -1,0 +1,47 @@
+.superpowers/
+
+# Secrets and local environments
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Dependencies and virtual environments
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+
+# Caches, generated output, and coverage
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.next/
+.turbo/
+dist/
+build/
+coverage/
+.coverage
+htmlcov/
+playwright-report/
+test-results/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+
+# Editors and operating systems
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
