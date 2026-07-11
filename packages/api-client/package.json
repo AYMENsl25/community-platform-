@@ -7,13 +7,14 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "tsc --noEmit",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
     "@talaqi/config": "workspace:*",
+    "eslint": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

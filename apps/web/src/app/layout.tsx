@@ -5,7 +5,6 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Talaqi",
-  description: "Community and events",
 };
 
 export default function RootLayout({
