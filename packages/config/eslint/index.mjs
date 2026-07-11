@@ -5,5 +5,5 @@ export const javascriptConfig = [eslint.configs.recommended];
 
 export const typescriptConfig = tseslint.config(
   eslint.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.strict,
 );
