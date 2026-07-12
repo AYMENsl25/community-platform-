@@ -58,6 +58,31 @@ async def test_readiness_returns_ready_when_all_probes_pass() -> None:
     assert response.json() == {"status": "ready", "checks": {"configuration": "ok"}}
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "",
+        "UPPERCASE",
+        "has-hyphen",
+        "has whitespace",
+        "https://internal.example.com",
+        "database:password",
+        "a" * 65,
+    ],
+)
+def test_readiness_rejects_unsafe_or_unstable_check_names(name: str) -> None:
+    registry = ReadinessRegistry()
+
+    with pytest.raises(ValueError, match="identifier"):
+        registry.register(name, lambda: asyncio.sleep(0, result=True))
+
+
+def test_readiness_accepts_stable_check_name_boundary() -> None:
+    registry = ReadinessRegistry()
+
+    registry.register("a" + "0" * 63, lambda: asyncio.sleep(0, result=True))
+
+
 @pytest.mark.asyncio
 async def test_readiness_isolates_false_exception_and_timeout_probes() -> None:
     async def raises_secret() -> bool:
@@ -91,6 +116,18 @@ async def test_readiness_isolates_false_exception_and_timeout_probes() -> None:
     }
     assert "secret" not in response.text
     assert "internal" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_readiness_propagates_cancellation() -> None:
+    async def cancelled() -> bool:
+        raise asyncio.CancelledError
+
+    registry = ReadinessRegistry()
+    registry.register("cancelled", cancelled)
+
+    with pytest.raises(asyncio.CancelledError):
+        await registry.check()
 
 
 @pytest.mark.asyncio

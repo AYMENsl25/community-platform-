@@ -13,6 +13,7 @@ def test_compose_defines_exact_local_service_contract() -> None:
 
     assert set(services) == {"postgres", "minio", "mailpit"}
     assert set(document["volumes"]) == {"postgres_data", "minio_data"}
+    assert services["postgres"]["volumes"] == ["postgres_data:/var/lib/postgresql"]
     for service in services.values():
         image = service["image"]
         assert ":" in image or "@sha256:" in image

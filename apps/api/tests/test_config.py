@@ -26,6 +26,20 @@ def valid_values(environment: Environment = Environment.DEVELOPMENT) -> dict[str
     }
 
 
+def deployed_values(environment: Environment) -> dict[str, object]:
+    values = valid_values(environment)
+    values.update(
+        api_public_url="https://api.example.com",
+        web_public_url="https://www.example.com",
+        allowed_origins=["https://www.example.com:8443"],
+        allowed_hosts=["api.example.com:8443", "[2001:db8::1]:8443"],
+        session_secret="s" * 64,
+        cookie_secure=True,
+        admin_mfa_required=True,
+    )
+    return values
+
+
 def test_development_accepts_explicit_localhost_configuration() -> None:
     settings = Settings.model_validate(valid_values())
 
@@ -48,6 +62,95 @@ def test_all_profiles_reject_wildcard_origins_and_hosts(field: str, value: list[
         Settings.model_validate(values)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("allowed_origins", [""]),
+        ("allowed_origins", ["example.com"]),
+        ("allowed_origins", ["ftp://example.com"]),
+        ("allowed_origins", ["https://not a host"]),
+        ("allowed_origins", ["https://user:password@example.com"]),
+        ("allowed_origins", ["https://example.com/path"]),
+        ("allowed_origins", ["https://example.com?query=yes"]),
+        ("allowed_origins", ["https://example.com#fragment"]),
+        ("allowed_hosts", [""]),
+        ("allowed_hosts", ["https://example.com"]),
+        ("allowed_hosts", ["user@example.com"]),
+        ("allowed_hosts", ["example.com/path"]),
+        ("allowed_hosts", ["not a host"]),
+        ("allowed_hosts", ["example.com:99999"]),
+    ],
+)
+def test_all_profiles_reject_malformed_origins_and_hosts(field: str, value: list[str]) -> None:
+    values = valid_values()
+    values[field] = value
+
+    with pytest.raises(ValidationError):
+        Settings.model_validate(values)
+
+
+def test_origin_credential_validation_error_does_not_echo_credentials() -> None:
+    values = valid_values()
+    values["allowed_origins"] = ["https://user:origin-password@example.com"]
+
+    with pytest.raises(ValidationError) as error:
+        Settings.model_validate(values)
+
+    assert "origin-password" not in str(error.value)
+
+
+@pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
+def test_deployed_profiles_accept_valid_origins_hosts_and_public_urls(
+    environment: Environment,
+) -> None:
+    settings = Settings.model_validate(deployed_values(environment))
+
+    assert settings.environment is environment
+
+
+@pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
+@pytest.mark.parametrize("field", ["api_public_url", "web_public_url"])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://localhost",
+        "https://127.0.0.1",
+        "https://[::1]",
+        "https://service.local",
+    ],
+)
+def test_deployed_profiles_reject_local_public_urls(
+    environment: Environment, field: str, url: str
+) -> None:
+    values = deployed_values(environment)
+    values[field] = url
+
+    with pytest.raises(ValidationError, match="public URLs"):
+        Settings.model_validate(values)
+
+
+@pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("allowed_origins", ["https://127.0.0.1"]),
+        ("allowed_origins", ["https://[::1]:8443"]),
+        ("allowed_origins", ["https://service.local"]),
+        ("allowed_hosts", ["127.0.0.1:8443"]),
+        ("allowed_hosts", ["[::1]:8443"]),
+        ("allowed_hosts", ["service.local"]),
+    ],
+)
+def test_deployed_profiles_reject_local_origins_and_hosts(
+    environment: Environment, field: str, value: list[str]
+) -> None:
+    values = deployed_values(environment)
+    values[field] = value
+
+    with pytest.raises(ValidationError):
+        Settings.model_validate(values)
+
+
 @pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
 @pytest.mark.parametrize(
     ("overrides", "needle"),
@@ -67,39 +170,12 @@ def test_all_profiles_reject_wildcard_origins_and_hosts(field: str, value: list[
 def test_deployed_profiles_fail_closed(
     environment: Environment, overrides: dict[str, object], needle: str
 ) -> None:
-    values = valid_values(environment)
-    values.update(
-        api_public_url="https://api.example.com",
-        web_public_url="https://www.example.com",
-        allowed_origins=["https://www.example.com"],
-        allowed_hosts=["api.example.com"],
-        session_secret="s" * 64,
-        cookie_secure=True,
-        admin_mfa_required=True,
-    )
+    values = deployed_values(environment)
     values.update(overrides)
 
     with pytest.raises(ValidationError) as error:
         Settings.model_validate(values)
     assert needle in str(error.value).lower()
-
-
-@pytest.mark.parametrize("field", ["api_public_url", "web_public_url"])
-def test_production_rejects_local_public_urls(field: str) -> None:
-    values = valid_values(Environment.PRODUCTION)
-    values.update(
-        api_public_url="https://api.example.com",
-        web_public_url="https://www.example.com",
-        allowed_origins=["https://www.example.com"],
-        allowed_hosts=["api.example.com"],
-        session_secret="s" * 64,
-        cookie_secure=True,
-        admin_mfa_required=True,
-    )
-    values[field] = "https://localhost"
-
-    with pytest.raises(ValidationError):
-        Settings.model_validate(values)
 
 
 def test_secrets_are_redacted_from_repr_and_validation_errors() -> None:

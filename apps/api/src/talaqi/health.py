@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import Awaitable
 from typing import Literal, Protocol
 
@@ -27,15 +28,17 @@ class ReadinessRegistry:
         self._probes: dict[str, ReadinessProbe] = {}
 
     def register(self, name: str, probe: ReadinessProbe) -> None:
-        if not name or name in self._probes:
-            raise ValueError("readiness check names must be non-empty and unique")
+        if re.fullmatch(r"[a-z][a-z0-9_]{0,63}", name) is None:
+            raise ValueError("readiness check names must be stable safe identifiers")
+        if name in self._probes:
+            raise ValueError("readiness check names must be unique")
         self._probes[name] = probe
 
     async def check(self) -> dict[str, Literal["ok", "failed"]]:
         async def isolated(probe: ReadinessProbe) -> Literal["ok", "failed"]:
             try:
                 passed = await asyncio.wait_for(probe(), timeout=self._timeout_seconds)
-            except (Exception, asyncio.CancelledError):
+            except Exception:
                 return "failed"
             return "ok" if passed else "failed"
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from enum import StrEnum
 from functools import lru_cache
 from ipaddress import ip_address
@@ -28,13 +29,70 @@ class LogLevel(StrEnum):
 def _is_local_host(host: str | None) -> bool:
     if host is None:
         return True
-    normalized = host.rstrip(".").lower()
+    normalized = host.strip("[]").rstrip(".").lower()
     if normalized == "localhost" or normalized.endswith(".local"):
         return True
     try:
         return ip_address(normalized).is_loopback
     except ValueError:
         return False
+
+
+_HOSTNAME_PATTERN = re.compile(
+    r"^(?=.{1,253}\.?$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*"
+    r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.?$",
+    re.IGNORECASE,
+)
+
+
+def _validate_hostname(hostname: str, *, field: str) -> str:
+    try:
+        ip_address(hostname)
+    except ValueError:
+        if _HOSTNAME_PATTERN.fullmatch(hostname) is None:
+            raise ValueError(f"{field} must contain a valid hostname or IP address") from None
+    return hostname
+
+
+def _parse_origin(value: str) -> str:
+    if not value or value != value.strip() or "*" in value:
+        raise ValueError("allowed origins must be explicit HTTP(S) origins without wildcards")
+    parsed = urlsplit(value)
+    try:
+        _ = parsed.port
+    except ValueError as error:
+        raise ValueError("allowed origins must contain a valid optional port") from error
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.hostname is None
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("allowed origins must contain only HTTP(S), host, and optional port")
+    return _validate_hostname(parsed.hostname, field="allowed origins")
+
+
+def _parse_allowed_host(value: str) -> str:
+    if (
+        not value
+        or value != value.strip()
+        or "*" in value
+        or any(character in value for character in "/@?#")
+    ):
+        raise ValueError("allowed hosts must be explicit host identifiers without wildcards")
+    parsed = urlsplit(f"//{value}")
+    try:
+        _ = parsed.port
+    except ValueError as error:
+        raise ValueError("allowed hosts must contain a valid optional port") from error
+    hostname = parsed.hostname
+    if hostname is None:
+        raise ValueError("allowed hosts must contain a hostname or IP address")
+    return _validate_hostname(hostname, field="allowed hosts")
 
 
 class Settings(BaseSettings):
@@ -64,12 +122,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_profile(self) -> Self:
-        origins = [origin.strip() for origin in self.allowed_origins]
-        hosts = [host.strip().lower() for host in self.allowed_hosts]
-        if any("*" in origin for origin in origins):
-            raise ValueError("allowed origins must be explicit and may not contain a wildcard")
-        if any("*" in host for host in hosts):
-            raise ValueError("allowed hosts must be explicit and may not contain a wildcard")
+        origin_hosts = [_parse_origin(origin) for origin in self.allowed_origins]
+        allowed_hostnames = [_parse_allowed_host(host) for host in self.allowed_hosts]
 
         deployed = self.environment in {Environment.STAGING, Environment.PRODUCTION}
         if deployed:
@@ -83,15 +137,15 @@ class Settings(BaseSettings):
             placeholders = ("changeme", "placeholder", "replace", "example")
             if len(secret) < 64 or any(token in secret.lower() for token in placeholders):
                 raise ValueError("session secret must be strong and may not be a known placeholder")
-            if any(_is_local_host(urlsplit(origin).hostname) for origin in origins):
+            if any(_is_local_host(host) for host in origin_hosts):
                 raise ValueError("allowed origins may not use localhost in staging or production")
-            if any(_is_local_host(host.split(":", maxsplit=1)[0]) for host in hosts):
+            if any(_is_local_host(host) for host in allowed_hostnames):
                 raise ValueError("allowed hosts may not use localhost in staging or production")
-
-        if self.environment is Environment.PRODUCTION:
             public_hosts = (self.api_public_url.host, self.web_public_url.host)
             if any(_is_local_host(host) for host in public_hosts):
-                raise ValueError("production public URLs may not use local or loopback hosts")
+                raise ValueError(
+                    "staging and production public URLs may not use local or loopback hosts"
+                )
         return self
 
 
