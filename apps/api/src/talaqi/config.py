@@ -5,7 +5,7 @@ from enum import StrEnum
 from functools import lru_cache
 from ipaddress import ip_address
 from typing import Self
-from urllib.parse import urlsplit
+from urllib.parse import SplitResult, urlsplit
 
 from pydantic import AnyHttpUrl, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -54,14 +54,29 @@ def _validate_hostname(hostname: str, *, field: str) -> str:
     return hostname
 
 
+def _validate_optional_port(parsed: SplitResult, *, field: str) -> None:
+    authority = parsed.netloc.rsplit("@", maxsplit=1)[-1]
+    if authority.startswith("["):
+        closing_bracket = authority.find("]")
+        suffix = authority[closing_bracket + 1 :]
+        has_port = suffix.startswith(":")
+        port_text = suffix[1:] if has_port else ""
+    else:
+        has_port = ":" in authority
+        port_text = authority.rsplit(":", maxsplit=1)[-1] if has_port else ""
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError(f"{field} must contain a valid optional port") from error
+    if has_port and (not port_text.isdecimal() or port is None or not 1 <= port <= 65535):
+        raise ValueError(f"{field} must contain a valid optional port")
+
+
 def _parse_origin(value: str) -> str:
     if not value or value != value.strip() or "*" in value:
         raise ValueError("allowed origins must be explicit HTTP(S) origins without wildcards")
     parsed = urlsplit(value)
-    try:
-        _ = parsed.port
-    except ValueError as error:
-        raise ValueError("allowed origins must contain a valid optional port") from error
+    _validate_optional_port(parsed, field="allowed origins")
     if (
         parsed.scheme not in {"http", "https"}
         or not parsed.netloc
@@ -85,10 +100,7 @@ def _parse_allowed_host(value: str) -> str:
     ):
         raise ValueError("allowed hosts must be explicit host identifiers without wildcards")
     parsed = urlsplit(f"//{value}")
-    try:
-        _ = parsed.port
-    except ValueError as error:
-        raise ValueError("allowed hosts must contain a valid optional port") from error
+    _validate_optional_port(parsed, field="allowed hosts")
     hostname = parsed.hostname
     if hostname is None:
         raise ValueError("allowed hosts must contain a hostname or IP address")

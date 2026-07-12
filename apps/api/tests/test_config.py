@@ -73,11 +73,15 @@ def test_all_profiles_reject_wildcard_origins_and_hosts(field: str, value: list[
         ("allowed_origins", ["https://example.com/path"]),
         ("allowed_origins", ["https://example.com?query=yes"]),
         ("allowed_origins", ["https://example.com#fragment"]),
+        ("allowed_origins", ["https://example.com:"]),
+        ("allowed_origins", ["https://example.com:0"]),
         ("allowed_hosts", [""]),
         ("allowed_hosts", ["https://example.com"]),
         ("allowed_hosts", ["user@example.com"]),
         ("allowed_hosts", ["example.com/path"]),
         ("allowed_hosts", ["not a host"]),
+        ("allowed_hosts", ["example.com:"]),
+        ("allowed_hosts", ["example.com:0"]),
         ("allowed_hosts", ["example.com:99999"]),
     ],
 )
@@ -97,6 +101,17 @@ def test_origin_credential_validation_error_does_not_echo_credentials() -> None:
         Settings.model_validate(values)
 
     assert "origin-password" not in str(error.value)
+
+
+@pytest.mark.parametrize("port", [1, 65535])
+def test_all_profiles_accept_valid_optional_port_boundaries(port: int) -> None:
+    values = valid_values()
+    values["allowed_origins"] = [f"https://example.com:{port}"]
+    values["allowed_hosts"] = [f"example.com:{port}", f"[2001:db8::1]:{port}"]
+
+    settings = Settings.model_validate(values)
+
+    assert settings.allowed_origins == (f"https://example.com:{port}",)
 
 
 @pytest.mark.parametrize("environment", [Environment.STAGING, Environment.PRODUCTION])
