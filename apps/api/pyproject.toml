@@ -2,7 +2,13 @@
 name = "talaqi-api"
 version = "0.0.0"
 requires-python = ">=3.13,<3.14"
-dependencies = []
+dependencies = [
+    "fastapi==0.139.0",
+    "httpx==0.28.1",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.2",
+    "uvicorn==0.51.0",
+]
 
 [build-system]
 requires = ["hatchling"]

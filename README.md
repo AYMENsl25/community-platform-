@@ -39,6 +39,22 @@ docker compose down
 
 Every verification command must exit 0; migrations must report one head, OpenAPI must have no diff, and critical Playwright journeys must pass. PostgreSQL baseline setup and its separate schema contract are documented in [database/README.md](database/README.md).
 
+## Local services and API health
+
+Copy `.env.example` to the ignored `.env`, replace every `REPLACE_WITH_...` local placeholder, then start the loopback-only PostgreSQL, MinIO, and Mailpit services. Mailpit has no authentication and is strictly for local email inspection.
+
+```powershell
+Copy-Item .env.example .env
+docker compose config
+docker compose up -d --wait
+uv run uvicorn talaqi.main:app --app-dir apps/api/src --reload
+Invoke-RestMethod http://127.0.0.1:8000/health/live
+Invoke-RestMethod http://127.0.0.1:8000/health/ready
+docker compose down
+```
+
+Liveness is process-only. Readiness currently validates configuration; database, object-storage, and SMTP network probes are introduced with their later adapters. Production and staging configuration must use HTTPS, secure cookies, explicit non-local origins/hosts, a non-placeholder session secret of at least 64 characters, and enforced admin MFA.
+
 ## Locked public contracts
 
 - REST base path: `/api/v1`; JSON names use `snake_case`; timestamps are RFC 3339 UTC strings.

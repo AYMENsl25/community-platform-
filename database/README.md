@@ -8,6 +8,19 @@ This directory contains the one-time PostgreSQL 18 baseline for Talaqi's closed-
 - An empty database whose connected owner may create a schema, types, functions, tables, triggers, and indexes.
 - `psql` configured with TLS for any remote database.
 
+## Local PostgreSQL 18
+
+The root `compose.yaml` is the development service contract. Copy `.env.example` to `.env`, replace the conspicuous local-only password placeholder, validate the resolved configuration, and start the named-volume service:
+
+```powershell
+Copy-Item .env.example .env
+docker compose config
+docker compose up -d --wait postgres
+docker compose ps
+```
+
+The database and user are both `talaqi`, and port 5432 is published only on `127.0.0.1`. Stop the service with `docker compose down`; add `--volumes` only when you intentionally want to destroy local data. Never reuse local compose credentials in staging or production.
+
 ## Apply and verify with pgAdmin
 
 1. In pgAdmin, expand **Servers**, connect to a PostgreSQL 18 server, and enter the server password when requested.
