@@ -39,6 +39,12 @@ async def request(registry: ReadinessRegistry, path: str) -> httpx.Response:
         return await client.get(path)
 
 
+async def request_app(app: object, path: str) -> httpx.Response:
+    transport = httpx.ASGITransport(app=app)  # pyright: ignore[reportArgumentType]
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        return await client.get(path)
+
+
 @pytest.mark.asyncio
 async def test_liveness_has_exact_contract() -> None:
     response = await request(ReadinessRegistry(), "/health/live")
@@ -56,6 +62,37 @@ async def test_readiness_returns_ready_when_all_probes_pass() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ready", "checks": {"configuration": "ok"}}
+
+
+@pytest.mark.asyncio
+async def test_default_readiness_includes_configuration_and_injected_database_probe() -> None:
+    app = create_app(settings(), database_probe=lambda: asyncio.sleep(0, result=True))
+
+    response = await request_app(app, "/health/ready")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "checks": {"configuration": "ok", "database": "ok"},
+    }
+
+
+@pytest.mark.asyncio
+async def test_default_database_readiness_fails_closed_without_internal_details() -> None:
+    async def failing_database_probe() -> bool:
+        raise RuntimeError("internal database diagnostic")
+
+    app = create_app(settings(), database_probe=failing_database_probe)
+
+    response = await request_app(app, "/health/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "not_ready",
+        "checks": {"configuration": "ok", "database": "failed"},
+    }
+    assert "internal" not in response.text
+    assert "diagnostic" not in response.text
 
 
 @pytest.mark.parametrize(

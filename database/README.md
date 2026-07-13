@@ -53,7 +53,53 @@ Expected final test output:
  t      | Talaqi schema contract passed.
 ```
 
-The script runs in one transaction and is intentionally one-time-only. Do not rerun it on an initialized database. After the application repository is created, stamp this baseline into Alembic and make every later change through a new reviewed migration.
+The script runs in one transaction and is intentionally one-time-only. Do not rerun it on an
+initialized database. The approved script is also frozen beside Alembic revision
+`0001_closed_beta_baseline`; the migration verifies the frozen asset checksum before applying it.
+Never edit that baseline after merge. Every later schema change requires a new reviewed revision.
+
+## PostgreSQL-only Alembic and database tests
+
+Use an ignored `.env.test.local` containing `TEST_DATABASE_URL`. The URL must use
+`postgresql+asyncpg`, a loopback host (`localhost`, `127.0.0.1`, or `::1`), an explicit port, and a
+database name ending exactly in `_test`. Migration and destructive test tooling rejects missing,
+remote, SQLite, ambiguous-port, `talaqi`, `TALAQI`, and every other non-test target without echoing
+the URL or credentials.
+
+The compose service remains on `127.0.0.1:5432`. A native PostgreSQL 18 installation may use port
+5433 (or another explicit local port) in the ignored file. After loading the setting into the
+process environment without printing it:
+
+```powershell
+uv run alembic upgrade head
+uv run pytest apps/api/tests/db -q
+uv run alembic downgrade base
+uv run alembic upgrade head
+uv run alembic heads
+```
+
+`alembic heads` must return only `0001_closed_beta_baseline (head)`. Tests clean only the guarded
+`talaqi` schema in the test database; they never drop the database or login role. SQLite is not a
+supported fallback for migrations, constraints, sessions, or transaction fixtures.
+
+## Contract-check and stamp for an existing bootstrap
+
+For a database created previously with `database/bootstrap.sql`, do not run the baseline migration
+DDL again. First execute the complete `database/tests/schema_contract.sql` using pgAdmin or `psql`
+and require `passed = true`. When `TEST_DATABASE_URL` uses the SQLAlchemy driver name, derive a
+temporary libpq URL only in memory:
+
+```powershell
+$libpqUrl = $env:TEST_DATABASE_URL -replace '^postgresql\+asyncpg:', 'postgresql:'
+psql "$libpqUrl" -v ON_ERROR_STOP=1 -f database/tests/schema_contract.sql
+Remove-Variable libpqUrl
+uv run alembic stamp 0001_closed_beta_baseline
+uv run alembic current
+```
+
+Stamp only after the complete contract passes, and only on the intended guarded database. Stamping
+records migration ownership without rerunning schema DDL. Never use this test workflow to stamp or
+modify a user or production `TALAQI` database.
 
 ## Application-role grants
 

@@ -53,7 +53,34 @@ Invoke-RestMethod http://127.0.0.1:8000/health/ready
 docker compose down
 ```
 
-Liveness is process-only. Readiness currently validates configuration; database, object-storage, and SMTP network probes are introduced with their later adapters. Production and staging configuration must use HTTPS, secure cookies, explicit non-local origins/hosts, a non-placeholder session secret of at least 64 characters, and enforced admin MFA.
+Liveness is process-only. Readiness validates configuration and performs a bounded PostgreSQL
+`SELECT 1`; object-storage and SMTP network probes are introduced with their later adapters. App
+construction remains connection-free. Production and staging configuration must use HTTPS, secure
+cookies, explicit non-local origins/hosts, a non-placeholder session secret of at least 64
+characters, and enforced admin MFA.
+
+## PostgreSQL migrations and tests
+
+PostgreSQL 18 is the only supported persistence test backend; there is no SQLite fallback. The
+compose service stays on loopback port 5432. A separately installed native PostgreSQL may use another
+explicit port, such as 5433, through the ignored `.env.test.local` file. `TEST_DATABASE_URL` must use
+the `postgresql+asyncpg` driver, a loopback host, an explicit port, and a database whose name ends
+exactly in `_test`; destructive tooling fails closed for every other target.
+
+Load the ignored setting into the process environment without printing it, then run migrations and
+database tests:
+
+```powershell
+uv run alembic upgrade head
+uv run pytest apps/api/tests/db -q
+uv run alembic downgrade base
+uv run alembic upgrade head
+uv run alembic heads
+```
+
+The closed-beta baseline migration is immutable. Every later schema change requires a new Alembic
+revision. See [database/README.md](database/README.md) for the schema-contract verification and safe
+stamp workflow for a database that was initialized manually.
 
 ## Locked public contracts
 
