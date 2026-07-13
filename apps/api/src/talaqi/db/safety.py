@@ -44,6 +44,6 @@ def validate_test_database_url(value: str | SecretStr | None) -> SafeDatabaseTar
     if not valid:
         raise ValueError(_UNSAFE_TARGET_MESSAGE)
 
-    assert host is not None
-    assert port is not None
+    if host is None or port is None:
+        raise ValueError(_UNSAFE_TARGET_MESSAGE)
     return SafeDatabaseTarget(host=host, port=port, database=database)

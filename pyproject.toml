@@ -6,6 +6,9 @@ dependencies = ["talaqi-api", "talaqi-worker"]
 
 [dependency-groups]
 dev = [
+  "detect-secrets==1.5.0",
+  "pip-audit==2.10.1",
+  "pre-commit==4.6.0",
   "pyright==1.1.411",
   "pytest==9.1.1",
   "pytest-asyncio==1.4.0",
@@ -27,6 +30,7 @@ extend-exclude = [".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".turbo
 
 [tool.ruff.lint]
 select = ["A", "ASYNC", "B", "C4", "E", "F", "I", "N", "PERF", "PIE", "PT", "PTH", "RET", "RUF", "SIM", "UP", "W"]
+external = ["S"]
 
 [tool.pyright]
 pythonVersion = "3.13"
@@ -37,4 +41,5 @@ exclude = ["**/__pycache__", ".venv", "dist"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
 asyncio_mode = "strict"
+pythonpath = ["."]
 testpaths = ["apps/api/tests", "apps/worker/tests"]

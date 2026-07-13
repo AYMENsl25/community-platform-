@@ -34,7 +34,7 @@ async def test_default_database_readiness_executes_select_one(
     )
     transport = httpx.ASGITransport(app=create_app(settings))
 
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
         response = await client.get("/health/ready")
 
     assert response.status_code == 200

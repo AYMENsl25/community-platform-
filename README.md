@@ -1,5 +1,30 @@
 # Talaqi
 
+## Foundation quality gates
+
+Use Node 24 with pnpm 10.34.5 and Python 3.13 with uv 0.11.28. Install and verify the repository with:
+
+```text
+corepack pnpm install --frozen-lockfile
+python -m uv sync --frozen
+corepack pnpm format:check
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm build
+corepack pnpm openapi:check
+corepack pnpm brand:check
+python -m uv run ruff format --check .
+python -m uv run ruff check .
+python -m uv run pyright
+python -m uv run pytest -q
+python -m uv run pre-commit run --all-files
+corepack pnpm audit --prod --audit-level high
+corepack pnpm e2e
+```
+
+The production-dependency Python audit exports the frozen non-development requirements to a temporary file before running `pip-audit`. See [CI and security operations](docs/engineering/ci-security.md) for exact CI job/path mapping, protected checks, cache boundaries, security incident handling, and dependency remediation.
+
 Talaqi is a mobile-first community and events PWA for an adult-only closed beta in Istanbul and Algiers. Verified members with a complete profile and accepted organizer/community rules may create a club or an independent event. MVP registration is free or organizer-confirmed cash only.
 
 The repository will contain a Next.js App Router PWA, FastAPI modular monolith, PostgreSQL-backed worker/outbox, generated TypeScript client, shared UI, and four-locale translation dictionaries. PostgreSQL 18 is authoritative for transactions, capacity, idempotency, audit history, and the transactional outbox.

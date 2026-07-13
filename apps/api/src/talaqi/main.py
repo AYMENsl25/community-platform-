@@ -8,6 +8,7 @@ from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
+from talaqi.security import install_http_security, install_request_logging
 
 
 def create_app(
@@ -45,6 +46,9 @@ def create_app(
 
     application = FastAPI(title="Talaqi API")
     register_platform_contracts(application)
+    settings_factory = (lambda: settings) if settings is not None else get_settings
+    install_http_security(application, settings_factory)
+    install_request_logging(application)
     application.include_router(create_health_router(registry))
     install_openapi(application)
     return application

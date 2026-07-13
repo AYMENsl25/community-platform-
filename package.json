@@ -17,9 +17,10 @@
     "build": "corepack pnpm --recursive --if-present build",
     "openapi:generate": "corepack pnpm --filter @talaqi/api-client generate",
     "openapi:check": "corepack pnpm --filter @talaqi/api-client generate:check",
-    "e2e": "node -e \"console.log('Playwright will be added with the first critical journey; no browsers required yet.')\""
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.0",
     "sharp": "0.34.5",

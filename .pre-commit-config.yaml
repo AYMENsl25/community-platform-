@@ -1,0 +1,34 @@
+repos:
+  - repo: local
+    hooks:
+      - id: text-safety
+        name: whitespace and end-of-file safety
+        entry: python scripts/ci/check_text.py
+        language: system
+        types: [text]
+      - id: yaml-safety
+        name: YAML safe-load and duplicate-key check
+        entry: python scripts/ci/check_yaml.py
+        language: system
+        files: \.(yaml|yml)$
+      - id: ruff-format
+        name: Ruff format check
+        entry: ruff format --check
+        language: system
+        types: [python]
+      - id: ruff-check
+        name: Ruff lint check
+        entry: ruff check
+        language: system
+        types: [python]
+      - id: prettier
+        name: Prettier check
+        entry: corepack pnpm exec prettier --check --ignore-unknown
+        language: system
+        types_or: [javascript, jsx, ts, tsx, json, markdown, yaml]
+      - id: detect-secrets
+        name: detect-secrets baseline gate
+        entry: detect-secrets-hook --baseline .secrets.baseline
+        language: system
+        exclude: >-
+          (?x)^(pnpm-lock\.yaml|uv\.lock|assets/brand/source/|apps/web/public/brand/|\.env(?:\.local|\.[^/]+\.local)?)$

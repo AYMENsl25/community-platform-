@@ -8,9 +8,33 @@ import pytest
 import pytest_asyncio
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, ValidationError
+from talaqi.config import Settings
 from talaqi.db.identifiers import validate_uuid7
 from talaqi.main import create_app
 from talaqi.platform import ApiError, CursorParams, FieldError, register_platform_contracts
+
+
+def transport_settings() -> Settings:
+    return Settings.model_validate(
+        {
+            "environment": "test",
+            "api_public_url": "http://localhost:8000",
+            "web_public_url": "http://localhost:3000",
+            "allowed_origins": ["http://localhost:3000"],
+            "allowed_hosts": ["test"],
+            "session_secret": "test-secret",
+            "cookie_secure": False,
+            "admin_mfa_required": False,
+            "database_url": "postgresql://user:password@localhost/talaqi_test",
+            "s3_endpoint": "http://localhost:9000",
+            "s3_bucket": "test",
+            "s3_access_key": "access",
+            "s3_secret_key": "secret",
+            "smtp_host": "localhost",
+            "smtp_port": 1025,
+            "log_level": "INFO",
+        }
+    )
 
 
 class MaliciousValidationBody(BaseModel):
@@ -97,7 +121,7 @@ async def test_success_and_health_responses_have_server_owned_uuid7_request_ids(
     assert first_id != supplied
     assert first_id != second_id
 
-    health_transport = httpx.ASGITransport(app=create_app())
+    health_transport = httpx.ASGITransport(app=create_app(settings=transport_settings()))
     async with httpx.AsyncClient(transport=health_transport, base_url="http://test") as health:
         response = await health.get("/health/live")
     assert response.json() == {"status": "ok"}

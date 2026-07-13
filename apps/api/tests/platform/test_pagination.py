@@ -11,7 +11,9 @@ from talaqi.platform import ApiError, CursorCodec, CursorPage, CursorParams
 
 
 def _tamper(value: str) -> str:
-    return value[:-1] + ("A" if value[-1] != "A" else "B")
+    payload, signature = value.split(".", maxsplit=1)
+    tampered_signature = ("A" if signature[0] != "A" else "B") + signature[1:]
+    return f"{payload}.{tampered_signature}"
 
 
 def _malformed(_value: str) -> str:

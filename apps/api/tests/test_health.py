@@ -35,13 +35,13 @@ def settings() -> Settings:
 
 async def request(registry: ReadinessRegistry, path: str) -> httpx.Response:
     transport = httpx.ASGITransport(app=create_app(settings(), registry))
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
         return await client.get(path)
 
 
 async def request_app(app: object, path: str) -> httpx.Response:
     transport = httpx.ASGITransport(app=app)  # pyright: ignore[reportArgumentType]
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+    async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
         return await client.get(path)
 
 
