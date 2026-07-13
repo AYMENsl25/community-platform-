@@ -10,6 +10,8 @@
     "build": "next build"
   },
   "dependencies": {
+    "@talaqi/translations": "workspace:*",
+    "@talaqi/ui": "workspace:*",
     "next": "16.2.10",
     "react": "catalog:",
     "react-dom": "catalog:"

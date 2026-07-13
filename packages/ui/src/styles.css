@@ -1,0 +1,189 @@
+:root {
+  color-scheme: light;
+
+  --tq-color-brand: #184f43;
+  --tq-color-brand-strong: #103b33;
+  --tq-color-brand-soft: #dce9e3;
+  --tq-color-canvas: #fcf7ef;
+  --tq-color-surface: #fffdf9;
+  --tq-color-accent: #d87050;
+  --tq-color-text: #20443b;
+  --tq-color-text-muted: #526961;
+  --tq-color-border: #75887f;
+  --tq-color-focus: #103b33;
+  --tq-color-on-brand: #ffffff;
+
+  --tq-font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Noto Sans Arabic", "Noto Sans", Arial, sans-serif;
+  --tq-font-size-xs: 0.75rem;
+  --tq-font-size-sm: 0.875rem;
+  --tq-font-size-base: 1rem;
+  --tq-font-size-lg: 1.125rem;
+  --tq-font-size-xl: 1.375rem;
+  --tq-font-size-2xl: clamp(2rem, 5vw, 4.75rem);
+  --tq-line-height-tight: 1.1;
+  --tq-line-height-body: 1.6;
+
+  --tq-space-1: 0.25rem;
+  --tq-space-2: 0.5rem;
+  --tq-space-3: 0.75rem;
+  --tq-space-4: 1rem;
+  --tq-space-5: 1.5rem;
+  --tq-space-6: 2rem;
+  --tq-space-7: 3rem;
+  --tq-space-8: 4rem;
+
+  --tq-radius-sm: 0.5rem;
+  --tq-radius-md: 1rem;
+  --tq-radius-lg: 1.5rem;
+  --tq-radius-pill: 999rem;
+  --tq-shadow-card: 0 1.25rem 3rem rgb(24 79 67 / 10%);
+  --tq-focus-ring-width: 0.1875rem;
+  --tq-focus-ring-offset: 0.1875rem;
+  --tq-touch-target: 2.75rem;
+  --tq-content-wide: 75rem;
+  --tq-content-reading: 42rem;
+  --tq-breakpoint-compact: 48rem;
+  --tq-motion-fast: 140ms;
+  --tq-motion-standard: 220ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:focus-visible {
+  outline: var(--tq-focus-ring-width) solid var(--tq-color-focus);
+  outline-offset: var(--tq-focus-ring-offset);
+}
+
+.tq-button,
+.tq-action-link {
+  align-items: center;
+  border: 0.125rem solid transparent;
+  border-radius: var(--tq-radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  font: 700 var(--tq-font-size-sm) / 1 var(--tq-font-sans);
+  justify-content: center;
+  min-block-size: var(--tq-touch-target);
+  padding-block: var(--tq-space-3);
+  padding-inline: var(--tq-space-5);
+  text-decoration: none;
+  transition:
+    background-color var(--tq-motion-fast) ease,
+    border-color var(--tq-motion-fast) ease,
+    color var(--tq-motion-fast) ease,
+    transform var(--tq-motion-fast) ease;
+}
+
+.tq-button--primary,
+.tq-action-link--primary {
+  background: var(--tq-color-brand);
+  color: var(--tq-color-on-brand);
+}
+
+.tq-button--secondary,
+.tq-action-link--secondary {
+  background: transparent;
+  border-color: var(--tq-color-brand);
+  color: var(--tq-color-brand);
+}
+
+.tq-button--quiet,
+.tq-action-link--quiet {
+  background: transparent;
+  color: var(--tq-color-brand);
+}
+
+.tq-button:hover:not(:disabled),
+.tq-action-link:hover {
+  transform: translateY(-0.0625rem);
+}
+
+.tq-button--primary:hover:not(:disabled),
+.tq-action-link--primary:hover {
+  background: var(--tq-color-brand-strong);
+}
+
+.tq-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.tq-card {
+  background: var(--tq-color-surface);
+  border: 0.0625rem solid var(--tq-color-border);
+  border-radius: var(--tq-radius-lg);
+  box-shadow: var(--tq-shadow-card);
+  padding-block: var(--tq-space-6);
+  padding-inline: var(--tq-space-6);
+}
+
+.tq-container {
+  inline-size: min(calc(100% - 2 * var(--tq-space-5)), var(--tq-content-wide));
+  margin-inline: auto;
+}
+
+.tq-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.tq-stack[data-gap="small"] {
+  gap: var(--tq-space-2);
+}
+
+.tq-stack[data-gap="medium"] {
+  gap: var(--tq-space-4);
+}
+
+.tq-stack[data-gap="large"] {
+  gap: var(--tq-space-6);
+}
+
+.tq-skip-link {
+  background: var(--tq-color-brand-strong);
+  border-radius: 0 0 var(--tq-radius-sm) var(--tq-radius-sm);
+  color: var(--tq-color-on-brand);
+  inset-block-start: var(--tq-space-2);
+  inset-inline-start: var(--tq-space-2);
+  min-block-size: var(--tq-touch-target);
+  padding-block: var(--tq-space-3);
+  padding-inline: var(--tq-space-4);
+  position: fixed;
+  transform: translateY(calc(-100% - var(--tq-space-4)));
+  transition: transform var(--tq-motion-fast) ease;
+  z-index: 100;
+}
+
+.tq-skip-link:focus,
+.tq-skip-link:focus-visible {
+  outline-color: var(--tq-color-on-brand);
+  transform: translateY(0);
+}
+
+.tq-visually-hidden {
+  block-size: 0.0625rem;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  inline-size: 0.0625rem;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

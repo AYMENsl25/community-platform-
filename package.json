@@ -9,6 +9,8 @@
   },
   "scripts": {
     "format:check": "prettier --check .",
+    "brand:generate": "node scripts/brand/generate-assets.mjs",
+    "brand:check": "node scripts/brand/generate-assets.mjs --check",
     "lint": "corepack pnpm --recursive --if-present lint",
     "typecheck": "corepack pnpm --recursive --if-present typecheck",
     "test": "corepack pnpm --recursive --if-present test",
@@ -20,6 +22,7 @@
   "devDependencies": {
     "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.0",
+    "sharp": "0.34.5",
     "turbo": "2.10.4",
     "typescript": "5.9.3"
   }
