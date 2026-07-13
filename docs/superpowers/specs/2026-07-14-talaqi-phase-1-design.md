@@ -1,8 +1,11 @@
 # Talaqi Phase 1 Design
 
-**Status:** Approved for implementation planning  
-**Date:** 2026-07-14  
-**Phase:** Identity, regions, localization, and discovery  
+**Status:** Approved for implementation planning
+
+**Date:** 2026-07-14
+
+**Phase:** Identity, regions, localization, and discovery
+
 **Baseline:** Phase 0 commit `e3c278354918695e62f549e3c6b1541ea907ef9a`
 
 ## Purpose
@@ -56,9 +59,9 @@ Task 1.2 establishes short-lived authenticated access and the session-service in
 
 ### Task 1.3: Verification, reset, rotating sessions, and CSRF
 
-The session module owns verification/reset tokens, refresh-session families, rotation, replay detection, session listing, revocation, cookie encoding, and CSRF validation. Raw verification, reset, access, refresh, and CSRF secrets are never persisted or logged. Database records store only domain-separated cryptographic hashes.
+The session module owns verification/reset tokens, refresh-session families, rotation, replay detection, session listing, revocation, cookie encoding, and CSRF validation. Verification/reset links use a random UUID token identifier plus a domain-separated HMAC-SHA256 authenticator so the outbox worker can reconstruct the one-time link from the identifier without persisting a raw secret. Raw verification, reset, access, refresh, and CSRF secrets are never persisted or logged. Database records store only domain-separated cryptographic hashes.
 
-Verification and reset requests always use non-enumerating responses. Tokens are random, single-use, expiring, and invalid after use. Refreshing atomically revokes the presented session, creates its replacement, and links the two records. Reuse of a rotated refresh token revokes the complete session family. Logout revokes the current session. Users may list their own sessions and revoke one or all other sessions; cross-user access is denied.
+Verification and reset requests always use non-enumerating responses. Tokens use a random UUID4 identifier and an unguessable authenticator, are single-use and expiring, and are invalid after use. Refreshing atomically revokes the presented session, creates its replacement, and links the two records. Reuse of a rotated refresh token revokes the complete session family. Logout revokes the current session. Users may list their own sessions and revoke one or all other sessions; cross-user access is denied.
 
 The web transport uses `HttpOnly`, `Secure` in deployed environments, `SameSite=Lax` access and refresh cookies. Cookie-authenticated mutations require a CSRF cookie/header match plus a server-verified session-bound secret. Access expiry is 15 minutes and refresh expiry is 30 days. Cancellation continues to propagate, public errors use the existing envelope, and completed request logs contain no credential material.
 
@@ -153,4 +156,3 @@ The seven product tasks use the exact master-plan commit subjects:
 Each task is implemented sequentially in an isolated Phase 1 worktree. A fresh implementer follows its decision-complete task brief and TDD report contract. A separate reviewer checks both specification compliance and code quality. Critical and important findings are fixed and re-reviewed. The controller reruns the applicable complete gates, creates or amends exactly one task commit, pushes that approved fast-forward commit directly to GitHub `main`, verifies the remote SHA, and only then begins the next task.
 
 After Task 1.7, a fresh reviewer evaluates the complete Phase 1 range and the controller runs the Phase 1 acceptance matrix. Phase 1 exits only when a verified adult can complete a valid profile, restricted/unverified behavior is proven, visitors can discover safe public club/event fixtures in all four locales, and all authentication, CSRF, privacy, accessibility, migration, contract, and browser gates pass.
-
