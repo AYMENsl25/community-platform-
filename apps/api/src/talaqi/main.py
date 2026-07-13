@@ -6,6 +6,8 @@ from sqlalchemy import text
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
+from talaqi.platform import register_platform_contracts
+from talaqi.platform.openapi import install_openapi
 
 
 def create_app(
@@ -42,7 +44,9 @@ def create_app(
         registry.register("database", database_probe)
 
     application = FastAPI(title="Talaqi API")
+    register_platform_contracts(application)
     application.include_router(create_health_router(registry))
+    install_openapi(application)
     return application
 
 

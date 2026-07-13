@@ -49,11 +49,21 @@ class ReadinessRegistry:
 def create_health_router(registry: ReadinessRegistry) -> APIRouter:
     router = APIRouter(prefix="/health", tags=["health"])
 
-    @router.get("/live", response_model=LiveResponse)
+    @router.get("/live", response_model=LiveResponse, operation_id="healthLive")
     async def _live() -> LiveResponse:  # pyright: ignore[reportUnusedFunction]
         return LiveResponse()
 
-    @router.get("/ready", response_model=ReadyResponse)
+    @router.get(
+        "/ready",
+        response_model=ReadyResponse,
+        operation_id="healthReady",
+        responses={
+            status.HTTP_503_SERVICE_UNAVAILABLE: {
+                "model": ReadyResponse,
+                "description": "One or more readiness dependencies are unavailable.",
+            }
+        },
+    )
     async def _ready(  # pyright: ignore[reportUnusedFunction]
         response: Response,
     ) -> ReadyResponse:

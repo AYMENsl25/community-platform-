@@ -7,6 +7,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "generate:check": "node scripts/generate.mjs --check",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -15,7 +17,11 @@
   "devDependencies": {
     "@talaqi/config": "workspace:*",
     "eslint": "catalog:",
+    "openapi-typescript": "7.13.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
   }
 }

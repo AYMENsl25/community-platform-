@@ -5,5 +5,7 @@ coverage
 dist
 docs
 node_modules
+openapi/talaqi-v1.json
+packages/api-client/src/schema.generated.ts
 pnpm-lock.yaml
 uv.lock

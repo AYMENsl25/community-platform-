@@ -13,7 +13,8 @@
     "typecheck": "corepack pnpm --recursive --if-present typecheck",
     "test": "corepack pnpm --recursive --if-present test",
     "build": "corepack pnpm --recursive --if-present build",
-    "openapi:check": "node -e \"console.log('Task 0.5 owns OpenAPI generation; no generated files yet.')\"",
+    "openapi:generate": "corepack pnpm --filter @talaqi/api-client generate",
+    "openapi:check": "corepack pnpm --filter @talaqi/api-client generate:check",
     "e2e": "node -e \"console.log('Playwright will be added with the first critical journey; no browsers required yet.')\""
   },
   "devDependencies": {
