@@ -64,6 +64,16 @@ def test_openapi_contains_no_environment_secret_path_or_generation_metadata() ->
         assert forbidden not in rendered
 
 
+def test_validation_responses_use_the_platform_error_envelope() -> None:
+    document = build_openapi_document(create_app())
+
+    validation_response = document["paths"]["/api/v1/cities"]["get"]["responses"]["422"]
+
+    assert validation_response == {"$ref": "#/components/responses/PlatformError"}
+    assert "HTTPValidationError" not in document["components"]["schemas"]
+    assert "ValidationError" not in document["components"]["schemas"]
+
+
 def test_openapi_check_detects_drift_without_rewriting(tmp_path: Path) -> None:
     output = tmp_path / "openapi.json"
     document = build_openapi_document(create_app())

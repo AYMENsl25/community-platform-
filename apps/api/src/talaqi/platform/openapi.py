@@ -33,6 +33,9 @@ def build_openapi_document(application: FastAPI) -> dict[str, Any]:
             },
         }
     }
+    _replace_validation_responses(document)
+    schemas.pop("HTTPValidationError", None)
+    schemas.pop("ValidationError", None)
     _add_request_id_response_headers(document)
     return document
 
@@ -148,7 +151,26 @@ def _add_request_id_response_headers(document: dict[str, Any]) -> None:
             for response in typed_responses.values():
                 if isinstance(response, dict):
                     typed_response = cast(dict[str, object], response)
+                    if "$ref" in typed_response:
+                        continue
                     headers = typed_response.setdefault("headers", {})
                     if isinstance(headers, dict):
                         typed_headers = cast(dict[str, object], headers)
                         typed_headers["X-Request-ID"] = {"$ref": "#/components/headers/RequestId"}
+
+
+def _replace_validation_responses(document: dict[str, Any]) -> None:
+    paths = cast(dict[str, object], document.get("paths", {}))
+    for path_item in paths.values():
+        if not isinstance(path_item, dict):
+            continue
+        for method, operation in cast(dict[str, object], path_item).items():
+            if method not in {"get", "post", "put", "patch", "delete", "options", "head"}:
+                continue
+            if not isinstance(operation, dict):
+                continue
+            responses = cast(dict[str, object], operation).get("responses")
+            if isinstance(responses, dict) and "422" in responses:
+                cast(dict[str, object], responses)["422"] = {
+                    "$ref": "#/components/responses/PlatformError"
+                }

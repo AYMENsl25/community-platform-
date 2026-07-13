@@ -228,6 +228,121 @@ async def test_enum_index_trigger_version_and_postgresql_18_invariants(
             revision = (
                 await connection.execute(text("SELECT version_num FROM public.alembic_version"))
             ).scalar_one()
-            assert revision == "0001_closed_beta_baseline"
+            assert revision == "0002_regional_catalog"
+    finally:
+        await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_launch_region_catalog_and_policy_defaults_are_exact(
+    test_database_url: SecretStr, migrated_database: None
+) -> None:
+    del migrated_database
+    engine = build_async_engine(test_database_url)
+    try:
+        async with engine.connect() as connection:
+            countries = (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT code, name_key, default_locale, default_currency
+                        FROM talaqi.countries WHERE code IN ('TR', 'DZ') ORDER BY code
+                        """
+                    )
+                )
+            ).all()
+            assert [tuple(row) for row in countries] == [
+                ("DZ", "regions.country.dz", "fr", "DZD"),
+                ("TR", "regions.country.tr", "tr", "TRY"),
+            ]
+
+            cities = (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT c.code, city.slug, city.time_zone, city.beta_enabled
+                        FROM talaqi.cities AS city
+                        JOIN talaqi.countries AS c ON c.id = city.country_id
+                        WHERE c.code IN ('TR', 'DZ') ORDER BY c.code
+                        """
+                    )
+                )
+            ).all()
+            assert [tuple(row) for row in cities] == [
+                ("DZ", "algiers", "Africa/Algiers", True),
+                ("TR", "istanbul", "Europe/Istanbul", True),
+            ]
+
+            categories = (
+                (
+                    await connection.execute(
+                        text(
+                            """
+                        SELECT slug FROM talaqi.categories WHERE slug IN (
+                            'sports', 'arts-culture', 'technology',
+                            'language-exchange', 'outdoors', 'games'
+                        ) ORDER BY sort_order, slug
+                        """
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert categories == [
+                "sports",
+                "arts-culture",
+                "technology",
+                "language-exchange",
+                "outdoors",
+                "games",
+            ]
+
+            policies = (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT c.code, p.allowed_registration_methods::text[],
+                               p.cash_expiry_min_minutes, p.cash_expiry_default_minutes,
+                               p.cash_expiry_max_minutes, p.cancellation_min_minutes,
+                               p.cancellation_default_minutes, p.cancellation_max_minutes,
+                               p.default_club_ownership_limit,
+                               p.default_active_independent_event_limit,
+                               p.exact_venue_public_by_default
+                        FROM talaqi.regional_policies AS p
+                        JOIN talaqi.countries AS c ON c.id = p.country_id
+                        ORDER BY c.code
+                        """
+                    )
+                )
+            ).all()
+            assert [tuple(row) for row in policies] == [
+                (
+                    "DZ",
+                    ["free", "cash_organizer_confirmed"],
+                    120,
+                    2880,
+                    10080,
+                    0,
+                    1440,
+                    10080,
+                    1,
+                    3,
+                    False,
+                ),
+                (
+                    "TR",
+                    ["free", "cash_organizer_confirmed"],
+                    120,
+                    1440,
+                    4320,
+                    0,
+                    1440,
+                    10080,
+                    1,
+                    3,
+                    False,
+                ),
+            ]
     finally:
         await engine.dispose()

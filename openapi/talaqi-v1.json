@@ -36,6 +36,104 @@
       }
     },
     "schemas": {
+      "CategoryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "icon_key": {
+            "title": "Icon Key",
+            "type": "string"
+          },
+          "name_key": {
+            "title": "Name Key",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slug",
+          "name_key",
+          "icon_key",
+          "sort_order"
+        ],
+        "title": "CategoryResponse",
+        "type": "object"
+      },
+      "CityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "beta_enabled": {
+            "title": "Beta Enabled",
+            "type": "boolean"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "name_key": {
+            "title": "Name Key",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "time_zone": {
+            "title": "Time Zone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "country_code",
+          "slug",
+          "name_key",
+          "time_zone",
+          "beta_enabled"
+        ],
+        "title": "CityResponse",
+        "type": "object"
+      },
+      "CountryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "default_currency": {
+            "title": "Default Currency",
+            "type": "string"
+          },
+          "default_locale": {
+            "enum": [
+              "en",
+              "tr",
+              "fr",
+              "ar"
+            ],
+            "title": "Default Locale",
+            "type": "string"
+          },
+          "name_key": {
+            "title": "Name Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name_key",
+          "default_locale",
+          "default_currency"
+        ],
+        "title": "CountryResponse",
+        "type": "object"
+      },
       "CursorPage": {
         "additionalProperties": false,
         "properties": {
@@ -164,6 +262,104 @@
         ],
         "title": "ReadyResponse",
         "type": "object"
+      },
+      "RegionPolicyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_registration_methods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Registration Methods",
+            "type": "array"
+          },
+          "cancellation_bounds": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Cancellation Bounds",
+            "type": "array"
+          },
+          "cancellation_default_minutes": {
+            "title": "Cancellation Default Minutes",
+            "type": "integer"
+          },
+          "cash_bounds": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "Cash Bounds",
+            "type": "array"
+          },
+          "cash_default_minutes": {
+            "title": "Cash Default Minutes",
+            "type": "integer"
+          },
+          "club_limit": {
+            "title": "Club Limit",
+            "type": "integer"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "default_currency": {
+            "title": "Default Currency",
+            "type": "string"
+          },
+          "default_locale": {
+            "enum": [
+              "en",
+              "tr",
+              "fr",
+              "ar"
+            ],
+            "title": "Default Locale",
+            "type": "string"
+          },
+          "exact_venue_public_by_default": {
+            "title": "Exact Venue Public By Default",
+            "type": "boolean"
+          },
+          "independent_event_limit": {
+            "title": "Independent Event Limit",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "country_code",
+          "default_locale",
+          "default_currency",
+          "allowed_registration_methods",
+          "cash_default_minutes",
+          "cash_bounds",
+          "cancellation_default_minutes",
+          "cancellation_bounds",
+          "club_limit",
+          "independent_event_limit",
+          "exact_venue_public_by_default",
+          "revision"
+        ],
+        "title": "RegionPolicyResponse",
+        "type": "object"
       }
     }
   },
@@ -173,6 +369,174 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/categories": {
+      "get": {
+        "operationId": "listCategories",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  },
+                  "title": "Response Listcategories",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Categories",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/cities": {
+      "get": {
+        "operationId": "listCities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "country_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Country Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CityResponse"
+                  },
+                  "title": "Response Listcities",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "List Cities",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/countries": {
+      "get": {
+        "operationId": "listCountries",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CountryResponse"
+                  },
+                  "title": "Response Listcountries",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Countries",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/regions/{country_code}/policy": {
+      "get": {
+        "operationId": "getRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "The requested enabled region does not exist.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Region Policy",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
     "/health/live": {
       "get": {
         "operationId": "healthLive",
