@@ -1,0 +1,40 @@
+[project]
+name = "talaqi-workspace"
+version = "0.0.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["talaqi-api", "talaqi-worker"]
+
+[dependency-groups]
+dev = [
+  "pyright==1.1.411",
+  "pytest==9.1.1",
+  "pytest-asyncio==1.4.0",
+  "pyyaml==6.0.3",
+  "ruff==0.15.21",
+]
+
+[tool.uv.workspace]
+members = ["apps/api", "apps/worker"]
+
+[tool.uv.sources]
+talaqi-api = { workspace = true }
+talaqi-worker = { workspace = true }
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = [".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".turbo", ".venv", "dist", "node_modules"]
+
+[tool.ruff.lint]
+select = ["A", "ASYNC", "B", "C4", "E", "F", "I", "N", "PERF", "PIE", "PT", "PTH", "RET", "RUF", "SIM", "UP", "W"]
+
+[tool.pyright]
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+include = ["apps/api/src", "apps/api/tests", "apps/worker/src", "apps/worker/tests"]
+exclude = ["**/__pycache__", ".venv", "dist"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+asyncio_mode = "strict"
+testpaths = ["apps/api/tests", "apps/worker/tests"]
