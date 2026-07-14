@@ -23,8 +23,8 @@
     "@playwright/test": "1.61.1",
     "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.0",
-    "sharp": "0.34.5",
-    "turbo": "2.10.4",
+    "sharp": "0.35.3",
+    "turbo": "2.10.5",
     "typescript": "5.9.3"
   }
 }
