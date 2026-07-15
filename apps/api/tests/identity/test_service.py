@@ -1,14 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import cast
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
-from talaqi.identity.models import LoginState, NewSession, NewUser, SessionRecord, UserRecord
+from talaqi.identity.models import (
+    AuthPrincipal,
+    LoginState,
+    NewSession,
+    NewUser,
+    SessionRecord,
+    UserRecord,
+)
 from talaqi.identity.passwords import PasswordPolicy, PasswordService
+from talaqi.identity.repository import IdentityRepositoryProtocol
 from talaqi.identity.service import AuthRequest, AuthService
 from talaqi.identity.sessions import AccessSessionCodec, AccessToken
 from talaqi.platform import ApiError
@@ -79,14 +88,19 @@ class MemoryRepository:
         if record:
             self.sessions[session_id] = replace(record, revoked_at=now)
 
+    async def touch_session(self, session_id: UUID, user_id: UUID, now: datetime) -> None:
+        assert user_id == USER_ID
+        assert session_id in self.sessions
+
 
 def service_for(repository: MemoryRepository) -> AuthService:
     return AuthService(
-        repository,
+        cast(IdentityRepositoryProtocol, repository),
         PasswordService(PasswordPolicy.from_package_resource()),
         AccessSessionCodec("test-session-secret"),
         current_terms_version="2026-07-11",
         current_privacy_version="2026-07-11",
+        session_secret="test-session-secret",  # pragma: allowlist secret
     )
 
 
@@ -318,3 +332,75 @@ async def test_locked_login_does_not_count_until_exact_expiry_boundary() -> None
         await service.login("locked@example.com", "wrong password value", now=now)
     assert repository.failed == 1
     assert repository.user.locked_until is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "operation",
+    [
+        "recovery_create",
+        "recovery_confirm",
+        "password_hash",
+        "rotation",
+        "logout",
+        "revoke_one",
+        "revoke_all",
+    ],
+)
+async def test_auth_session_operations_propagate_cancellation(
+    operation: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = MemoryRepository()
+    service = service_for(repository)
+    await service.register(
+        email="cancel@example.com",
+        password="correct horse battery",  # pragma: allowlist secret
+        age_attested=True,
+        terms_version="2026-07-11",
+        privacy_version="2026-07-11",
+    )
+    assert repository.user is not None
+    principal = AuthPrincipal(repository.user.id, uuid4(), False, "active", False)
+
+    async def cancelled(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise asyncio.CancelledError
+
+    if operation == "recovery_create":
+        monkeypatch.setattr(repository, "find_user_by_email", cancelled, raising=False)
+        call = service.request_recovery("cancel@example.com", "email_verification")
+    elif operation == "recovery_confirm":
+        monkeypatch.setattr(repository, "lock_auth_token", cancelled, raising=False)
+        public = service.auth_tokens.public_token(uuid4(), "email_verification")
+        call = service.confirm_verification(public)
+    elif operation == "password_hash":
+
+        async def consumed(*args: object, **kwargs: object) -> UserRecord:
+            del args, kwargs
+            assert repository.user is not None
+            return repository.user
+
+        monkeypatch.setattr(service, "_consume_recovery_token", consumed)
+        monkeypatch.setattr(service.passwords, "hash", cancelled)
+        call = service.confirm_password_reset("unused-token", "replacement horse battery")
+    elif operation == "rotation":
+        monkeypatch.setattr(repository, "find_refresh_session_for_update", cancelled, raising=False)
+        call = service.rotate(service.refresh_tokens.issue(), "csrf", "csrf")
+    elif operation == "logout":
+
+        async def authenticated(*args: object, **kwargs: object) -> AuthPrincipal:
+            del args, kwargs
+            return principal
+
+        monkeypatch.setattr(service, "require_access", authenticated)
+        monkeypatch.setattr(repository, "revoke_session", cancelled)
+        call = service.logout("access")
+    elif operation == "revoke_one":
+        monkeypatch.setattr(repository, "revoke_owned_session", cancelled, raising=False)
+        call = service.revoke_owned_session(principal, uuid4())
+    else:
+        monkeypatch.setattr(repository, "revoke_all_sessions", cancelled, raising=False)
+        call = service.revoke_all_other(principal)
+
+    with pytest.raises(asyncio.CancelledError):
+        await call

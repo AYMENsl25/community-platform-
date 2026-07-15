@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import string
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -35,5 +36,8 @@ def test_access_cookie_rejects_tampering() -> None:
         issued_at=datetime.now(UTC),
     )
     encoded = codec.encode(token)
+    alphabet = string.ascii_uppercase + string.ascii_lowercase + string.digits + "-_"
+    final_index = alphabet.index(encoded[-1])
+    noncanonical_alias = f"{encoded[:-1]}{alphabet[final_index + 1]}"
     with pytest.raises(ApiError):
-        codec.decode(f"{encoded[:-1]}A")
+        codec.decode(noncanonical_alias)

@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import json
+import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Final
@@ -12,7 +13,10 @@ from uuid import UUID
 from talaqi.platform import ApiError
 
 ACCESS_COOKIE_NAME: Final = "talaqi_access"
+REFRESH_COOKIE_NAME: Final = "talaqi_refresh"
+CSRF_COOKIE_NAME: Final = "talaqi_csrf"
 ACCESS_LIFETIME_SECONDS: Final = 900
+REFRESH_LIFETIME_SECONDS: Final = 2_592_000
 
 
 def _invalid_session() -> ApiError:
@@ -61,7 +65,9 @@ class AccessSessionCodec:
             payload_part, signature_part = encoded.split(".", maxsplit=1)
             supplied = _b64_decode(signature_part)
             expected = hmac.new(self._key, payload_part.encode("ascii"), hashlib.sha256).digest()
-            if not hmac.compare_digest(supplied, expected):
+            if _b64_encode(supplied) != signature_part or not hmac.compare_digest(
+                supplied, expected
+            ):
                 raise ValueError
             payload = json.loads(_b64_decode(payload_part))
             if set(payload) != {"exp", "iat", "sid", "uid", "v"} or payload["v"] != 1:
@@ -80,3 +86,28 @@ class AccessSessionCodec:
             )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             raise _invalid_session() from None
+
+
+class RefreshTokenCodec:
+    def __init__(self, secret: str) -> None:
+        self._key = secret.encode("utf-8")
+
+    def issue(self) -> str:
+        return _b64_encode(secrets.token_bytes(32))
+
+    def hash(self, raw: str) -> bytes:
+        try:
+            if len(raw) != 43 or "=" in raw:
+                raise ValueError
+            decoded = _b64_decode(raw)
+            if len(decoded) != 32 or _b64_encode(decoded) != raw:
+                raise ValueError
+        except (UnicodeEncodeError, ValueError):
+            raise _invalid_session() from None
+        return hmac.new(self._key, b"talaqi:refresh:v2\0" + decoded, hashlib.sha256).digest()
+
+    @staticmethod
+    def expiry(now: datetime) -> datetime:
+        from datetime import timedelta
+
+        return now + timedelta(seconds=REFRESH_LIFETIME_SECONDS)

@@ -20,6 +20,9 @@ from talaqi.security import (
 class AuthRateLimitAction(StrEnum):
     LOGIN = "login"
     REGISTER = "register"
+    RECOVERY_REQUEST = "recovery_request"
+    RECOVERY_CONFIRM = "recovery_confirm"
+    REFRESH = "refresh"
 
 
 _POLICIES = {
@@ -35,6 +38,27 @@ _POLICIES = {
     (AuthRateLimitAction.REGISTER, "identifier"): (
         "auth.register.identifier",
         RateLimitPolicy(3, 86400),
+    ),
+    (AuthRateLimitAction.RECOVERY_REQUEST, "client"): (
+        "auth.recovery_request.client",
+        RateLimitPolicy(10, 3600),
+    ),
+    (AuthRateLimitAction.RECOVERY_REQUEST, "identifier"): (
+        "auth.recovery_request.identifier",
+        RateLimitPolicy(5, 3600),
+    ),
+    (AuthRateLimitAction.RECOVERY_CONFIRM, "client"): (
+        "auth.recovery_confirm.client",
+        RateLimitPolicy(20, 3600),
+    ),
+    (AuthRateLimitAction.RECOVERY_CONFIRM, "identifier"): (
+        "auth.recovery_confirm.identifier",
+        RateLimitPolicy(10, 3600),
+    ),
+    (AuthRateLimitAction.REFRESH, "client"): ("auth.refresh.client", RateLimitPolicy(60, 900)),
+    (AuthRateLimitAction.REFRESH, "identifier"): (
+        "auth.refresh.identifier",
+        RateLimitPolicy(30, 900),
     ),
 }
 

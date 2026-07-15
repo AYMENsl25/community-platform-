@@ -40,6 +40,22 @@ def identity_settings() -> Settings:
     )
 
 
+def assert_session_cookies_cleared(response: httpx.Response, *, secure: bool) -> None:
+    http_only = {"talaqi_access": True, "talaqi_refresh": True, "talaqi_csrf": False}
+    cookies = response.headers.get_list("set-cookie")
+    assert len(cookies) == 3
+    assert {item.split("=", maxsplit=1)[0] for item in cookies} == set(http_only)
+    for name, expected_http_only in http_only.items():
+        item = next(value for value in cookies if value.startswith(f"{name}="))
+        assert item.startswith(f'{name}=""')
+        assert "expires=" in item.lower()
+        assert "Max-Age=0" in item
+        assert "Path=/" in item
+        assert "SameSite=lax" in item
+        assert ("Secure" in item) is secure
+        assert ("HttpOnly" in item) is expected_http_only
+
+
 @pytest.mark.asyncio
 async def test_register_login_logout_are_safe_non_enumerating_and_cookie_scoped(
     identity_engine: AsyncEngine,
@@ -76,7 +92,8 @@ async def test_register_login_logout_are_safe_non_enumerating_and_cookie_scoped(
             "/api/v1/auth/login", json={"identifier": EMAIL, "password": PASSWORD}
         )
         access_cookie = login.cookies["talaqi_access"]
-        logout = await client.post("/api/v1/auth/logout")
+        csrf_cookie = login.cookies["talaqi_csrf"]
+        logout = await client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": csrf_cookie})
         repeated_logout = await client.post(
             "/api/v1/auth/logout", headers={"cookie": f"talaqi_access={access_cookie}"}
         )
@@ -95,7 +112,7 @@ async def test_register_login_logout_are_safe_non_enumerating_and_cookie_scoped(
     assert "Secure" not in cookie
     assert logout.status_code == 200
     assert logout.json() == {"logged_out": True}
-    assert 'talaqi_access=""' in logout.headers["set-cookie"]
+    assert_session_cookies_cleared(logout, secure=False)
     assert repeated_logout.status_code == 401
     assert "set-cookie" not in repeated_logout.headers
 
@@ -142,7 +159,11 @@ def test_identity_openapi_is_configuration_and_connection_free() -> None:
         "422",
         "429",
     }
-    assert set(document["paths"]["/api/v1/auth/logout"]["post"]["responses"]) == {"200", "401"}
+    assert set(document["paths"]["/api/v1/auth/logout"]["post"]["responses"]) == {
+        "200",
+        "401",
+        "403",
+    }
 
 
 class AlwaysDenyLimiter:
@@ -200,6 +221,55 @@ async def test_logout_requires_an_authenticated_access_cookie(identity_engine: A
         response = await client.post("/api/v1/auth/logout")
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "authentication_required"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("path", "body", "cookie"),
+    [
+        ("/api/v1/auth/verification/request", {"email": "limited@example.com"}, None),
+        ("/api/v1/auth/password-reset/request", {"email": "limited@example.com"}, None),
+        ("/api/v1/auth/verification/confirm", {"token": "A" * 40}, None),
+        (
+            "/api/v1/auth/password-reset/confirm",
+            {"token": "A" * 40, "new_password": PASSWORD},
+            None,
+        ),
+        ("/api/v1/auth/refresh", None, "talaqi_refresh=" + "A" * 43),
+    ],
+)
+async def test_recovery_and_refresh_limits_run_before_token_or_database_work(
+    identity_engine: AsyncEngine,
+    path: str,
+    body: dict[str, object] | None,
+    cookie: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def forbidden_work(*args: object, **kwargs: object) -> object:
+        del args, kwargs
+        raise AssertionError("rate limiting must run before token/session work")
+
+    monkeypatch.setattr(
+        "talaqi.identity.repository.IdentityRepository.find_user_by_email", forbidden_work
+    )
+    monkeypatch.setattr(
+        "talaqi.identity.repository.IdentityRepository.lock_auth_token", forbidden_work
+    )
+    monkeypatch.setattr(
+        "talaqi.identity.repository.IdentityRepository.find_refresh_session_for_update",
+        forbidden_work,
+    )
+    factory = async_sessionmaker(identity_engine, class_=AsyncSession, expire_on_commit=False)
+    app = create_app(
+        identity_settings(), session_factory=factory, auth_rate_limiter=AlwaysDenyLimiter()
+    )
+    headers = {"cookie": cookie} if cookie else None
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        response = await client.post(path, json=body, headers=headers)
+    assert response.status_code == 429
+    assert response.json()["error"]["code"] == "rate_limited"
 
 
 @pytest.mark.asyncio

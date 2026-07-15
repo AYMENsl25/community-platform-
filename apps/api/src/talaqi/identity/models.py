@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal
@@ -50,6 +49,9 @@ class NewSession:
 @dataclass(frozen=True, slots=True)
 class SessionRecord(NewSession):
     revoked_at: datetime | None
+    rotated_at: datetime | None = None
+    revoke_reason: str | None = None
+    replaced_by_session_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,14 +72,46 @@ class LoginResult:
 
 @dataclass(frozen=True, slots=True)
 class SessionCredentials:
-    refresh_token: bytes
-    csrf_secret: bytes
+    refresh_token: str
+    csrf_secret: str
+    refresh_hash: bytes
+    csrf_hash: bytes
 
     def refresh_token_hash(self) -> bytes:
-        return hashlib.sha256(b"talaqi:refresh:v1\0" + self.refresh_token).digest()
+        return self.refresh_hash
 
     def csrf_secret_hash(self) -> bytes:
-        return hashlib.sha256(b"talaqi:csrf:v1\0" + self.csrf_secret).digest()
+        return self.csrf_hash
+
+
+@dataclass(frozen=True, slots=True)
+class NewAuthToken:
+    id: UUID
+    user_id: UUID
+    kind: str
+    token_hash: bytes
+    expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class AuthTokenRecord(NewAuthToken):
+    used_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class SessionBundle:
+    principal: AuthPrincipal
+    access_cookie: str
+    credentials: SessionCredentials
+
+
+@dataclass(frozen=True, slots=True)
+class SessionSummary:
+    id: UUID
+    current: bool
+    created_at: datetime
+    last_used_at: datetime | None
+    expires_at: datetime
 
 
 @dataclass(frozen=True, slots=True)

@@ -18,12 +18,14 @@ DatabaseSession = Annotated[AsyncSession, Depends(get_db_session, scope="functio
 
 def build_auth_service(request: Request, session: AsyncSession) -> AuthService:
     settings: Settings = request.app.state.settings_factory()
+    secret = settings.session_secret.get_secret_value()
     return AuthService(
         IdentityRepository(session),
         PasswordService(PasswordPolicy.from_package_resource()),
-        AccessSessionCodec(settings.session_secret.get_secret_value()),
+        AccessSessionCodec(secret),
         current_terms_version=settings.current_terms_version,
         current_privacy_version=settings.current_privacy_version,
+        session_secret=secret,
     )
 
 
@@ -32,3 +34,16 @@ async def require_user(request: Request, session: DatabaseSession) -> AuthPrinci
 
 
 CurrentPrincipal = Annotated[AuthPrincipal, Depends(require_user)]
+
+
+async def require_csrf(
+    request: Request, principal: CurrentPrincipal, session: DatabaseSession
+) -> None:
+    await build_auth_service(request, session).verify_csrf(
+        principal,
+        request.cookies.get("talaqi_csrf"),
+        request.headers.get("X-CSRF-Token"),
+    )
+
+
+CsrfProtection = Annotated[None, Depends(require_csrf)]
