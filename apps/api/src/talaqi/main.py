@@ -6,11 +6,13 @@ from sqlalchemy import text
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
+from talaqi.identity.rate_limits import install_auth_rate_limits
+from talaqi.identity.routes import router as identity_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
 from talaqi.regions.routes import router as regions_router
 from talaqi.runtime import SessionFactory, install_runtime
-from talaqi.security import install_http_security, install_request_logging
+from talaqi.security import RateLimiter, install_http_security, install_request_logging
 
 
 def create_app(
@@ -19,6 +21,7 @@ def create_app(
     *,
     database_probe: ReadinessProbe | None = None,
     session_factory: SessionFactory | None = None,
+    auth_rate_limiter: RateLimiter | None = None,
 ) -> FastAPI:
     registry = readiness_registry or ReadinessRegistry()
     if readiness_registry is None:
@@ -51,10 +54,12 @@ def create_app(
     register_platform_contracts(application)
     settings_factory = (lambda: settings) if settings is not None else get_settings
     install_runtime(application, settings_factory, session_factory)
+    install_auth_rate_limits(application, settings_factory, provider=auth_rate_limiter)
     install_http_security(application, settings_factory)
     install_request_logging(application)
     application.include_router(create_health_router(registry))
     application.include_router(regions_router)
+    application.include_router(identity_router)
     install_openapi(application)
     return application
 

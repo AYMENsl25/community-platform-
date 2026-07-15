@@ -46,6 +46,7 @@ def install_runtime(
     runtime = LazySessionFactory(settings_factory, session_factory)
     application.state.database_runtime = runtime
     application.state.session_factory_holder = runtime
+    application.state.settings_factory = settings_factory
     application.router.add_event_handler("shutdown", runtime.close)
     return runtime
 

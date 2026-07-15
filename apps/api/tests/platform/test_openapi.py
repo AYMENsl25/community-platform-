@@ -53,7 +53,8 @@ def test_openapi_contains_no_environment_secret_path_or_generation_metadata() ->
 
     for forbidden in (
         "postgresql://",
-        "password",
+        "postgres_password",
+        "database_url",
         "smtp_",
         "s3_secret",
         "C:\\\\Users",
@@ -62,6 +63,9 @@ def test_openapi_contains_no_environment_secret_path_or_generation_metadata() ->
         "generation_timestamp",
     ):
         assert forbidden not in rendered
+
+    assert '"password"' in rendered
+    assert '"example"' not in rendered.lower()
 
 
 def test_validation_responses_use_the_platform_error_envelope() -> None:

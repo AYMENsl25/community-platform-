@@ -228,7 +228,7 @@ async def test_enum_index_trigger_version_and_postgresql_18_invariants(
             revision = (
                 await connection.execute(text("SELECT version_num FROM public.alembic_version"))
             ).scalar_one()
-            assert revision == "0002_regional_catalog"
+            assert revision == "0003_identity_authentication"
     finally:
         await engine.dispose()
 
