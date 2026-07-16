@@ -10,6 +10,7 @@ from talaqi.identity.rate_limits import install_auth_rate_limits
 from talaqi.identity.routes import router as identity_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
+from talaqi.profiles.routes import router as profiles_router
 from talaqi.regions.routes import router as regions_router
 from talaqi.runtime import SessionFactory, install_runtime
 from talaqi.security import RateLimiter, install_http_security, install_request_logging
@@ -60,6 +61,7 @@ def create_app(
     application.include_router(create_health_router(registry))
     application.include_router(regions_router)
     application.include_router(identity_router)
+    application.include_router(profiles_router)
     install_openapi(application)
     return application
 

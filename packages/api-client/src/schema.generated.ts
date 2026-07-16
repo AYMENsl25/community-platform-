@@ -221,6 +221,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Profile */
+        get: operations["getMyProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Replace My Profile */
+        patch: operations["replaceMyProfile"];
+        trace?: never;
+    };
+    "/api/v1/me/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get My Capabilities */
+        get: operations["getMyCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/regions/{country_code}/policy": {
         parameters: {
             query?: never;
@@ -301,6 +336,21 @@ export interface components {
              * @constant
              */
             status: "active";
+        };
+        /** Capabilities */
+        Capabilities: {
+            /** Access Admin */
+            access_admin: boolean;
+            /** Blockers */
+            blockers: string[];
+            /** Create Club */
+            create_club: boolean;
+            /** Create Independent Event */
+            create_independent_event: boolean;
+            /** Register Event */
+            register_event: boolean;
+            /** Save Event */
+            save_event: boolean;
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -403,6 +453,68 @@ export interface components {
             new_password: string;
             /** Token */
             token: string;
+        };
+        /** ProfileReplacementRequest */
+        ProfileReplacementRequest: {
+            /** City Slug */
+            city_slug: string;
+            /** Community Rules Version */
+            community_rules_version: string;
+            /** Country Code */
+            country_code: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Locale
+             * @enum {string}
+             */
+            locale: "en" | "tr" | "fr" | "ar";
+            /** Notify Community Email */
+            notify_community_email: boolean;
+            /** Notify Event Email */
+            notify_event_email: boolean;
+            /** Organizer Rules Version */
+            organizer_rules_version: string;
+            /** Preferred Currency */
+            preferred_currency: string;
+            /** Time Zone */
+            time_zone: string;
+            /** Username */
+            username: string;
+        };
+        /** ProfileResponse */
+        ProfileResponse: {
+            /** Avatar */
+            avatar?: null;
+            /** City Slug */
+            city_slug: string | null;
+            /** Community Rules Version */
+            community_rules_version: string | null;
+            /** Country Code */
+            country_code: string | null;
+            /** Display Name */
+            display_name: string | null;
+            /** Locale */
+            locale: ("en" | "tr" | "fr" | "ar") | null;
+            /** Notify Community Email */
+            notify_community_email: boolean;
+            /** Notify Event Email */
+            notify_event_email: boolean;
+            /**
+             * Notify Security Email
+             * @constant
+             */
+            notify_security_email: true;
+            /** Organizer Rules Version */
+            organizer_rules_version: string | null;
+            /** Preferred Currency */
+            preferred_currency: string | null;
+            /** Profile Completed At */
+            profile_completed_at: string | null;
+            /** Time Zone */
+            time_zone: string | null;
+            /** Username */
+            username: string | null;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -1095,6 +1207,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CountryResponse"][];
+                };
+            };
+        };
+    };
+    getMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    replaceMyProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileReplacementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Username is unavailable. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getMyCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };

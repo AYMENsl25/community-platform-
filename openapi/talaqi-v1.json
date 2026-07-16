@@ -75,6 +75,48 @@
         "title": "AuthenticationResponse",
         "type": "object"
       },
+      "Capabilities": {
+        "additionalProperties": false,
+        "properties": {
+          "access_admin": {
+            "title": "Access Admin",
+            "type": "boolean"
+          },
+          "blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "create_club": {
+            "title": "Create Club",
+            "type": "boolean"
+          },
+          "create_independent_event": {
+            "title": "Create Independent Event",
+            "type": "boolean"
+          },
+          "register_event": {
+            "title": "Register Event",
+            "type": "boolean"
+          },
+          "save_event": {
+            "title": "Save Event",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "create_club",
+          "create_independent_event",
+          "save_event",
+          "register_event",
+          "access_admin",
+          "blockers"
+        ],
+        "title": "Capabilities",
+        "type": "object"
+      },
       "CategoryResponse": {
         "additionalProperties": false,
         "properties": {
@@ -343,6 +385,248 @@
           "new_password"
         ],
         "title": "PasswordResetConfirm",
+        "type": "object"
+      },
+      "ProfileReplacementRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "city_slug": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "City Slug",
+            "type": "string"
+          },
+          "community_rules_version": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Community Rules Version",
+            "type": "string"
+          },
+          "country_code": {
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country Code",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "locale": {
+            "enum": [
+              "en",
+              "tr",
+              "fr",
+              "ar"
+            ],
+            "title": "Locale",
+            "type": "string"
+          },
+          "notify_community_email": {
+            "title": "Notify Community Email",
+            "type": "boolean"
+          },
+          "notify_event_email": {
+            "title": "Notify Event Email",
+            "type": "boolean"
+          },
+          "organizer_rules_version": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Organizer Rules Version",
+            "type": "string"
+          },
+          "preferred_currency": {
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Preferred Currency",
+            "type": "string"
+          },
+          "time_zone": {
+            "maxLength": 64,
+            "minLength": 3,
+            "title": "Time Zone",
+            "type": "string"
+          },
+          "username": {
+            "maxLength": 30,
+            "minLength": 3,
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name",
+          "country_code",
+          "city_slug",
+          "locale",
+          "time_zone",
+          "preferred_currency",
+          "notify_event_email",
+          "notify_community_email",
+          "organizer_rules_version",
+          "community_rules_version"
+        ],
+        "title": "ProfileReplacementRequest",
+        "type": "object"
+      },
+      "ProfileResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar": {
+            "title": "Avatar",
+            "type": "null"
+          },
+          "city_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Slug"
+          },
+          "community_rules_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Community Rules Version"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "enum": [
+                  "en",
+                  "tr",
+                  "fr",
+                  "ar"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "notify_community_email": {
+            "title": "Notify Community Email",
+            "type": "boolean"
+          },
+          "notify_event_email": {
+            "title": "Notify Event Email",
+            "type": "boolean"
+          },
+          "notify_security_email": {
+            "const": true,
+            "title": "Notify Security Email",
+            "type": "boolean"
+          },
+          "organizer_rules_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizer Rules Version"
+          },
+          "preferred_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Currency"
+          },
+          "profile_completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Completed At"
+          },
+          "time_zone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Zone"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "username",
+          "display_name",
+          "country_code",
+          "city_slug",
+          "locale",
+          "time_zone",
+          "preferred_currency",
+          "notify_security_email",
+          "notify_event_email",
+          "notify_community_email",
+          "organizer_rules_version",
+          "community_rules_version",
+          "profile_completed_at"
+        ],
+        "title": "ProfileResponse",
         "type": "object"
       },
       "ReadyResponse": {
@@ -1465,6 +1749,170 @@
         "summary": "List Countries",
         "tags": [
           "regions"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "getMyProfile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Get My Profile",
+        "tags": [
+          "profiles"
+        ]
+      },
+      "patch": {
+        "operationId": "replaceMyProfile",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileReplacementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Username is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Replace My Profile",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/v1/me/capabilities": {
+      "get": {
+        "operationId": "getMyCapabilities",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Get My Capabilities",
+        "tags": [
+          "profiles"
         ]
       }
     },

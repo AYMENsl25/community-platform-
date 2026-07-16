@@ -210,6 +210,8 @@ async def test_enum_index_trigger_version_and_postgresql_18_invariants(
                 "uq_registrations_active_member_event",
                 "uq_club_memberships_single_owner",
                 "ix_outbox_claim",
+                "ix_clubs_active_owner_eligibility",
+                "ix_events_active_independent_owner_eligibility",
             }.issubset(index_names)
 
             trigger_names = set(
@@ -228,7 +230,7 @@ async def test_enum_index_trigger_version_and_postgresql_18_invariants(
             revision = (
                 await connection.execute(text("SELECT version_num FROM public.alembic_version"))
             ).scalar_one()
-            assert revision == "0004_verification_sessions"
+            assert revision == "0005_profiles_eligibility"
     finally:
         await engine.dispose()
 

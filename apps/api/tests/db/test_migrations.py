@@ -49,10 +49,13 @@ REQUIRED_TABLES = {
 }
 
 
-def test_alembic_has_exactly_one_recovery_sessions_head() -> None:
+def test_alembic_has_exactly_one_profiles_eligibility_head() -> None:
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
 
-    assert scripts.get_heads() == ["0004_verification_sessions"]
+    assert scripts.get_heads() == ["0005_profiles_eligibility"]
+    assert scripts.get_revision("0005_profiles_eligibility").down_revision == (
+        "0004_verification_sessions"
+    )
     assert scripts.get_revision("0004_verification_sessions").down_revision == (
         "0003_identity_authentication"
     )
@@ -202,6 +205,30 @@ async def _recovery_session_migration_state(database_url: SecretStr) -> tuple[bo
                         to_regclass('talaqi.ix_sessions_active_family') IS NOT NULL,
                         (SELECT count(*) FROM talaqi.schema_revisions
                          WHERE revision='2026-07-15-verification-rotating-sessions')"""
+                    )
+                )
+            ).one()
+            return cast(tuple[bool, bool, int], tuple(row))
+    finally:
+        await engine.dispose()
+
+
+async def _profiles_eligibility_migration_state(
+    database_url: SecretStr,
+) -> tuple[bool, bool, int]:
+    engine = build_async_engine(database_url)
+    try:
+        async with engine.connect() as connection:
+            row = (
+                await connection.execute(
+                    text(
+                        """SELECT
+                        to_regclass('talaqi.ix_clubs_active_owner_eligibility') IS NOT NULL,
+                        to_regclass(
+                            'talaqi.ix_events_active_independent_owner_eligibility'
+                        ) IS NOT NULL,
+                        (SELECT count(*) FROM talaqi.schema_revisions
+                         WHERE revision='2026-07-16-profiles-eligibility')"""
                     )
                 )
             ).one()
@@ -369,11 +396,29 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0004_verification_sessions"
+    assert revision == "0005_profiles_eligibility"
     assert asyncio.run(_regional_seed_counts(test_database_url)) == (2, 2, 6, 2, 1)
     assert asyncio.run(_regional_catalog_state(test_database_url)) == APPROVED_CATALOG
     assert asyncio.run(_server_uuid_version(test_database_url)) == 7
     assert asyncio.run(_recovery_session_migration_state(test_database_url)) == (True, True, 1)
+    assert asyncio.run(_profiles_eligibility_migration_state(test_database_url)) == (
+        True,
+        True,
+        1,
+    )
+
+    command.downgrade(config, "0004_verification_sessions")
+    assert asyncio.run(_profiles_eligibility_migration_state(test_database_url)) == (
+        False,
+        False,
+        0,
+    )
+    command.upgrade(config, "head")
+    assert asyncio.run(_profiles_eligibility_migration_state(test_database_url)) == (
+        True,
+        True,
+        1,
+    )
 
     command.downgrade(config, "0003_identity_authentication")
     assert asyncio.run(_recovery_session_migration_state(test_database_url)) == (
@@ -402,4 +447,4 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0004_verification_sessions"
+    assert revision == "0005_profiles_eligibility"

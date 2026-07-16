@@ -3,7 +3,17 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime, timedelta
 
-from talaqi.regions.models import Category, City, Country, DeadlineObligation, RegionPolicy
+from talaqi.platform import ApiError
+from talaqi.regions.models import (
+    Category,
+    City,
+    Country,
+    DeadlineObligation,
+    Locale,
+    ProfileRegion,
+    ProfileRegionSnapshot,
+    RegionPolicy,
+)
 from talaqi.regions.repository import RegionRepository
 
 
@@ -22,6 +32,16 @@ class RegionPolicyService:
 
     async def list_categories(self) -> tuple[Category, ...]:
         return await self._repository.list_categories()
+
+    async def resolve_profile_region(self, country_code: str, city_slug: str) -> ProfileRegion:
+        snapshot = await self._repository.get_profile_region(country_code, city_slug)
+        return _validated_profile_region(snapshot)
+
+    async def lock_profile_region(self, country_code: str, city_slug: str) -> ProfileRegion:
+        """Resolve and lock profile region metadata until the request transaction ends."""
+
+        snapshot = await self._repository.lock_profile_region(country_code, city_slug)
+        return _validated_profile_region(snapshot)
 
     @staticmethod
     def validate_deadlines(
@@ -64,3 +84,30 @@ def _whole_minutes(duration: timedelta) -> int:
     if total_seconds < 0 or total_seconds % 60 != 0:
         raise ValueError("active obligation duration must be non-negative whole minutes")
     return int(total_seconds // 60)
+
+
+_SUPPORTED_PROFILE_LOCALES: dict[str, tuple[Locale, ...]] = {
+    "TR": ("en", "tr"),
+    "DZ": ("en", "fr", "ar"),
+}
+
+
+def _validated_profile_region(snapshot: ProfileRegionSnapshot) -> ProfileRegion:
+    if not snapshot.country_enabled or not snapshot.city_enabled or not snapshot.beta_enabled:
+        raise ApiError(
+            code="region_not_found",
+            message_key="errors.region_not_found",
+            status_code=404,
+        )
+    return ProfileRegion(
+        country_code=snapshot.country_code,
+        city_slug=snapshot.city_slug,
+        supported_locales=_SUPPORTED_PROFILE_LOCALES.get(
+            snapshot.country_code,
+            (snapshot.default_locale,),
+        ),
+        default_currency=snapshot.default_currency,
+        time_zone=snapshot.time_zone,
+        club_limit=snapshot.club_limit,
+        independent_event_limit=snapshot.independent_event_limit,
+    )

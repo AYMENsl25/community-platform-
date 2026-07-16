@@ -123,6 +123,8 @@ class Settings(BaseSettings):
     session_secret: SecretStr
     current_terms_version: str = Field(default="2026-07-11", min_length=1, max_length=64)
     current_privacy_version: str = Field(default="2026-07-11", min_length=1, max_length=64)
+    current_organizer_rules_version: str = Field(default="2026-07-11", min_length=1, max_length=64)
+    current_community_rules_version: str = Field(default="2026-07-11", min_length=1, max_length=64)
     cookie_secure: bool
     admin_mfa_required: bool
     database_url: SecretStr

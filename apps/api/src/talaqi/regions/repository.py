@@ -6,7 +6,14 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.platform import ApiError
-from talaqi.regions.models import Category, City, Country, Locale, RegionPolicy
+from talaqi.regions.models import (
+    Category,
+    City,
+    Country,
+    Locale,
+    ProfileRegionSnapshot,
+    RegionPolicy,
+)
 
 
 class RegionRepository:
@@ -140,4 +147,71 @@ class RegionRepository:
                 sort_order=row["sort_order"],
             )
             for row in rows
+        )
+
+    async def get_profile_region(self, country_code: str, city_slug: str) -> ProfileRegionSnapshot:
+        return await self._profile_region_snapshot(country_code, city_slug, lock=False)
+
+    async def lock_profile_region(self, country_code: str, city_slug: str) -> ProfileRegionSnapshot:
+        return await self._profile_region_snapshot(country_code, city_slug, lock=True)
+
+    async def _profile_region_snapshot(
+        self,
+        country_code: str,
+        city_slug: str,
+        *,
+        lock: bool,
+    ) -> ProfileRegionSnapshot:
+        lock_clause = " FOR SHARE OF country, city, policy" if lock else ""
+        statement = text(
+            """
+            SELECT
+                country.code,
+                country.default_locale,
+                country.default_currency,
+                country.enabled AS country_enabled,
+                city.slug,
+                city.time_zone,
+                city.enabled AS city_enabled,
+                city.beta_enabled,
+                policy.default_club_ownership_limit,
+                policy.default_active_independent_event_limit
+            FROM talaqi.countries AS country
+            JOIN talaqi.cities AS city ON city.country_id = country.id
+            JOIN talaqi.regional_policies AS policy ON policy.country_id = country.id
+            WHERE country.code = :country_code
+              AND city.slug = :city_slug
+            """
+            + lock_clause
+        )
+        row = (
+            (
+                await self._session.execute(
+                    statement,
+                    {
+                        "country_code": country_code.strip().upper(),
+                        "city_slug": city_slug.strip().lower(),
+                    },
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            raise ApiError(
+                code="region_not_found",
+                message_key="errors.region_not_found",
+                status_code=404,
+            )
+        return ProfileRegionSnapshot(
+            country_code=row["code"].strip(),
+            city_slug=row["slug"],
+            default_locale=cast(Locale, row["default_locale"]),
+            default_currency=row["default_currency"].strip(),
+            time_zone=row["time_zone"],
+            country_enabled=row["country_enabled"],
+            city_enabled=row["city_enabled"],
+            beta_enabled=row["beta_enabled"],
+            club_limit=row["default_club_ownership_limit"],
+            independent_event_limit=row["default_active_independent_event_limit"],
         )

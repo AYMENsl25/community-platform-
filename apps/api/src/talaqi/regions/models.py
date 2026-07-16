@@ -53,3 +53,32 @@ class RegionPolicy:
     independent_event_limit: int
     exact_venue_public_by_default: bool
     revision: int
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileRegionSnapshot:
+    """Single-statement database snapshot used by profile and eligibility boundaries."""
+
+    country_code: str
+    city_slug: str
+    default_locale: Locale
+    default_currency: str
+    time_zone: str
+    country_enabled: bool
+    city_enabled: bool
+    beta_enabled: bool
+    club_limit: int
+    independent_event_limit: int
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileRegion:
+    """Public typed boundary used to validate profile/region combinations."""
+
+    country_code: str
+    city_slug: str
+    supported_locales: tuple[Locale, ...]
+    default_currency: str
+    time_zone: str
+    club_limit: int
+    independent_event_limit: int
