@@ -1,0 +1,20 @@
+.tq-locale-selector {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-inline-size: 100%;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.tq-locale-selector select {
+  min-block-size: 44px;
+  max-inline-size: 100%;
+  padding-block: 0.5rem;
+  padding-inline: 0.75rem 2rem;
+  border: 1px solid var(--tq-color-border, #b8c5bf);
+  border-radius: 0.65rem;
+  background: var(--tq-color-surface, #fff);
+  color: inherit;
+  font: inherit;
+}

@@ -7,14 +7,16 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-literals.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsc --noEmit"
   },
   "devDependencies": {
     "@talaqi/config": "workspace:*",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
+    "jsdom": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
