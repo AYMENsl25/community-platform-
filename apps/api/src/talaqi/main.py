@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
+from talaqi.discovery.routes import router as discovery_router
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.identity.rate_limits import install_auth_rate_limits
 from talaqi.identity.routes import router as identity_router
@@ -62,6 +63,7 @@ def create_app(
     application.include_router(regions_router)
     application.include_router(identity_router)
     application.include_router(profiles_router)
+    application.include_router(discovery_router)
     install_openapi(application)
     return application
 

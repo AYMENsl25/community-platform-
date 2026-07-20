@@ -204,6 +204,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Clubs */
+        get: operations["listClubs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Club */
+        get: operations["getClub"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/countries": {
         parameters: {
             query?: never;
@@ -216,6 +250,58 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Events */
+        get: operations["listEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event */
+        get: operations["getEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Event */
+        put: operations["saveEvent"];
+        post?: never;
+        /** Unsave Event */
+        delete: operations["unsaveEvent"];
         options?: never;
         head?: never;
         patch?: never;
@@ -256,6 +342,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/saved-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Events */
+        get: operations["listSavedEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Metadata */
+        get: operations["getDiscoveryMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/regions/{country_code}/policy": {
         parameters: {
             query?: never;
@@ -265,6 +385,23 @@ export interface paths {
         };
         /** Get Region Policy */
         get: operations["getRegionPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Discovery */
+        get: operations["searchDiscovery"];
         put?: never;
         post?: never;
         delete?: never;
@@ -376,6 +513,59 @@ export interface components {
             /** Time Zone */
             time_zone: string;
         };
+        /** ClubCardResponse */
+        ClubCardResponse: {
+            /** Category Slug */
+            category_slug: string;
+            /** City Slug */
+            city_slug: string;
+            /** Country Code */
+            country_code: string;
+            /** Cover Storage Key */
+            cover_storage_key: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
+        /** ClubDetailResponse */
+        ClubDetailResponse: {
+            /** Category Slug */
+            category_slug: string;
+            /** City Slug */
+            city_slug: string;
+            /** Country Code */
+            country_code: string;
+            /** Cover Storage Key */
+            cover_storage_key: string | null;
+            /** Description */
+            description: string;
+            /** Events */
+            events: components["schemas"]["EventCardResponse"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+        };
+        /** ClubPageResponse */
+        ClubPageResponse: {
+            /** Items */
+            items: components["schemas"]["ClubCardResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** ConfirmedResponse */
         ConfirmedResponse: {
             /**
@@ -404,6 +594,38 @@ export interface components {
             items: unknown[];
             next_cursor: string | null;
         };
+        /** DiscoveryMetadataResponse */
+        DiscoveryMetadataResponse: {
+            /** Categories */
+            categories: {
+                [key: string]: string;
+            }[];
+            /** Cities */
+            cities: {
+                [key: string]: string;
+            }[];
+            /** Countries */
+            countries: {
+                [key: string]: string;
+            }[];
+            /**
+             * Price Types
+             * @default [
+             *       "free",
+             *       "cash"
+             *     ]
+             */
+            price_types: [
+                "free",
+                "cash"
+            ];
+            /**
+             * Sort
+             * @default featured
+             * @constant
+             */
+            sort: "featured";
+        };
         /** ErrorDetail */
         ErrorDetail: {
             code: string;
@@ -415,6 +637,68 @@ export interface components {
         /** ErrorEnvelope */
         ErrorEnvelope: {
             error: components["schemas"]["ErrorDetail"];
+        };
+        /** EventCardResponse */
+        EventCardResponse: {
+            /** Available Places */
+            available_places: number;
+            /** Capacity */
+            capacity: number;
+            /** Category Slug */
+            category_slug: string;
+            /** City Slug */
+            city_slug: string;
+            /** Club Name */
+            club_name: string | null;
+            /** Club Slug */
+            club_slug: string | null;
+            /** Country Code */
+            country_code: string;
+            /** Cover Storage Key */
+            cover_storage_key: string | null;
+            /** Description */
+            description: string;
+            /** District */
+            district: string | null;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Saved */
+            is_saved: boolean;
+            /** Organizer Display Name */
+            organizer_display_name: string | null;
+            /**
+             * Price Type
+             * @enum {string}
+             */
+            price_type: "free" | "cash";
+            /** Public Meeting Area */
+            public_meeting_area: string | null;
+            /** Registration State */
+            registration_state: string | null;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /** Time Zone */
+            time_zone: string;
+            /** Title */
+            title: string;
+        };
+        /** EventPageResponse */
+        EventPageResponse: {
+            /** Items */
+            items: components["schemas"]["EventCardResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** FieldError */
         FieldError: {
@@ -618,6 +902,40 @@ export interface components {
              * @constant
              */
             revoked: true;
+        };
+        /** SearchItemResponse */
+        SearchItemResponse: {
+            /** Category Slug */
+            category_slug: string;
+            /** City Slug */
+            city_slug: string;
+            /** Country Code */
+            country_code: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "event" | "club";
+            /** Slug */
+            slug: string | null;
+            /** Start At */
+            start_at: string | null;
+            /** Title */
+            title: string;
+        };
+        /** SearchPageResponse */
+        SearchPageResponse: {
+            /** Items */
+            items: components["schemas"]["SearchItemResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
         };
         /** SessionResponse */
         SessionResponse: {
@@ -1190,6 +1508,69 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    listClubs: {
+        parameters: {
+            query?: {
+                category?: string | null;
+                city?: string | null;
+                country?: string | null;
+                cursor?: string | null;
+                limit?: number;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getClub: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubDetailResponse"];
+                };
+            };
+            /** @description Public resource not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     listCountries: {
         parameters: {
             query?: never;
@@ -1209,6 +1590,176 @@ export interface operations {
                     "application/json": components["schemas"]["CountryResponse"][];
                 };
             };
+        };
+    };
+    listEvents: {
+        parameters: {
+            query?: {
+                category?: string | null;
+                city?: string | null;
+                country?: string | null;
+                cursor?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                price?: string | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCardResponse"];
+                };
+            };
+            /** @description Public resource not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    saveEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Public resource not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    unsaveEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Public resource not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
         };
     };
     getMyProfile: {
@@ -1329,6 +1880,62 @@ export interface operations {
             };
         };
     };
+    listSavedEvents: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getDiscoveryMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryMetadataResponse"];
+                };
+            };
+        };
+    };
     getRegionPolicy: {
         parameters: {
             query?: never;
@@ -1358,6 +1965,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    searchDiscovery: {
+        parameters: {
+            query: {
+                category?: string | null;
+                city?: string | null;
+                country?: string | null;
+                cursor?: string | null;
+                limit?: number;
+                search: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPageResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];
