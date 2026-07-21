@@ -19,7 +19,7 @@
   },
   "devDependencies": {
     "@talaqi/config": "workspace:*",
-    "@tailwindcss/postcss": "4.3.2",
+    "@tailwindcss/postcss": "4.3.3",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/node": "catalog:",
@@ -28,7 +28,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.10",
     "jsdom": "catalog:",
-    "tailwindcss": "4.3.2",
+    "tailwindcss": "4.3.3",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
