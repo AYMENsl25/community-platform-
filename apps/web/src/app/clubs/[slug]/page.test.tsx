@@ -21,6 +21,7 @@ const club = {
   city_slug: "istanbul",
   category_slug: "sports",
   cover_storage_key: "private/key",
+  member_count: 42,
   events: [],
 } satisfies components["schemas"]["ClubDetailResponse"];
 

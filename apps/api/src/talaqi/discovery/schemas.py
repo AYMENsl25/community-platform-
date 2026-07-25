@@ -50,6 +50,7 @@ class ClubCardResponse(BaseModel):
     city_slug: str
     category_slug: str
     cover_storage_key: str | None
+    member_count: int = Field(ge=0)
 
 
 class ClubPageResponse(BaseModel):

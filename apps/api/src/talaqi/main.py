@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from sqlalchemy import text
 
+from talaqi.clubs.membership_routes import router as club_memberships_router
 from talaqi.clubs.routes import router as clubs_router
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
@@ -65,6 +66,7 @@ def create_app(
     application.include_router(identity_router)
     application.include_router(profiles_router)
     application.include_router(clubs_router)
+    application.include_router(club_memberships_router)
     application.include_router(discovery_router)
     install_openapi(application)
     return application

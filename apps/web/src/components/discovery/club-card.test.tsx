@@ -13,6 +13,7 @@ const club = {
   city_slug: "istanbul",
   category_slug: "social",
   cover_storage_key: "private/club/key",
+  member_count: 42,
 } satisfies components["schemas"]["ClubCardResponse"];
 
 describe("ClubCard", () => {

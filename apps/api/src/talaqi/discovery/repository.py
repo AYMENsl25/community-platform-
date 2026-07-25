@@ -61,6 +61,7 @@ def _club(row: Mapping[str, object]) -> ClubCard:
         city_slug=cast(str, row["city_slug"]),
         category_slug=cast(str, row["category_slug"]),
         cover_storage_key=cast(str | None, row["cover_storage_key"]),
+        member_count=cast(int, row["member_count"]),
     )
 
 
@@ -230,7 +231,12 @@ class DiscoveryRepository:
                                club.description,
                                country.code AS country_code, city.slug AS city_slug,
                                category.slug AS category_slug,
-                               cover.storage_key AS cover_storage_key
+                               cover.storage_key AS cover_storage_key,
+                               (
+                                   SELECT count(*)::integer
+                                   FROM talaqi.club_memberships AS membership
+                                   WHERE membership.club_id = club.id
+                               ) AS member_count
                         FROM talaqi.clubs AS club
                         JOIN talaqi.countries AS country ON country.id = club.country_id
                         JOIN talaqi.cities AS city ON city.id = club.city_id

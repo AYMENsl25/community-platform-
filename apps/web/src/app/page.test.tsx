@@ -45,6 +45,7 @@ const club = {
   city_slug: "istanbul",
   category_slug: "sports",
   cover_storage_key: null,
+  member_count: 42,
 } satisfies components["schemas"]["ClubCardResponse"];
 
 const landing = { metadata, featuredEvents: [event], popularClubs: [club] };

@@ -134,3 +134,4 @@ class ClubCard:
     city_slug: str
     category_slug: str
     cover_storage_key: str | None
+    member_count: int
