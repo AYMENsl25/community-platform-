@@ -197,6 +197,8 @@ export const englishDictionary = {
   "errors.conflict": "This change conflicts with current data.",
   "errors.csrf_failed": "Your secure form session expired. Try again.",
   "errors.forbidden": "You do not have permission to do that.",
+  "errors.admin_mfa_required":
+    "Complete multi-factor authentication to continue.",
   "errors.http": "The request failed.",
   "errors.idempotency_conflict":
     "This request key was already used for different data.",

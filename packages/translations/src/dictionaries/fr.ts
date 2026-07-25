@@ -206,6 +206,8 @@ export const frenchDictionary: Dictionary = {
   "errors.csrf_failed":
     "Votre formulaire sécurisé a expiré. Veuillez réessayer.",
   "errors.forbidden": "Vous n’avez pas le droit d’effectuer cette action.",
+  "errors.admin_mfa_required":
+    "Terminez l’authentification multifacteur pour continuer.",
   "errors.http": "La demande a échoué.",
   "errors.idempotency_conflict":
     "Cette clé de requête a déjà été utilisée avec d’autres données.",

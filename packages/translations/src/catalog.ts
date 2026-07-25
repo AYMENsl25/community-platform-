@@ -17,6 +17,7 @@ export const dictionaries = {
 
 export const API_MESSAGE_KEYS = [
   "errors.unknown",
+  "errors.admin_mfa_required",
   "errors.authentication_required",
   "errors.bad_request",
   "errors.conflict",

@@ -202,6 +202,8 @@ export const turkishDictionary = {
   "errors.conflict": "Bu değişiklik mevcut verilerle çakışıyor.",
   "errors.csrf_failed": "Güvenli form oturumunuz sona erdi. Yeniden deneyin.",
   "errors.forbidden": "Bu işlemi yapma izniniz yok.",
+  "errors.admin_mfa_required":
+    "Devam etmek için çok faktörlü kimlik doğrulamayı tamamlayın.",
   "errors.http": "İstek başarısız oldu.",
   "errors.idempotency_conflict":
     "Bu istek anahtarı daha önce farklı veriler için kullanılmış.",

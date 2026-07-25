@@ -197,6 +197,7 @@ export const arabicDictionary: Dictionary = {
   "errors.conflict": "يتعارض هذا التغيير مع البيانات الحالية.",
   "errors.csrf_failed": "انتهت صلاحية جلسة النموذج الآمنة. حاول مرة أخرى.",
   "errors.forbidden": "ليست لديك صلاحية لتنفيذ ذلك.",
+  "errors.admin_mfa_required": "أكمل المصادقة متعددة العوامل للمتابعة.",
   "errors.http": "فشل الطلب.",
   "errors.idempotency_conflict": "سبق استخدام مفتاح الطلب هذا لبيانات مختلفة.",
   "errors.idempotency_in_progress": "هذا الطلب قيد المعالجة بالفعل.",
