@@ -214,11 +214,30 @@ export interface paths {
         /** List Clubs */
         get: operations["listClubs"];
         put?: never;
-        post?: never;
+        /** Create Club */
+        post: operations["createClub"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clubs/{club_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Managed Club */
+        get: operations["getManagedClub"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Club */
+        patch: operations["updateClub"];
         trace?: never;
     };
     "/api/v1/clubs/{slug}": {
@@ -535,6 +554,35 @@ export interface components {
             /** Slug */
             slug: string;
         };
+        /** ClubCreateRequest */
+        ClubCreateRequest: {
+            /** Category Slug */
+            category_slug?: string | null;
+            /** City Slug */
+            city_slug?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            /** Cover Media Id */
+            cover_media_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Logo Media Id */
+            logo_media_id?: string | null;
+            /**
+             * Membership Policy
+             * @default open
+             * @enum {string}
+             */
+            membership_policy: "open" | "approval_required";
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Social Links */
+            social_links?: {
+                [key: string]: string;
+            };
+        };
         /** ClubDetailResponse */
         ClubDetailResponse: {
             /** Category Slug */
@@ -565,6 +613,93 @@ export interface components {
             items: components["schemas"]["ClubCardResponse"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** ClubPatchRequest */
+        ClubPatchRequest: {
+            /** Category Slug */
+            category_slug?: string | null;
+            /** City Slug */
+            city_slug?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            /** Cover Media Id */
+            cover_media_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Logo Media Id */
+            logo_media_id?: string | null;
+            /** Membership Policy */
+            membership_policy?: ("open" | "approval_required") | null;
+            /** Name */
+            name?: string | null;
+            /** Revision */
+            revision: number;
+            /** Slug */
+            slug?: string | null;
+            /** Social Links */
+            social_links?: {
+                [key: string]: string;
+            } | null;
+        };
+        /** ClubResponse */
+        ClubResponse: {
+            /** Category Slug */
+            category_slug: string | null;
+            /** City Slug */
+            city_slug: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Country Code */
+            country_code: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Logo Media Id */
+            logo_media_id: string | null;
+            /**
+             * Membership Policy
+             * @enum {string}
+             */
+            membership_policy: "open" | "approval_required";
+            /** Missing Fields */
+            missing_fields: string[];
+            /** Name */
+            name: string;
+            /** Published At */
+            published_at: string | null;
+            /** Revision */
+            revision: number;
+            /** Slug */
+            slug: string;
+            /** Social Links */
+            social_links: {
+                [key: string]: string;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "unpublished" | "suspended" | "closed";
+            /** Suspended At */
+            suspended_at: string | null;
+            /** Suspension Reason */
+            suspension_reason: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** ConfirmedResponse */
         ConfirmedResponse: {
@@ -1532,6 +1667,187 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClubPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    createClub: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying this club creation request. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Slug, revision, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getManagedClub: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Club not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    updateClub: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClubResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Club not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Slug, revision, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
             422: components["responses"]["PlatformError"];

@@ -3,7 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal, cast
@@ -65,6 +66,7 @@ class IdempotencyRepository:
         now: datetime,
         lease_duration: timedelta,
         expires_at: datetime,
+        session: AsyncSession | None = None,
     ) -> IdempotencyAcquisition:
         validated = _validate_acquisition(
             actor_id=actor_id,
@@ -86,9 +88,9 @@ class IdempotencyRepository:
             locked_until=locked_until,
         )
         result: IdempotencyAcquisition
-        async with transactional_session(self._session_factory) as session:
+        async with self._session_scope(session) as active_session:
             inserted = (
-                await session.execute(
+                await active_session.execute(
                     text(
                         """
                         INSERT INTO talaqi.idempotency_keys (
@@ -119,7 +121,7 @@ class IdempotencyRepository:
             else:
                 row = (
                     (
-                        await session.execute(
+                        await active_session.execute(
                             text(
                                 """
                                 SELECT request_hash, response_status, response_body,
@@ -144,7 +146,7 @@ class IdempotencyRepository:
                     .one()
                 )
                 if row["expires_at"] <= validated.now:
-                    await self._reset_claim(session, validated, locked_until)
+                    await self._reset_claim(active_session, validated, locked_until)
                     result = IdempotencyAcquisition(outcome="acquired", claim=claim)
                 elif row["request_hash"] != validated.request_hash:
                     result = IdempotencyAcquisition(outcome="conflict")
@@ -157,7 +159,7 @@ class IdempotencyRepository:
                 elif row["locked_until"] is not None and row["locked_until"] > validated.now:
                     result = IdempotencyAcquisition(outcome="in_progress")
                 else:
-                    await session.execute(
+                    await active_session.execute(
                         text(
                             """
                             UPDATE talaqi.idempotency_keys
@@ -187,14 +189,15 @@ class IdempotencyRepository:
         response_status: int,
         response_body: object,
         completed_at: datetime,
+        session: AsyncSession | None = None,
     ) -> None:
         if not 100 <= response_status <= 599:
             raise ValueError("response status must be between 100 and 599")
         completed_at = _validate_utc(completed_at, "completion time")
         normalized_body = _normalize_json(response_body)
-        async with transactional_session(self._session_factory) as session:
+        async with self._session_scope(session) as active_session:
             completed = (
-                await session.execute(
+                await active_session.execute(
                     text(
                         """
                         UPDATE talaqi.idempotency_keys
@@ -233,6 +236,17 @@ class IdempotencyRepository:
             ).scalar_one_or_none()
             if completed is None:
                 raise IdempotencyClaimLostError("idempotency claim is no longer current")
+
+    @asynccontextmanager
+    async def _session_scope(
+        self,
+        session: AsyncSession | None,
+    ) -> AsyncGenerator[AsyncSession]:
+        if session is not None:
+            yield session
+            return
+        async with transactional_session(self._session_factory) as owned_session:
+            yield owned_session
 
     async def _reset_claim(
         self,
@@ -284,6 +298,7 @@ class IdempotencyCoordinator:
         now: datetime,
         lease_duration: timedelta,
         expires_at: datetime,
+        session: AsyncSession | None = None,
     ) -> IdempotencyAcquisition:
         acquisition = await self._repository.acquire(
             actor_id=actor_id,
@@ -294,6 +309,7 @@ class IdempotencyCoordinator:
             now=now,
             lease_duration=lease_duration,
             expires_at=expires_at,
+            session=session,
         )
         if acquisition.outcome == "conflict":
             raise ApiError(
