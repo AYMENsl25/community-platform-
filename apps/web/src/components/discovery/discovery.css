@@ -1,0 +1,87 @@
+.tq-discovery-card {
+  min-inline-size: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--tq-color-border, #cbd5d1);
+  border-radius: 1rem;
+  background: var(--tq-color-surface, #fff);
+  overflow-wrap: anywhere;
+}
+
+.tq-discovery-card h3 {
+  margin-block: 0.35rem 0.75rem;
+}
+.tq-discovery-card__eyebrow,
+.tq-discovery-note {
+  color: var(--tq-color-text-muted, #43534e);
+}
+.tq-discovery-facts {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+.tq-discovery-facts div {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) 1fr;
+  gap: 0.75rem;
+}
+.tq-discovery-facts dt {
+  font-weight: 700;
+}
+
+.tq-discovery-control,
+.tq-filter-dialog input,
+.tq-filter-dialog select {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+}
+
+.tq-discovery-control {
+  padding-inline: 1rem;
+  cursor: pointer;
+}
+.tq-filter-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow-y: auto;
+  padding: clamp(1rem, 5vw, 3rem);
+  background: var(--tq-color-surface, #fff);
+}
+.tq-filter-dialog form {
+  display: grid;
+  gap: 1rem;
+  max-inline-size: 42rem;
+  margin-inline: auto;
+}
+.tq-filter-dialog label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+.tq-filter-dialog input,
+.tq-filter-dialog select {
+  inline-size: 100%;
+  padding-inline: 0.75rem;
+}
+.tq-filter-dialog__close {
+  display: block;
+  margin-inline-start: auto;
+}
+.tq-result-state {
+  padding: 1.25rem;
+  text-align: center;
+}
+.tq-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tq-filter-dialog {
+    scroll-behavior: auto;
+  }
+}

@@ -9,6 +9,29 @@ import {
 
 const identicalValueAllowlist = new Set<TranslationKey>(["brand.name"]);
 
+it("contains the complete public discovery experience copy contract", () => {
+  const publicKeys = [
+    "home.region.title",
+    "home.region.body",
+    "home.region.action",
+    "home.categories",
+    "home.popularClubs",
+    "home.organizer.title",
+    "home.organizer.body",
+    "home.organizer.action",
+    "discovery.backToExplore",
+    "discovery.clubEvents",
+    "discovery.loadMore",
+    "discovery.rules",
+    "discovery.cancellation",
+    "states.errorTitle",
+  ] as const;
+
+  for (const locale of LOCALE_CODES)
+    for (const key of publicKeys)
+      expect(dictionaries[locale]).toHaveProperty(key);
+});
+
 describe("complete Phase 1 dictionaries", () => {
   it("has exact key parity across all locales", () => {
     const englishKeys = Object.keys(dictionaries.en).sort();

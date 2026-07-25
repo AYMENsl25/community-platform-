@@ -52,7 +52,11 @@ test.describe("request and client locale changes", () => {
   }) => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("lang", "fr");
-    await page.getByRole("combobox").selectOption("ar");
+    await page
+      .getByRole("combobox", {
+        name: translate("fr", "a11y.localeSelector"),
+      })
+      .selectOption("ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator(".tq-public-shell")).toHaveAttribute(
       "dir",

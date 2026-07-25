@@ -7,6 +7,7 @@ import "../components/shell/shells.css";
 import "./globals.css";
 
 import { getLocaleDirection, translate } from "@talaqi/translations";
+import { LocaleProvider } from "@/lib/locale/locale-context";
 import { resolveRequestLocale } from "@/lib/locale/request-locale";
 
 export const metadata: Metadata = {
@@ -21,7 +22,9 @@ export default async function RootLayout({
   const locale = await resolveRequestLocale();
   return (
     <html dir={getLocaleDirection(locale)} lang={locale}>
-      <body>{children}</body>
+      <body>
+        <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

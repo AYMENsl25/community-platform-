@@ -21,6 +21,7 @@ type NavigationItem = {
 };
 
 const publicNavigation: NavigationItem[] = [
+  { href: "/explore", label: "shell.navigation.explore" },
   { href: "/", label: "shell.navigation.home" },
   { href: "#community", label: "shell.navigation.community" },
   { href: "#about", label: "shell.navigation.about" },

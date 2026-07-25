@@ -19,3 +19,51 @@ textarea {
 img {
   max-inline-size: 100%;
 }
+
+.tq-landing-sections {
+  display: grid;
+  gap: clamp(2rem, 6vw, 4rem);
+  padding-block-end: clamp(3rem, 8vw, 6rem);
+}
+
+.tq-landing-sections h2 {
+  color: var(--tq-color-brand-strong);
+}
+
+.tq-landing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--tq-space-5);
+}
+
+.tq-category-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tq-space-3);
+}
+
+.tq-category-links a {
+  min-block-size: var(--tq-touch-target);
+  padding-block: var(--tq-space-3);
+  padding-inline: var(--tq-space-4);
+  border: 1px solid var(--tq-color-border);
+  border-radius: var(--tq-radius-pill);
+}
+
+.tq-region-form {
+  display: grid;
+  gap: var(--tq-space-3);
+}
+
+.tq-region-form label {
+  display: grid;
+  gap: var(--tq-space-1);
+  font-weight: 700;
+}
+
+.tq-region-form select {
+  min-block-size: var(--tq-touch-target);
+  min-inline-size: 0;
+  inline-size: 100%;
+  padding-inline: var(--tq-space-3);
+}

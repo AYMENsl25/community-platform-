@@ -41,6 +41,22 @@ describe("public shell", () => {
       "aria-current",
     );
   });
+  it("links to Explore and marks it on discovery routes", () => {
+    render(
+      <PublicShell locale="en" currentHref="/explore">
+        Content
+      </PublicShell>,
+    );
+
+    expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute(
+      "href",
+      "/explore",
+    );
+    expect(screen.getByRole("link", { name: "Explore" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
 
   it("allows the first focusable skip link to receive keyboard focus", () => {
     const { container } = render(
