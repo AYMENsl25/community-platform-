@@ -7,6 +7,16 @@ from uuid import UUID
 
 ClubMembershipPolicy = Literal["open", "approval_required"]
 ClubStatus = Literal["draft", "published", "unpublished", "suspended", "closed"]
+ClubRole = Literal["owner", "admin", "member"]
+ManagedClubRole = Literal["owner", "admin"]
+WorkspaceCapability = Literal[
+    "edit_profile",
+    "manage_members",
+    "change_member_roles",
+    "transfer_ownership",
+    "close_club",
+    "preview_profile",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,3 +80,17 @@ class Club:
     closed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class ClubAccess:
+    club_id: UUID
+    user_id: UUID
+    role: ClubRole
+
+
+@dataclass(frozen=True, slots=True)
+class ManagedClub:
+    club: Club
+    role: ManagedClubRole
+    capabilities: tuple[WorkspaceCapability, ...]

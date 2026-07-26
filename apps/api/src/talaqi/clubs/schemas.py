@@ -69,3 +69,24 @@ class ClubResponse(BaseModel):
     closed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+WorkspaceCapability = Literal[
+    "edit_profile",
+    "manage_members",
+    "change_member_roles",
+    "transfer_ownership",
+    "close_club",
+    "preview_profile",
+]
+
+
+class ManagedClubResponse(ClubResponse):
+    role: Literal["owner", "admin"]
+    capabilities: tuple[WorkspaceCapability, ...]
+
+
+class ManagedClubPageResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    items: list[ManagedClubResponse]

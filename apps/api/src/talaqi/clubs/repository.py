@@ -12,9 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.clubs.models import (
     Club,
+    ClubAccess,
     ClubMembershipPolicy,
     ClubReferences,
+    ClubRole,
     ClubStatus,
+    ManagedClubRole,
 )
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.platform import ApiError
@@ -99,6 +102,16 @@ class ClubRepositoryProtocol(Protocol):
     ) -> Club: ...
 
     async def get(self, club_id: UUID, *, for_update: bool = False) -> Club | None: ...
+
+    async def get_access(
+        self,
+        club_id: UUID,
+        user_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> ClubAccess | None: ...
+
+    async def list_managed(self, user_id: UUID) -> list[tuple[Club, ManagedClubRole]]: ...
 
     async def update(
         self,
@@ -317,6 +330,81 @@ class ClubRepository:
             .one_or_none()
         )
         return None if row is None else _club(cast(Mapping[str, object], row))
+
+    async def get_access(
+        self,
+        club_id: UUID,
+        user_id: UUID,
+        *,
+        for_update: bool = False,
+    ) -> ClubAccess | None:
+        suffix = " FOR UPDATE OF membership" if for_update else ""
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT membership.club_id, membership.user_id,
+                               membership.role::text AS role
+                        FROM talaqi.club_memberships AS membership
+                        WHERE membership.club_id = :club_id
+                          AND membership.user_id = :user_id
+                        """
+                        + suffix
+                    ),
+                    {"club_id": club_id, "user_id": user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        return ClubAccess(
+            club_id=cast(UUID, row["club_id"]),
+            user_id=cast(UUID, row["user_id"]),
+            role=cast(ClubRole, row["role"]),
+        )
+
+    async def list_managed(self, user_id: UUID) -> list[tuple[Club, ManagedClubRole]]:
+        rows = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT club.id, club.owner_user_id, club.slug, club.name,
+                               club.description, category.slug AS category_slug,
+                               country.code AS country_code, city.slug AS city_slug,
+                               club.membership_policy::text AS membership_policy,
+                               club.social_links, club.logo_media_id, club.cover_media_id,
+                               club.revision, club.status::text AS status,
+                               club.published_at, club.suspended_at,
+                               club.suspension_reason, club.closed_at,
+                               club.created_at, club.updated_at,
+                               membership.role::text AS actor_role
+                        FROM talaqi.club_memberships AS membership
+                        JOIN talaqi.clubs AS club ON club.id = membership.club_id
+                        LEFT JOIN talaqi.categories AS category ON category.id = club.category_id
+                        LEFT JOIN talaqi.countries AS country ON country.id = club.country_id
+                        LEFT JOIN talaqi.cities AS city ON city.id = club.city_id
+                        WHERE membership.user_id = :user_id
+                          AND membership.role IN ('owner', 'admin')
+                        ORDER BY club.updated_at DESC, club.id
+                        """
+                    ),
+                    {"user_id": user_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [
+            (
+                _club(cast(Mapping[str, object], row)),
+                cast(ManagedClubRole, row["actor_role"]),
+            )
+            for row in rows
+        ]
 
     async def update(
         self,

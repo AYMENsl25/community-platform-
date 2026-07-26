@@ -8,7 +8,15 @@ from urllib.parse import urlsplit
 from uuid import UUID
 
 from talaqi.audit import AuditService
-from talaqi.clubs.models import Club, ClubPatch, ClubStatus, NewClub
+from talaqi.clubs.models import (
+    Club,
+    ClubPatch,
+    ClubRole,
+    ClubStatus,
+    ManagedClub,
+    NewClub,
+    WorkspaceCapability,
+)
 from talaqi.clubs.repository import ClubRepositoryProtocol
 from talaqi.db.identifiers import validate_uuid7
 from talaqi.identity.models import AuthPrincipal
@@ -218,10 +226,22 @@ class ClubService:
             )
         return club
 
+    async def list_managed(self, principal: AuthPrincipal) -> tuple[ManagedClub, ...]:
+        if principal.status != "active":
+            raise ApiError(code="forbidden", message_key="errors.forbidden", status_code=403)
+        return tuple(
+            ManagedClub(
+                club=club,
+                role=role,
+                capabilities=self._workspace_capabilities(club, role),
+            )
+            for club, role in await self._repository.list_managed(principal.user_id)
+        )
+
     async def get(self, principal: AuthPrincipal, club_id: UUID) -> Club:
         club = await self._find(club_id)
-        if club.owner_user_id != principal.user_id:
-            raise ApiError(code="forbidden", message_key="errors.forbidden", status_code=403)
+        access = await self._repository.get_access(club.id, principal.user_id)
+        can_edit_club(principal, club, access)
         return club
 
     async def update(
@@ -234,7 +254,8 @@ class ClubService:
         now: datetime | None = None,
     ) -> Club:
         club = await self._find(club_id, for_update=True)
-        can_edit_club(principal, club, None)
+        access = await self._repository.get_access(club.id, principal.user_id, for_update=True)
+        can_edit_club(principal, club, access)
         if patch.revision != club.revision:
             raise ApiError(
                 code="stale_revision",
@@ -251,7 +272,7 @@ class ClubService:
             status = club.status
         candidate = replace(candidate, status=status)
         references = await self._repository.resolve_references(
-            owner_user_id=principal.user_id,
+            owner_user_id=club.owner_user_id,
             category_slug=candidate.category_slug,
             country_code=candidate.country_code,
             city_slug=candidate.city_slug,
@@ -291,6 +312,24 @@ class ClubService:
                 request_id=request_id,
             )
         return updated
+
+    @staticmethod
+    def _workspace_capabilities(club: Club, role: ClubRole) -> tuple[WorkspaceCapability, ...]:
+        if club.status in ("suspended", "closed"):
+            return ()
+        shared: tuple[WorkspaceCapability, ...] = (
+            "edit_profile",
+            "manage_members",
+        )
+        if role == "owner":
+            return (
+                *shared,
+                "change_member_roles",
+                "transfer_ownership",
+                "close_club",
+                "preview_profile",
+            )
+        return (*shared, "preview_profile")
 
     async def _find(self, club_id: UUID, *, for_update: bool = False) -> Club:
         try:

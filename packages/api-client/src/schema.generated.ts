@@ -410,6 +410,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clubs/managed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Managed Clubs */
+        get: operations["listManagedClubs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/countries": {
         parameters: {
             query?: never;
@@ -1087,6 +1104,78 @@ export interface components {
              * @constant
              */
             logged_out: true;
+        };
+        /** ManagedClubPageResponse */
+        ManagedClubPageResponse: {
+            /** Items */
+            items: components["schemas"]["ManagedClubResponse"][];
+        };
+        /** ManagedClubResponse */
+        ManagedClubResponse: {
+            /** Capabilities */
+            capabilities: ("edit_profile" | "manage_members" | "change_member_roles" | "transfer_ownership" | "close_club" | "preview_profile")[];
+            /** Category Slug */
+            category_slug: string | null;
+            /** City Slug */
+            city_slug: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Country Code */
+            country_code: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Logo Media Id */
+            logo_media_id: string | null;
+            /**
+             * Membership Policy
+             * @enum {string}
+             */
+            membership_policy: "open" | "approval_required";
+            /** Missing Fields */
+            missing_fields: string[];
+            /** Name */
+            name: string;
+            /** Published At */
+            published_at: string | null;
+            /** Revision */
+            revision: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "owner" | "admin";
+            /** Slug */
+            slug: string;
+            /** Social Links */
+            social_links: {
+                [key: string]: string;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "unpublished" | "suspended" | "closed";
+            /** Suspended At */
+            suspended_at: string | null;
+            /** Suspension Reason */
+            suspension_reason: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** MemberPageResponse */
         MemberPageResponse: {
@@ -2745,6 +2834,47 @@ export interface operations {
                 };
             };
             422: components["responses"]["PlatformError"];
+        };
+    };
+    listManagedClubs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedClubPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
     listCountries: {

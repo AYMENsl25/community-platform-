@@ -1469,6 +1469,252 @@
         "title": "LogoutResponse",
         "type": "object"
       },
+      "ManagedClubPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedClubResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ManagedClubPageResponse",
+        "type": "object"
+      },
+      "ManagedClubResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "capabilities": {
+            "items": {
+              "enum": [
+                "edit_profile",
+                "manage_members",
+                "change_member_roles",
+                "transfer_ownership",
+                "close_club",
+                "preview_profile"
+              ],
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "category_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Slug"
+          },
+          "city_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City Slug"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "country_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country Code"
+          },
+          "cover_media_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Media Id"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "logo_media_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Media Id"
+          },
+          "membership_policy": {
+            "enum": [
+              "open",
+              "approval_required"
+            ],
+            "title": "Membership Policy",
+            "type": "string"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Fields",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "admin"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "social_links": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Social Links",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "published",
+              "unpublished",
+              "suspended",
+              "closed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suspended_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspended At"
+          },
+          "suspension_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspension Reason"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "category_slug",
+          "country_code",
+          "city_slug",
+          "membership_policy",
+          "social_links",
+          "logo_media_id",
+          "cover_media_id",
+          "revision",
+          "status",
+          "missing_fields",
+          "published_at",
+          "suspended_at",
+          "suspension_reason",
+          "closed_at",
+          "created_at",
+          "updated_at",
+          "role",
+          "capabilities"
+        ],
+        "title": "ManagedClubResponse",
+        "type": "object"
+      },
       "MemberPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3295,6 +3541,62 @@
           }
         },
         "summary": "Create Club",
+        "tags": [
+          "clubs"
+        ]
+      }
+    },
+    "/api/v1/clubs/managed": {
+      "get": {
+        "operationId": "listManagedClubs",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedClubPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Capability, object authorization, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Managed Clubs",
         "tags": [
           "clubs"
         ]

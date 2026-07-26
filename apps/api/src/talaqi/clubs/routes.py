@@ -8,9 +8,15 @@ from fastapi import APIRouter, Header, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.audit import AuditRepository, AuditService
-from talaqi.clubs.models import Club, ClubPatch, NewClub
+from talaqi.clubs.models import Club, ClubPatch, ManagedClub, NewClub
 from talaqi.clubs.repository import ClubRepository
-from talaqi.clubs.schemas import ClubCreateRequest, ClubPatchRequest, ClubResponse
+from talaqi.clubs.schemas import (
+    ClubCreateRequest,
+    ClubPatchRequest,
+    ClubResponse,
+    ManagedClubPageResponse,
+    ManagedClubResponse,
+)
 from talaqi.clubs.service import ClubService, missing_fields
 from talaqi.config import Settings
 from talaqi.identity.dependencies import CsrfProtection, CurrentPrincipal, DatabaseSession
@@ -92,6 +98,14 @@ def _response(club: Club) -> ClubResponse:
         closed_at=club.closed_at,
         created_at=club.created_at,
         updated_at=club.updated_at,
+    )
+
+
+def _managed_response(value: ManagedClub) -> ManagedClubResponse:
+    return ManagedClubResponse(
+        **_response(value.club).model_dump(),
+        role=value.role,
+        capabilities=value.capabilities,
     )
 
 
@@ -189,6 +203,27 @@ async def create_club(
         session=session,
     )
     return result
+
+
+@router.get(
+    "/managed",
+    response_model=ManagedClubPageResponse,
+    operation_id="listManagedClubs",
+    responses={401: _AUTH, 403: _FORBIDDEN},
+)
+async def list_managed_clubs(
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+) -> ManagedClubPageResponse:
+    _private(response)
+    return ManagedClubPageResponse(
+        items=[
+            _managed_response(item)
+            for item in await _service(request, session).list_managed(principal)
+        ]
+    )
 
 
 @router.get(
