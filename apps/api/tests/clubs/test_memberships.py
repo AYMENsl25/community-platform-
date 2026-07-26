@@ -406,3 +406,142 @@ async def test_unverified_user_cannot_join_and_mutations_require_csrf(
     assert denied.status_code == 403
     assert denied.json()["error"]["code"] == "email_verification_required"
     assert no_csrf.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_suspended_club_denies_every_membership_manager_mutation(
+    club_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(club_engine)
+    member = await create_user(club_engine)
+    applicant = await create_user(club_engine)
+    app = app_for(club_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        club_id = await create_club(client, owner, policy="approval_required")
+        member_request = (await join(client, club_id, member)).json()["join_request_id"]
+        approved = await client.post(
+            f"/api/v1/clubs/{club_id}/join-requests/{member_request}/approve",
+            json={"reason": "Approved before suspension"},
+            headers=owner.headers(),
+        )
+        assert approved.status_code == 200
+        pending_request = (await join(client, club_id, applicant)).json()["join_request_id"]
+
+    async with club_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                UPDATE talaqi.clubs
+                SET status = 'suspended', suspended_at = clock_timestamp(),
+                    suspension_reason = 'Safety review'
+                WHERE id = :club_id
+                """
+            ),
+            {"club_id": club_id},
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        denied = [
+            await client.post(
+                f"/api/v1/clubs/{club_id}/join-requests/{pending_request}/approve",
+                json={"reason": "Should remain blocked"},
+                headers=owner.headers(),
+            ),
+            await client.patch(
+                f"/api/v1/clubs/{club_id}/members/{member.user_id}/role",
+                json={"role": "admin", "reason": "Should remain blocked"},
+                headers=owner.headers(),
+            ),
+            await client.post(
+                f"/api/v1/clubs/{club_id}/ownership-transfer",
+                json={"target_user_id": str(member.user_id), "reason": "Blocked"},
+                headers=owner.headers(),
+            ),
+            await client.post(
+                f"/api/v1/clubs/{club_id}/close",
+                json={"reason": "Should remain blocked"},
+                headers=owner.headers(),
+            ),
+            await client.delete(f"/api/v1/clubs/{club_id}/membership", headers=member.headers()),
+        ]
+
+    assert {response.status_code for response in denied} == {403}
+
+
+@pytest.mark.asyncio
+async def test_role_transfer_and_close_emit_reasoned_audit_events(
+    club_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(club_engine)
+    successor = await create_user(club_engine)
+    app = app_for(club_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        club_id = await create_club(client, owner)
+        assert (await join(client, club_id, successor)).status_code == 200
+        promoted = await client.patch(
+            f"/api/v1/clubs/{club_id}/members/{successor.user_id}/role",
+            json={"role": "admin", "reason": "  Trusted organizer  "},
+            headers=owner.headers(),
+        )
+        transferred = await client.post(
+            f"/api/v1/clubs/{club_id}/ownership-transfer",
+            json={
+                "target_user_id": str(successor.user_id),
+                "reason": "  Planned ownership handover  ",
+            },
+            headers=owner.headers(),
+        )
+        closed = await client.post(
+            f"/api/v1/clubs/{club_id}/close",
+            json={"reason": "  Community operations ended  "},
+            headers=successor.headers(),
+        )
+
+    assert promoted.status_code == transferred.status_code == closed.status_code == 200
+    async with club_engine.connect() as connection:
+        audit_rows = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                    SELECT action, actor_user_id, reason, request_id,
+                           safe_before, safe_after
+                    FROM talaqi.audit_events
+                    WHERE (target_id = :club_id AND action IN (
+                              'club.ownership.transfer', 'club.close'
+                          ))
+                       OR (action = 'club.member.role_change'
+                           AND safe_after ->> 'club_id' = CAST(:club_id AS text))
+                    ORDER BY created_at, id
+                    """
+                    ),
+                    {"club_id": club_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+
+    by_action = {row["action"]: row for row in audit_rows}
+    assert by_action["club.member.role_change"]["actor_user_id"] == owner.user_id
+    assert by_action["club.member.role_change"]["reason"] == "Trusted organizer"
+    assert by_action["club.member.role_change"]["safe_before"]["role"] == "member"
+    assert by_action["club.member.role_change"]["safe_after"]["role"] == "admin"
+    assert by_action["club.ownership.transfer"]["actor_user_id"] == owner.user_id
+    assert by_action["club.ownership.transfer"]["reason"] == "Planned ownership handover"
+    assert by_action["club.close"]["actor_user_id"] == successor.user_id
+    assert by_action["club.close"]["reason"] == "Community operations ended"
+    assert all(
+        by_action[action]["request_id"] is not None
+        for action in (
+            "club.member.role_change",
+            "club.ownership.transfer",
+            "club.close",
+        )
+    )
