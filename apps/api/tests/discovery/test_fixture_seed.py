@@ -58,11 +58,11 @@ def test_fixture_target_rejects_unsafe_database_urls(environment: str, database_
     [
         (
             "test",
-            "postgresql+asyncpg://u:p@127.0.0.1/talaqi_test",  # pragma: allowlist secret
+            "postgresql+asyncpg://u:p@127.0.0.1:5432/talaqi_test",  # pragma: allowlist secret
         ),
         (
             "development",
-            "postgresql+asyncpg://u:p@localhost/talaqi",  # pragma: allowlist secret
+            "postgresql+asyncpg://u:p@localhost:5432/talaqi",  # pragma: allowlist secret
         ),
     ],
 )
