@@ -7,6 +7,12 @@
   "engines": {
     "node": ">=24 <25"
   },
+  "pnpm": {
+    "overrides": {
+      "next>postcss": "8.5.23",
+      "next>sharp": "0.35.3"
+    }
+  },
   "scripts": {
     "format:check": "prettier --check .",
     "brand:generate": "node scripts/brand/generate-assets.mjs",
