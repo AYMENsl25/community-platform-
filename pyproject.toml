@@ -32,6 +32,13 @@ extend-exclude = [".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".turbo
 select = ["A", "ASYNC", "B", "C4", "E", "F", "I", "N", "PERF", "PIE", "PT", "PTH", "RET", "RUF", "SIM", "UP", "W"]
 external = ["S"]
 
+[tool.ruff.lint.per-file-ignores]
+# These repositories append only fixed internal FOR UPDATE clauses; all values remain bound.
+"apps/api/src/talaqi/clubs/membership_repository.py" = ["S608"]
+"apps/api/src/talaqi/clubs/repository.py" = ["S608"]
+# This deterministic Argon2 fixture hash is deliberately unusable for authentication.
+"apps/api/src/talaqi/discovery/fixtures.py" = ["S105"]
+
 [tool.pyright]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"

@@ -88,13 +88,13 @@ export type AdminResult<T> =
 
 export interface ModerationCaseQuery {
   status?: ModerationCaseStatus;
+  priority?: ModerationPriority;
   targetType?: ModerationTargetType;
   cursor?: string;
   limit?: number;
 }
 
 export interface AdminAuditEventQuery {
-  caseId?: string;
   targetType?: ModerationTargetType;
   targetId?: string;
   cursor?: string;
@@ -314,6 +314,7 @@ export function createAdminClient(options: AdminClientOptions): AdminClient {
         await request<ApiCasePage>(
           `${moderationBase}/cases${queryString({
             status: query.status,
+            priority: query.priority,
             target_type: query.targetType,
             cursor: query.cursor,
             limit: query.limit,
@@ -352,7 +353,6 @@ export function createAdminClient(options: AdminClientOptions): AdminClient {
       mapResult(
         await request<ApiAuditPage>(
           `/api/v1/admin/audit-events${queryString({
-            case_id: query.caseId,
             target_type: query.targetType,
             target_id: query.targetId,
             cursor: query.cursor,

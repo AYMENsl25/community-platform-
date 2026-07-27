@@ -1,4 +1,4 @@
-﻿import type { Dictionary } from "./en";
+import type { Dictionary } from "./en";
 
 export const turkishDictionary = {
   "brand.name": "Talaqi",
@@ -279,7 +279,7 @@ export const turkishDictionary = {
   "admin.category.fraud": "Dolandırıcılık",
   "admin.category.illegal_content": "Yasa dışı içerik",
   "admin.category.privacy": "Gizlilik",
-  "admin.category.spam": "Spam",
+  "admin.category.spam": "İstenmeyen içerik",
   "admin.category.other": "Diğer",
   "admin.priority.standard": "Standart öncelik",
   "admin.priority.high": "Yüksek öncelik",

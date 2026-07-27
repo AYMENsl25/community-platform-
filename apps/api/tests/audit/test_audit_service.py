@@ -4,7 +4,7 @@ import ipaddress
 from dataclasses import FrozenInstanceError
 from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from talaqi.audit.models import AuditEvent, NewAuditEvent
@@ -31,6 +31,19 @@ class FakeAuditRepository:
             ip_prefix=event.ip_prefix,
             created_at=datetime.now(UTC),
         )
+
+    async def list_audit_events(
+        self,
+        *,
+        target_type: str | None,
+        target_id: UUID | None,
+        actor_user_id: UUID | None,
+        action: str | None,
+        limit: int,
+        after_created_at: datetime | None = None,
+        after_id: UUID | None = None,
+    ) -> list[AuditEvent]:
+        return []
 
 
 @pytest.mark.asyncio

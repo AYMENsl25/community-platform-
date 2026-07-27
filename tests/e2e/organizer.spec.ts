@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.describe.configure({ mode: "serial" });
+
 const organizerClubId = "77777777-7777-4777-8777-777777777777";
 
 async function signInAs(

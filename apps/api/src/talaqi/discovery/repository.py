@@ -179,7 +179,7 @@ class DiscoveryRepository:
                      club.slug, club.name, owner_profile.display_name
             ORDER BY featured_score DESC, event.start_at ASC, event.id ASC
             LIMIT :limit
-        """
+        """  # noqa: S608 -- fixed filter fragments; values are bound
         rows = (await self._session.execute(text(query), params)).mappings().all()
         return [_event(cast(Mapping[str, object], row)) for row in rows]
 
@@ -244,7 +244,7 @@ class DiscoveryRepository:
                         LEFT JOIN talaqi.media_assets AS cover ON cover.id = club.cover_media_id
                             AND cover.status = 'verified'
                         WHERE {" AND ".join(conditions)}
-                        ORDER BY lower(club.name) ASC, club.id ASC LIMIT :limit"""
+                        ORDER BY lower(club.name) ASC, club.id ASC LIMIT :limit"""  # noqa: S608 -- fixed filter fragments
                     ),
                     params,
                 )
@@ -333,7 +333,7 @@ class DiscoveryRepository:
             {after_sql}
             ORDER BY result.title_key ASC, result.kind ASC, result.id ASC
             LIMIT :limit
-        """
+        """  # noqa: S608 -- fixed filter fragments; values are bound
         rows = (await self._session.execute(text(query), params)).mappings().all()
         return [_search(cast(Mapping[str, object], row)) for row in rows]
 
@@ -354,7 +354,7 @@ class DiscoveryRepository:
                          ON CONFLICT (user_id, event_id) DO NOTHING
                          RETURNING event_id
                      )
-                     SELECT EXISTS (SELECT 1 FROM public_event)"""
+                     SELECT EXISTS (SELECT 1 FROM public_event)"""  # noqa: S608 -- fixed public predicate
             ),
             {"user_id": user_id, "event_id": event_id},
         )
@@ -378,7 +378,7 @@ class DiscoveryRepository:
                            AND saved.event_id = public_event.id
                          RETURNING saved.event_id
                      )
-                     SELECT EXISTS (SELECT 1 FROM public_event)"""
+                     SELECT EXISTS (SELECT 1 FROM public_event)"""  # noqa: S608 -- fixed public predicate
             ),
             {"user_id": user_id, "event_id": event_id},
         )

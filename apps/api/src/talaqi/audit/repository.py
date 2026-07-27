@@ -58,7 +58,7 @@ class AuditRepository:
                             :request_id, CAST(:ip_prefix AS inet)
                         )
                         RETURNING created_at
-                        """
+                        """  # noqa: S608 -- fixed filter fields; values are bound
                     ),
                     params,
                 )
@@ -112,7 +112,7 @@ class AuditRepository:
                         {where}
                         ORDER BY created_at DESC, id DESC
                         LIMIT :limit
-                        """
+                        """  # noqa: S608 -- fixed filter fields; values are bound
                     ),
                     params,
                 )

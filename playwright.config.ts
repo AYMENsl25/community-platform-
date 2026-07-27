@@ -2,7 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  fullyParallel: true,
+  // The fixture API intentionally models cross-request moderation and organizer
+  // state. Keep the repository-wide gate serial so suites cannot mutate the
+  // same target while another suite is asserting its public state.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: "list",

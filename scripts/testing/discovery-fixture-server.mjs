@@ -137,34 +137,34 @@ let adminAuditEvents = [];
 function adminTarget() {
   return {
     id: clubs[0].id,
-    target_type: "club",
-    display_name: clubs[0].name,
-    secondary_text: "Istanbul",
+    type: "club",
+    label: clubs[0].name,
+    secondary_label: "Istanbul",
     status: adminTargetStatus,
   };
 }
 
 function adminCase() {
+  const actioned = adminActionHistory.length > 0;
   return {
     id: adminCaseId,
     target: adminTarget(),
     category: "safety",
     priority: "emergency",
-    status: adminActionHistory.length ? "actioned" : "open",
-    is_emergency: true,
-    report_count: 2,
-    capabilities: [
-      "view_moderation_cases",
-      "search_moderation_targets",
-      "view_admin_audit",
-    ],
+    status: actioned ? "actioned" : "open",
+    assigned_admin_user_id: null,
+    resolution_reason: actioned
+      ? adminActionHistory[adminActionHistory.length - 1].reason
+      : null,
+    acknowledged_at: actioned ? "2026-07-27T01:00:00Z" : null,
+    resolved_at: actioned ? "2026-07-27T01:00:00Z" : null,
+    emergency_notice: true,
     available_actions:
       adminTargetStatus === "published"
         ? ["suspend", "unpublish"]
         : ["restore"],
     created_at: "2026-07-27T00:00:00Z",
     updated_at: "2026-07-27T01:00:00Z",
-    action_history: adminActionHistory,
   };
 }
 
@@ -262,7 +262,12 @@ createServer(async (request, response) => {
         { error: { code: "forbidden" } },
         "private, no-store",
       );
-    return send(response, 200, adminCase(), "private, no-store");
+    return send(
+      response,
+      200,
+      { case: adminCase(), events: adminActionHistory },
+      "private, no-store",
+    );
   }
   if (url.pathname === "/api/v1/admin/moderation/targets") {
     if (!platformAdmin)
@@ -278,12 +283,12 @@ createServer(async (request, response) => {
         ? adminTarget()
         : {
             id: type === "event" ? events[0].id : workspaceMembers[1].user_id,
-            target_type: type,
-            display_name:
+            type,
+            label:
               type === "event"
                 ? events[0].title
                 : workspaceMembers[1].display_name,
-            secondary_text: "Fixture result",
+            secondary_label: "Fixture result",
             status: "active",
           };
     return send(
@@ -321,6 +326,7 @@ createServer(async (request, response) => {
         { error: { code: "invalid_reason" } },
         "private, no-store",
       );
+    const previousTargetStatus = adminTargetStatus;
     adminTargetStatus =
       payload.action === "restore"
         ? "published"
@@ -329,27 +335,41 @@ createServer(async (request, response) => {
           : "suspended";
     const record = {
       id: crypto.randomUUID(),
+      actor_user_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       action: payload.action,
+      from_status: adminActionHistory.length ? "actioned" : "open",
+      to_status: "actioned",
       reason,
-      actor_display_name: "Platform Admin",
       created_at: "2026-07-27T01:00:00Z",
     };
     adminActionHistory = [...adminActionHistory, record];
     adminAuditEvents = [
       {
         id: crypto.randomUUID(),
-        case_id: adminCaseId,
-        action: `moderation.${payload.action}`,
-        actor_display_name: "Platform Admin",
-        target: adminTarget(),
+        actor_user_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+        actor_kind: "admin",
+        action: `moderation.target.${payload.action}`,
+        target_type: "club",
+        target_id: clubs[0].id,
         reason,
+        safe_before: { status: previousTargetStatus },
+        safe_after: { status: adminTargetStatus, case_id: adminCaseId },
         request_id: request.headers["idempotency-key"] ?? null,
-        metadata: { resulting_status: adminTargetStatus },
         created_at: "2026-07-27T01:00:00Z",
       },
       ...adminAuditEvents,
     ];
-    return send(response, 200, adminCase(), "private, no-store");
+    return send(
+      response,
+      200,
+      {
+        action: payload.action,
+        status: "actioned",
+        case: adminCase(),
+        events: adminActionHistory,
+      },
+      "private, no-store",
+    );
   }
   if (url.pathname === "/api/v1/admin/audit-events") {
     if (!platformAdmin)

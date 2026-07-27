@@ -24,22 +24,22 @@ describe("admin API client", () => {
 
     await client.listModerationCases({
       status: "investigating",
+      priority: "emergency",
       targetType: "club",
       cursor: "opaque +/= cursor",
       limit: 20,
     });
     await client.searchModerationTargets("safe query & value", "event");
     await client.listAuditEvents({
-      caseId,
       targetType: "user",
       targetId: "target/id",
       limit: 10,
     });
 
     expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-      "http://api.test/api/v1/admin/moderation/cases?status=investigating&target_type=club&cursor=opaque+%2B%2F%3D+cursor&limit=20",
+      "http://api.test/api/v1/admin/moderation/cases?status=investigating&priority=emergency&target_type=club&cursor=opaque+%2B%2F%3D+cursor&limit=20",
       "http://api.test/api/v1/admin/moderation/targets?query=safe+query+%26+value&target_type=event",
-      `http://api.test/api/v1/admin/audit-events?case_id=${caseId}&target_type=user&target_id=target%2Fid&limit=10`,
+      `http://api.test/api/v1/admin/audit-events?target_type=user&target_id=target%2Fid&limit=10`,
     ]);
     for (const [, init] of fetcher.mock.calls) {
       expect(init).toMatchObject({
@@ -54,9 +54,30 @@ describe("admin API client", () => {
   });
 
   it("posts only the moderation action, reason, and CSRF", async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(json({ id: caseId }));
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      json({
+        action: "suspend",
+        status: "actioned",
+        case: {
+          id: caseId,
+          target: {
+            id: "88888888-8888-4888-8888-888888888888",
+            type: "club",
+            label: "Safety Club",
+            secondary_label: "safety-club",
+            status: "suspended",
+          },
+          category: "safety",
+          priority: "emergency",
+          status: "actioned",
+          emergency_notice: true,
+          available_actions: ["restore"],
+          created_at: "2026-07-27T00:00:00Z",
+          updated_at: "2026-07-27T01:00:00Z",
+        },
+        events: [],
+      }),
+    );
     const client = createAdminClient({
       baseUrl: "http://api.test",
       cookie: "talaqi_access=session; talaqi_csrf=token",

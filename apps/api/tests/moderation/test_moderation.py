@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from uuid import UUID
 
 import httpx
@@ -14,7 +15,7 @@ from talaqi.discovery.fixtures import (
     PUBLIC_EVENT_IDS,
     seed_discovery_fixtures,
 )
-from talaqi.moderation.models import ModerationTarget
+from talaqi.moderation.models import REPORT_CATEGORIES, ModerationTarget
 from talaqi.moderation.repository import ModerationRepository
 from talaqi.moderation.service import capabilities
 
@@ -45,7 +46,10 @@ async def make_case(
     target_id: UUID,
     *,
     target_type: str = "user",
+    category: str = "safety",
+    priority: str = "emergency",
     description: str = "Private report evidence must not leave the API.",
+    created_at: datetime | None = None,
 ) -> UUID:
     case_id = generate_uuid7()
     target_column = {
@@ -59,10 +63,12 @@ async def make_case(
                 f"""
                 INSERT INTO talaqi.moderation_cases (
                     id, target_type, {target_column}, category,
-                    description, priority
+                    description, priority, created_at
                 ) VALUES (
                     :id, CAST(:target_type AS talaqi.moderation_target_type),
-                    :target_id, 'safety', :description, 'emergency'
+                    :target_id, :category, :description,
+                    CAST(:priority AS talaqi.moderation_priority),
+                    coalesce(CAST(:created_at AS timestamptz), clock_timestamp())
                 )
                 """
             ),
@@ -70,7 +76,10 @@ async def make_case(
                 "id": case_id,
                 "target_type": target_type,
                 "target_id": target_id,
+                "category": category,
+                "priority": priority,
                 "description": description,
+                "created_at": created_at,
             },
         )
     return case_id
@@ -89,6 +98,101 @@ async def test_locked_user_target_only_locks_primary_table(
     assert target.id == user.user_id
     assert target.secondary_label is not None
     assert "@" not in target.secondary_label
+
+
+def test_launch_report_categories_are_exactly_the_approved_set() -> None:
+    assert REPORT_CATEGORIES == (
+        "safety",
+        "harassment",
+        "fraud",
+        "illegal_content",
+        "privacy",
+        "spam",
+        "other",
+    )
+
+
+@pytest.mark.asyncio
+async def test_safety_cases_must_enter_the_emergency_priority_queue(
+    moderation_engine: AsyncEngine,
+) -> None:
+    target = await create_user(moderation_engine)
+
+    with pytest.raises(DBAPIError, match="ck_moderation_safety_priority"):
+        await make_case(
+            moderation_engine,
+            target.user_id,
+            category="safety",
+            priority="standard",
+        )
+
+
+@pytest.mark.asyncio
+async def test_case_queue_orders_priority_first_and_cursor_stays_stable(
+    moderation_engine: AsyncEngine,
+) -> None:
+    admin = await make_admin(moderation_engine, mfa=False)
+    emergency_target = await create_user(moderation_engine)
+    high_target = await create_user(moderation_engine)
+    second_high_target = await create_user(moderation_engine)
+    standard_target = await create_user(moderation_engine)
+    emergency_id = await make_case(
+        moderation_engine,
+        emergency_target.user_id,
+        created_at=datetime(2099, 1, 1, 1, tzinfo=UTC),
+    )
+    high_id = await make_case(
+        moderation_engine,
+        high_target.user_id,
+        category="fraud",
+        priority="high",
+        created_at=datetime(2099, 1, 1, 3, tzinfo=UTC),
+    )
+    second_high_id = await make_case(
+        moderation_engine,
+        second_high_target.user_id,
+        category="privacy",
+        priority="high",
+        created_at=datetime(2099, 1, 1, 2, tzinfo=UTC),
+    )
+    standard_id = await make_case(
+        moderation_engine,
+        standard_target.user_id,
+        category="spam",
+        priority="standard",
+        created_at=datetime(2099, 1, 1, 4, tzinfo=UTC),
+    )
+
+    async with AsyncSession(moderation_engine) as session:
+        ordered = await ModerationRepository(session).list_cases(
+            status=None,
+            priority=None,
+            target_type=None,
+            limit=1_000,
+        )
+    positions = {case.id: index for index, case in enumerate(ordered)}
+    assert positions[emergency_id] < positions[high_id] < positions[standard_id]
+
+    app = app_for(moderation_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        first = await client.get(
+            "/api/v1/admin/moderation/cases",
+            params={"priority": "high", "limit": 1},
+            headers=admin.headers(),
+        )
+        assert first.status_code == 200
+        assert first.json()["items"][0]["id"] == str(high_id)
+        cursor = first.json()["next_cursor"]
+        assert cursor is not None
+        second = await client.get(
+            "/api/v1/admin/moderation/cases",
+            params={"priority": "high", "limit": 1, "cursor": cursor},
+            headers=admin.headers(),
+        )
+    assert second.status_code == 200
+    assert second.json()["items"][0]["id"] == str(second_high_id)
 
 
 def test_action_capabilities_are_an_explicit_target_state_matrix() -> None:

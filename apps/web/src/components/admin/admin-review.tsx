@@ -16,6 +16,7 @@ import { useLocale } from "@/lib/locale/locale-context";
 type Feedback = { key: TranslationKey; requestId?: string };
 
 function csrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
   const value = document.cookie
     .split(";")
     .map((item) => item.trim())

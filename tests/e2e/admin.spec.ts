@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.describe.configure({ mode: "serial" });
+
 const caseId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 
 async function signIn(
@@ -49,11 +51,13 @@ test("MFA admin reviews emergency case, suspends and restores with audit evidenc
   await expect(
     page.getByRole("heading", { name: "Moderation review" }),
   ).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText(
+  await expect(page.locator(".tq-admin-emergency")).toContainText(
     "contact local emergency services now",
   );
   await page.getByLabel("Target type").selectOption("club");
-  await page.getByLabel("Search").fill("Istanbul");
+  await page
+    .getByRole("textbox", { name: "Search", exact: true })
+    .fill("Istanbul");
   await page.getByRole("button", { name: "Search targets" }).click();
   await expect(page.getByText("Istanbul Neighbours").last()).toBeVisible();
   await page.getByRole("link", { name: "Open case" }).click();
@@ -72,7 +76,7 @@ test("MFA admin reviews emergency case, suspends and restores with audit evidenc
     page.getByRole("link", { name: /Istanbul Neighbours/i }),
   ).toHaveCount(0);
   await page.goto("/admin/audit");
-  await expect(page.getByText("moderation.suspend")).toBeVisible();
+  await expect(page.getByText("moderation.target.suspend")).toBeVisible();
   await expect(page.getByText("Immediate safety review")).toBeVisible();
   await page.goto(`/admin/review/${caseId}`);
   await page.getByRole("button", { name: "Restore target" }).click();
@@ -83,7 +87,7 @@ test("MFA admin reviews emergency case, suspends and restores with audit evidenc
 test("ordinary member receives no admin data or controls", async ({ page }) => {
   await signIn(page, "member");
   await page.goto("/admin/review");
-  await expect(page.getByRole("alert")).toContainText("permission");
+  await expect(page.locator(".tq-admin-alert")).toContainText("permission");
   await expect(page.getByText("Istanbul Neighbours")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Suspend|Restore|Unpublish/ }),

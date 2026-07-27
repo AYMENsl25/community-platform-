@@ -50,7 +50,7 @@ test("filters are URL-backed and deterministic empty/error states are safe", asy
   await page.goto("/explore?search=fixture-empty");
   await expect(page.getByRole("status")).toBeVisible();
   await page.goto("/explore?search=fixture-error");
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator(".tq-result-state--error")).toBeVisible();
   await expect(page.getByText(privateCanary)).toHaveCount(0);
 });
 

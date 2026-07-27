@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Header, Query, Request, Response
@@ -35,6 +35,7 @@ from talaqi.moderation.schemas import (
 )
 from talaqi.moderation.service import ModerationService, capabilities, emergency_notice
 from talaqi.platform import (
+    ApiError,
     CursorCodec,
     IdempotencyCoordinator,
     IdempotencyRepository,
@@ -80,6 +81,31 @@ def _codec(request: Request) -> CursorCodec:
 def _private(response: Response) -> None:
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["Vary"] = "Cookie"
+
+
+def _case_cursor_ordering(value: ModerationCase) -> str:
+    created_at = value.created_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+    return f"{value.priority}|{created_at}"
+
+
+def _case_cursor_position(request: Request, cursor: str) -> tuple[Priority, datetime, UUID]:
+    try:
+        position = _codec(request).decode(cursor)
+        if not isinstance(position.ordering, str):
+            raise ValueError
+        raw_priority, raw_created_at = position.ordering.split("|", maxsplit=1)
+        if raw_priority not in {"standard", "high", "emergency"}:
+            raise ValueError
+        if not raw_created_at.endswith("Z"):
+            raise ValueError
+        created_at = datetime.fromisoformat(raw_created_at.removesuffix("Z") + "+00:00")
+        return cast(Priority, raw_priority), created_at, position.tie_breaker
+    except (TypeError, ValueError):
+        raise ApiError(
+            code="invalid_cursor",
+            message_key="errors.invalid_cursor",
+            status_code=400,
+        ) from None
 
 
 def _target(value: ModerationTarget) -> TargetResponse:
@@ -160,19 +186,18 @@ async def list_cases(
     cursor: Annotated[str | None, Query(max_length=2_048)] = None,
 ) -> CasePageResponse:
     _private(response)
+    after_priority = None
     after_created_at = None
     after_id = None
     if cursor is not None:
-        position = _codec(request).decode(cursor)
-        if not isinstance(position.ordering, datetime):
-            raise ValueError("moderation cursor must contain a timestamp")
-        after_created_at, after_id = position.ordering, position.tie_breaker
+        after_priority, after_created_at, after_id = _case_cursor_position(request, cursor)
     views = await _service(session).list_cases(
         principal,
         status=status,
         priority=priority,
         target_type=target_type,
         limit=limit + 1,
+        after_priority=after_priority,
         after_created_at=after_created_at,
         after_id=after_id,
     )
@@ -180,7 +205,9 @@ async def list_cases(
     next_cursor = None
     if len(views) > limit and visible:
         last = visible[-1][0]
-        next_cursor = _codec(request).encode(ordering=last.created_at, tie_breaker=last.id)
+        next_cursor = _codec(request).encode(
+            ordering=_case_cursor_ordering(last), tie_breaker=last.id
+        )
     return CasePageResponse(
         items=[_case(case, target, actions) for case, target, actions in visible],
         next_cursor=next_cursor,

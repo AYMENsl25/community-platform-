@@ -18,6 +18,8 @@ from talaqi.moderation.models import (
     TargetType,
 )
 
+_PRIORITY_RANK_SQL = "CASE priority WHEN 'emergency' THEN 3 WHEN 'high' THEN 2 ELSE 1 END"
+
 
 def _case(row: Mapping[str, object]) -> ModerationCase:
     target_type = cast(TargetType, row["target_type"])
@@ -64,6 +66,7 @@ class ModerationRepositoryProtocol(Protocol):
         priority: str | None,
         target_type: str | None,
         limit: int,
+        after_priority: str | None = None,
         after_created_at: datetime | None = None,
         after_id: UUID | None = None,
     ) -> list[ModerationCase]: ...
@@ -134,6 +137,7 @@ class ModerationRepository:
         priority: str | None,
         target_type: str | None,
         limit: int,
+        after_priority: str | None = None,
         after_created_at: datetime | None = None,
         after_id: UUID | None = None,
     ) -> list[ModerationCase]:
@@ -148,12 +152,19 @@ class ModerationRepository:
         if target_type is not None:
             conditions.append("target_type = CAST(:target_type AS talaqi.moderation_target_type)")
             params["target_type"] = target_type
-        if after_created_at is not None and after_id is not None:
+        if after_priority is not None and after_created_at is not None and after_id is not None:
+            priority_rank = {"standard": 1, "high": 2, "emergency": 3}[after_priority]
             conditions.append(
+                f"({_PRIORITY_RANK_SQL} < :after_priority_rank OR "
+                f"({_PRIORITY_RANK_SQL} = :after_priority_rank AND "
                 "(created_at < :after_created_at OR "
-                "(created_at = :after_created_at AND id < :after_id))"
+                "(created_at = :after_created_at AND id < :after_id))))"
             )
-            params.update(after_created_at=after_created_at, after_id=after_id)
+            params.update(
+                after_priority_rank=priority_rank,
+                after_created_at=after_created_at,
+                after_id=after_id,
+            )
         where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
         rows = (
             (
@@ -162,9 +173,9 @@ class ModerationRepository:
                         f"""
                         SELECT * FROM talaqi.moderation_cases
                         {where}
-                        ORDER BY created_at DESC, id DESC
+                        ORDER BY {_PRIORITY_RANK_SQL} DESC, created_at DESC, id DESC
                         LIMIT :limit
-                        """
+                        """  # noqa: S608 -- fixed clauses; values are bound
                     ),
                     params,
                 )
@@ -179,7 +190,7 @@ class ModerationRepository:
         row = (
             (
                 await self._session.execute(
-                    text(f"SELECT * FROM talaqi.moderation_cases WHERE id = :id{locking}"),
+                    text(f"SELECT * FROM talaqi.moderation_cases WHERE id = :id{locking}"),  # noqa: S608 -- fixed lock suffix
                     {"id": case_id},
                 )
             )

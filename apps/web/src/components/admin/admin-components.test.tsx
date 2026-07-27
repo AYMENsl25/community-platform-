@@ -59,9 +59,26 @@ describe("admin moderation UI", () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(
         JSON.stringify({
-          ...detail,
+          action: "suspend",
           status: "actioned",
-          available_actions: ["restore"],
+          case: {
+            id: detail.id,
+            target: {
+              id: detail.target.id,
+              type: detail.target.target_type,
+              label: detail.target.display_name,
+              secondary_label: detail.target.secondary_text,
+              status: "suspended",
+            },
+            category: detail.category,
+            priority: detail.priority,
+            status: "actioned",
+            emergency_notice: detail.is_emergency,
+            available_actions: ["restore"],
+            created_at: detail.created_at,
+            updated_at: "2026-07-27T01:00:00Z",
+          },
+          events: [],
         }),
         { status: 200, headers: { "content-type": "application/json" } },
       ),

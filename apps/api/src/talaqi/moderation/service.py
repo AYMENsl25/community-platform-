@@ -69,6 +69,7 @@ class ModerationService:
         priority: str | None,
         target_type: str | None,
         limit: int,
+        after_priority: str | None = None,
         after_created_at: datetime | None = None,
         after_id: UUID | None = None,
     ) -> list[tuple[ModerationCase, ModerationTarget, tuple[ModerationAction, ...]]]:
@@ -78,6 +79,7 @@ class ModerationService:
             priority=priority,
             target_type=target_type,
             limit=limit,
+            after_priority=after_priority,
             after_created_at=after_created_at,
             after_id=after_id,
         )

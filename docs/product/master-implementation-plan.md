@@ -187,43 +187,43 @@
 
 **Produces:** append-only `AuditService.record`, `can_edit_club`, `can_manage_members`, `can_manage_event`, `can_confirm_cash`, and admin-policy functions.
 
-- [ ] Define actor, action, target, reason, safe before/after metadata, request ID, and timestamp; prevent application update/delete of audit rows.
-- [ ] Unit-test the complete role/action matrix and integration-test cross-club, cross-event, and suspended-actor denial.
-- [ ] Gate: audit/policy/authorization-negative suite; commit `feat: add immutable audit and scoped policies`.
+- [x] Define actor, action, target, reason, safe before/after metadata, request ID, and timestamp; prevent application update/delete of audit rows.
+- [x] Unit-test the complete role/action matrix and integration-test cross-club, cross-event, and suspended-actor denial.
+- [x] Gate: audit/policy/authorization-negative suite; commit `feat: add immutable audit and scoped policies`.
 
 ### Task 2.2: Club draft, completion, and automatic publication
 
 **Produces:** `POST /clubs`, `GET/PATCH /clubs/{id}`, and completion/publish behavior.
 
-- [ ] Enforce verified/profile/rules eligibility and club limit; create private draft, calculate missing required fields, and publish atomically when complete.
-- [ ] Store slug, name, description, category, country/city, membership policy, social links, logo/cover references, revision, and lifecycle state.
-- [ ] Test duplicate slug, incomplete draft privacy, automatic publication, stale revision, limit enforcement, suspension, and audit emission.
-- [ ] Gate: club repository/API/security tests and migration round trip; commit `feat: add automatic club publication`.
+- [x] Enforce verified/profile/rules eligibility and club limit; create private draft, calculate missing required fields, and publish atomically when complete.
+- [x] Store slug, name, description, category, country/city, membership policy, social links, logo/cover references, revision, and lifecycle state.
+- [x] Test duplicate slug, incomplete draft privacy, automatic publication, stale revision, limit enforcement, suspension, and audit emission.
+- [x] Gate: club repository/API/security tests and migration round trip; commit `feat: add automatic club publication`.
 
 ### Task 2.3: Club memberships and owner/admin roles
 
 **Produces:** join/leave, join-request approve/reject, member listing, role change, ownership transfer, and close endpoints.
 
-- [ ] Implement immediate open membership and idempotent approval requests; only owner may change admin roles; protect sole-owner exit.
-- [ ] Restrict member personal data to managers; public club views expose aggregate counts only.
-- [ ] Test concurrent joins, duplicate approval, admin escalation attempts, cross-club access, ownership transfer, and closed/suspended clubs.
-- [ ] Gate: membership integration/concurrency/security suite; commit `feat: add protected club membership operations`.
+- [x] Implement immediate open membership and idempotent approval requests; only owner may change admin roles; protect sole-owner exit.
+- [x] Restrict member personal data to managers; public club views expose aggregate counts only.
+- [x] Test concurrent joins, duplicate approval, admin escalation attempts, cross-club access, ownership transfer, and closed/suspended clubs.
+- [x] Gate: membership integration/concurrency/security suite; commit `feat: add protected club membership operations`.
 
 ### Task 2.4: Organizer club workspace
 
-- [ ] Build owned/managed-club navigation, draft-completion form, profile preview, member/request tables, role/ownership confirmations, and server-error mapping.
-- [ ] Render only API-returned capabilities while preserving backend denial tests; all destructive actions require explicit confirmation and reason where audited.
-- [ ] Gate: component tests, owner/admin/member Playwright journeys, RTL, keyboard, and build.
-- [ ] Commit `feat: add club organizer workspace`.
+- [x] Build owned/managed-club navigation, draft-completion form, profile preview, member/request tables, role/ownership confirmations, and server-error mapping.
+- [x] Render only API-returned capabilities while preserving backend denial tests; all destructive actions require explicit confirmation and reason where audited.
+- [x] Gate: component tests, owner/admin/member Playwright journeys, RTL, keyboard, and build.
+- [x] Commit `feat: add club organizer workspace`.
 
 ### Task 2.5: Moderation cases and platform-admin shell foundation
 
 **Produces:** case list/detail, user/club/event search, suspend/unpublish/restore actions, and admin audit views.
 
-- [ ] Require admin role plus MFA for production actions; require action reason; record immutable audit; remove suspended content from discovery immediately.
-- [ ] Define launch report categories: safety, harassment, fraud, illegal content, privacy, spam, and other. Emergency/safety reports display an immediate local-emergency-services notice and enter highest priority.
-- [ ] Test non-admin and non-MFA denial, cross-target actions, required reasons, restoration, discovery removal, and audit integrity.
-- [ ] Gate: moderation/security/API/client tests and admin E2E; commit `feat: establish moderation and admin operations`.
+- [x] Require admin role plus MFA for production actions; require action reason; record immutable audit; remove suspended content from discovery immediately.
+- [x] Define launch report categories: safety, harassment, fraud, illegal content, privacy, spam, and other. Emergency/safety reports display an immediate local-emergency-services notice and enter highest priority.
+- [x] Test non-admin and non-MFA denial, cross-target actions, required reasons, restoration, discovery removal, and audit integrity.
+- [x] Gate: moderation/security/API/client tests and admin E2E; commit `feat: establish moderation and admin operations`.
 
 **Phase 2 exit:** Verified members can publish clubs and manage scoped memberships; admins can safely suspend/restore content; every protected action has negative authorization coverage and audit evidence.
 
