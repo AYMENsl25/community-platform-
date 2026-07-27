@@ -11,6 +11,7 @@ from talaqi.discovery.routes import router as discovery_router
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.identity.rate_limits import install_auth_rate_limits
 from talaqi.identity.routes import router as identity_router
+from talaqi.moderation.routes import router as moderation_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
 from talaqi.profiles.routes import router as profiles_router
@@ -68,6 +69,7 @@ def create_app(
     application.include_router(clubs_router)
     application.include_router(club_memberships_router)
     application.include_router(discovery_router)
+    application.include_router(moderation_router)
     install_openapi(application)
     return application
 

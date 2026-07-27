@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "@talaqi/ui/styles.css";
+import "../components/admin/admin.css";
 import "../components/locale/locale-selector.css";
 import "../components/organizer/organizer.css";
 import "../components/shell/shells.css";

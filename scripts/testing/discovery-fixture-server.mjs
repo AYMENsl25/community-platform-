@@ -129,6 +129,45 @@ const secondWorkspaceMembers = [
   },
 ];
 
+const adminCaseId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+let adminTargetStatus = "published";
+let adminActionHistory = [];
+let adminAuditEvents = [];
+
+function adminTarget() {
+  return {
+    id: clubs[0].id,
+    target_type: "club",
+    display_name: clubs[0].name,
+    secondary_text: "Istanbul",
+    status: adminTargetStatus,
+  };
+}
+
+function adminCase() {
+  return {
+    id: adminCaseId,
+    target: adminTarget(),
+    category: "safety",
+    priority: "emergency",
+    status: adminActionHistory.length ? "actioned" : "open",
+    is_emergency: true,
+    report_count: 2,
+    capabilities: [
+      "view_moderation_cases",
+      "search_moderation_targets",
+      "view_admin_audit",
+    ],
+    available_actions:
+      adminTargetStatus === "published"
+        ? ["suspend", "unpublish"]
+        : ["restore"],
+    created_at: "2026-07-27T00:00:00Z",
+    updated_at: "2026-07-27T01:00:00Z",
+    action_history: adminActionHistory,
+  };
+}
+
 function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -139,6 +178,14 @@ function fixtureRole(request) {
       request.headers.cookie ?? "",
     );
   return match?.[1] ?? "member";
+}
+
+function adminKind(request) {
+  const match =
+    /(?:^|;\s*)talaqi_access=fixture-(platform-admin|platform-admin-no-mfa)(?:;|$)/.exec(
+      request.headers.cookie ?? "",
+    );
+  return match?.[1] ?? null;
 }
 
 function hasCsrf(request) {
@@ -191,6 +238,134 @@ createServer(async (request, response) => {
   }
   const empty = url.searchParams.get("search") === "fixture-empty";
   const role = fixtureRole(request);
+  const platformAdmin = adminKind(request);
+  if (url.pathname === "/api/v1/admin/moderation/cases") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: [adminCase()], next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === `/api/v1/admin/moderation/cases/${adminCaseId}`) {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(response, 200, adminCase(), "private, no-store");
+  }
+  if (url.pathname === "/api/v1/admin/moderation/targets") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    const type = url.searchParams.get("target_type");
+    const item =
+      type === "club"
+        ? adminTarget()
+        : {
+            id: type === "event" ? events[0].id : workspaceMembers[1].user_id,
+            target_type: type,
+            display_name:
+              type === "event"
+                ? events[0].title
+                : workspaceMembers[1].display_name,
+            secondary_text: "Fixture result",
+            status: "active",
+          };
+    return send(
+      response,
+      200,
+      { items: [item], next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (
+    url.pathname === `/api/v1/admin/moderation/cases/${adminCaseId}/actions` &&
+    request.method === "POST"
+  ) {
+    if (platformAdmin !== "platform-admin")
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const reason =
+      typeof payload.reason === "string" ? payload.reason.trim() : "";
+    if (reason.length < 3)
+      return send(
+        response,
+        422,
+        { error: { code: "invalid_reason" } },
+        "private, no-store",
+      );
+    adminTargetStatus =
+      payload.action === "restore"
+        ? "published"
+        : payload.action === "unpublish"
+          ? "unpublished"
+          : "suspended";
+    const record = {
+      id: crypto.randomUUID(),
+      action: payload.action,
+      reason,
+      actor_display_name: "Platform Admin",
+      created_at: "2026-07-27T01:00:00Z",
+    };
+    adminActionHistory = [...adminActionHistory, record];
+    adminAuditEvents = [
+      {
+        id: crypto.randomUUID(),
+        case_id: adminCaseId,
+        action: `moderation.${payload.action}`,
+        actor_display_name: "Platform Admin",
+        target: adminTarget(),
+        reason,
+        request_id: request.headers["idempotency-key"] ?? null,
+        metadata: { resulting_status: adminTargetStatus },
+        created_at: "2026-07-27T01:00:00Z",
+      },
+      ...adminAuditEvents,
+    ];
+    return send(response, 200, adminCase(), "private, no-store");
+  }
+  if (url.pathname === "/api/v1/admin/audit-events") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: adminAuditEvents, next_cursor: null },
+      "private, no-store",
+    );
+  }
   if (url.pathname === "/api/v1/clubs/managed") {
     return send(
       response,
@@ -357,7 +532,10 @@ createServer(async (request, response) => {
     return send(response, 200, events[0]);
   if (url.pathname === "/api/v1/clubs")
     return send(response, 200, {
-      items: empty ? [] : clubs,
+      items:
+        empty || (platformAdmin && adminTargetStatus !== "published")
+          ? []
+          : clubs,
       next_cursor: null,
     });
   if (url.pathname === `/api/v1/clubs/${clubs[0].slug}`)

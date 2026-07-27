@@ -1,4 +1,89 @@
 export interface paths {
+    "/api/v1/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Events */
+        get: operations["listAdminAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cases */
+        get: operations["listModerationCases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Case */
+        get: operations["getModerationCase"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/cases/{case_id}/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Perform Action */
+        post: operations["performModerationAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderation/targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Targets */
+        get: operations["searchModerationTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -646,6 +731,75 @@ export interface components {
              */
             accepted: true;
         };
+        /** ActionRequest */
+        ActionRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "suspend" | "unpublish" | "restore";
+            /** Reason */
+            reason: string;
+        };
+        /** ActionResponse */
+        ActionResponse: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "suspend" | "unpublish" | "restore";
+            case: components["schemas"]["CaseResponse"];
+            /** Events */
+            events: components["schemas"]["CaseEventResponse"][];
+            /**
+             * Status
+             * @default actioned
+             * @constant
+             */
+            status: "actioned";
+        };
+        /** AuditPageResponse */
+        AuditPageResponse: {
+            /** Items */
+            items: components["schemas"]["AuditResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** AuditResponse */
+        AuditResponse: {
+            /** Action */
+            action: string;
+            /** Actor Kind */
+            actor_kind: string;
+            /** Actor User Id */
+            actor_user_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string | null;
+            /** Request Id */
+            request_id: string | null;
+            /** Safe After */
+            safe_after: {
+                [key: string]: unknown;
+            } | null;
+            /** Safe Before */
+            safe_before: {
+                [key: string]: unknown;
+            } | null;
+            /** Target Id */
+            target_id: string | null;
+            /** Target Type */
+            target_type: string;
+        };
         /** AuthenticationResponse */
         AuthenticationResponse: {
             /**
@@ -677,6 +831,85 @@ export interface components {
             register_event: boolean;
             /** Save Event */
             save_event: boolean;
+        };
+        /** CaseDetailResponse */
+        CaseDetailResponse: {
+            case: components["schemas"]["CaseResponse"];
+            /** Events */
+            events: components["schemas"]["CaseEventResponse"][];
+        };
+        /** CaseEventResponse */
+        CaseEventResponse: {
+            /** Action */
+            action: string | null;
+            /** Actor User Id */
+            actor_user_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** From Status */
+            from_status: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Reason */
+            reason: string;
+            /** To Status */
+            to_status: string;
+        };
+        /** CasePageResponse */
+        CasePageResponse: {
+            /** Items */
+            items: components["schemas"]["CaseResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** CaseResponse */
+        CaseResponse: {
+            /** Acknowledged At */
+            acknowledged_at: string | null;
+            /** Assigned Admin User Id */
+            assigned_admin_user_id: string | null;
+            /** Available Actions */
+            available_actions: ("suspend" | "unpublish" | "restore")[];
+            /** Category */
+            category: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Emergency Notice */
+            emergency_notice: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "standard" | "high" | "emergency";
+            /** Resolution Reason */
+            resolution_reason: string | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "investigating" | "actioned" | "dismissed";
+            target: components["schemas"]["TargetResponse"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -1465,6 +1698,32 @@ export interface components {
             /** Sessions */
             sessions: components["schemas"]["SessionResponse"][];
         };
+        /** TargetPageResponse */
+        TargetPageResponse: {
+            /** Items */
+            items: components["schemas"]["TargetResponse"][];
+            /** Next Cursor */
+            next_cursor?: null;
+        };
+        /** TargetResponse */
+        TargetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Secondary Label */
+            secondary_label: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "user" | "club" | "event";
+        };
     };
     responses: {
         /** @description A stable Talaqi platform error envelope. */
@@ -1490,6 +1749,274 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listAdminAuditEvents: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                actor_user_id?: string | null;
+                cursor?: string | null;
+                limit?: number;
+                target_id?: string | null;
+                target_type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    listModerationCases: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+                priority?: ("standard" | "high" | "emergency") | null;
+                status?: ("open" | "investigating" | "actioned" | "dismissed") | null;
+                target_type?: ("user" | "club" | "event") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CasePageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getModerationCase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetailResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Case or target not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    performModerationAction: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a moderation action. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Case or target not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Moderation transition conflicted. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    searchModerationTargets: {
+        parameters: {
+            query: {
+                limit?: number;
+                query: string;
+                target_type: "user" | "club" | "event";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TargetPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     loginAccount: {
         parameters: {
             query?: never;

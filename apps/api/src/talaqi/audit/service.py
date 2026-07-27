@@ -4,6 +4,7 @@ import ipaddress
 import json
 import re
 from collections.abc import Mapping
+from datetime import datetime
 from ipaddress import IPv4Network, IPv6Network
 from typing import Any, Final, cast
 from uuid import UUID
@@ -128,3 +129,30 @@ class AuditService:
             ip_prefix=parsed_ip,
         )
         return await self.repository.create_audit_event(event)
+
+    async def list_events(
+        self,
+        *,
+        target_type: str | None,
+        target_id: UUID | None,
+        actor_user_id: UUID | None,
+        action: str | None,
+        limit: int,
+        after_created_at: datetime | None = None,
+        after_id: UUID | None = None,
+    ) -> list[AuditEvent]:
+        if target_type is not None and _TARGET_TYPE_PATTERN.fullmatch(target_type) is None:
+            raise ValueError("invalid audit target_type")
+        if action is not None and _ACTION_PATTERN.fullmatch(action) is None:
+            raise ValueError("invalid audit action")
+        if not 1 <= limit <= 100:
+            raise ValueError("audit limit must be between 1 and 100")
+        return await self.repository.list_audit_events(
+            target_type=target_type,
+            target_id=target_id,
+            actor_user_id=actor_user_id,
+            action=action,
+            limit=limit,
+            after_created_at=after_created_at,
+            after_id=after_id,
+        )
