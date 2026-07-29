@@ -36,6 +36,7 @@ def deployed_values(environment: Environment) -> dict[str, object]:
         session_secret="s" * 64,
         cookie_secure=True,
         admin_mfa_required=True,
+        s3_endpoint="https://storage.example.com",
     )
     return values
 
@@ -180,6 +181,8 @@ def test_deployed_profiles_reject_local_origins_and_hosts(
         ({"allowed_hosts": ["*"]}, "host"),
         ({"allowed_hosts": ["localhost"]}, "host"),
         ({"admin_mfa_required": False}, "mfa"),
+        ({"media_storage_backend": "local"}, "media storage"),
+        ({"s3_endpoint": "http://localhost:9000"}, "s3-compatible"),
     ],
 )
 def test_deployed_profiles_fail_closed(

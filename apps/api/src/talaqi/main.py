@@ -11,6 +11,9 @@ from talaqi.discovery.routes import router as discovery_router
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.identity.rate_limits import install_auth_rate_limits
 from talaqi.identity.routes import router as identity_router
+from talaqi.media.routes import router as media_router
+from talaqi.media.runtime import install_media_storage
+from talaqi.media.storage import MediaStorage
 from talaqi.moderation.routes import router as moderation_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
@@ -26,7 +29,9 @@ def create_app(
     *,
     database_probe: ReadinessProbe | None = None,
     session_factory: SessionFactory | None = None,
+    storage_probe: ReadinessProbe | None = None,
     auth_rate_limiter: RateLimiter | None = None,
+    media_storage: MediaStorage | None = None,
 ) -> FastAPI:
     registry = readiness_registry or ReadinessRegistry()
     if readiness_registry is None:
@@ -59,6 +64,10 @@ def create_app(
     register_platform_contracts(application)
     settings_factory = (lambda: settings) if settings is not None else get_settings
     install_runtime(application, settings_factory, session_factory)
+    media_runtime = install_media_storage(application, settings_factory, media_storage)
+    if readiness_registry is None:
+        registry.register("object_storage", storage_probe or media_runtime.ready)
+
     install_auth_rate_limits(application, settings_factory, provider=auth_rate_limiter)
     install_http_security(application, settings_factory)
     install_request_logging(application)
@@ -69,6 +78,7 @@ def create_app(
     application.include_router(clubs_router)
     application.include_router(club_memberships_router)
     application.include_router(discovery_router)
+    application.include_router(media_router)
     application.include_router(moderation_router)
     install_openapi(application)
     return application

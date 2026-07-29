@@ -309,6 +309,7 @@ export const englishDictionary = {
   "errors.authentication_required": "Sign in to continue.",
   "errors.bad_request": "The request could not be processed.",
   "errors.conflict": "This change conflicts with current data.",
+  "errors.unavailable": "The service is temporarily unavailable. Try again.",
   "errors.csrf_failed": "Your secure form session expired. Try again.",
   "errors.forbidden": "You do not have permission to do that.",
   "errors.admin_mfa_required":

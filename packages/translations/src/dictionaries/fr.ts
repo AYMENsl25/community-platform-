@@ -316,6 +316,8 @@ export const frenchDictionary: Dictionary = {
   "errors.bad_request": "La demande n’a pas pu être traitée.",
   "errors.conflict":
     "Cette modification entre en conflit avec les données actuelles.",
+  "errors.unavailable":
+    "Le service est temporairement indisponible. Réessayez.",
   "errors.csrf_failed":
     "Votre formulaire sécurisé a expiré. Veuillez réessayer.",
   "errors.forbidden": "Vous n’avez pas le droit d’effectuer cette action.",

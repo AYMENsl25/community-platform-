@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 from pydantic import SecretStr
@@ -32,7 +34,12 @@ async def test_default_database_readiness_executes_select_one(
             "log_level": "DEBUG",
         }
     )
-    transport = httpx.ASGITransport(app=create_app(settings))
+    transport = httpx.ASGITransport(
+        app=create_app(
+            settings,
+            storage_probe=lambda: asyncio.sleep(0, result=True),
+        )
+    )
 
     async with httpx.AsyncClient(transport=transport, base_url="http://localhost") as client:
         response = await client.get("/health/ready")
@@ -40,5 +47,5 @@ async def test_default_database_readiness_executes_select_one(
     assert response.status_code == 200
     assert response.json() == {
         "status": "ready",
-        "checks": {"configuration": "ok", "database": "ok"},
+        "checks": {"configuration": "ok", "database": "ok", "object_storage": "ok"},
     }

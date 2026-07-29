@@ -66,14 +66,22 @@ async def test_readiness_returns_ready_when_all_probes_pass() -> None:
 
 @pytest.mark.asyncio
 async def test_default_readiness_includes_configuration_and_injected_database_probe() -> None:
-    app = create_app(settings(), database_probe=lambda: asyncio.sleep(0, result=True))
+    app = create_app(
+        settings(),
+        database_probe=lambda: asyncio.sleep(0, result=True),
+        storage_probe=lambda: asyncio.sleep(0, result=True),
+    )
 
     response = await request_app(app, "/health/ready")
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "ready",
-        "checks": {"configuration": "ok", "database": "ok"},
+        "checks": {
+            "configuration": "ok",
+            "database": "ok",
+            "object_storage": "ok",
+        },
     }
 
 
@@ -82,14 +90,18 @@ async def test_default_database_readiness_fails_closed_without_internal_details(
     async def failing_database_probe() -> bool:
         raise RuntimeError("internal database diagnostic")
 
-    app = create_app(settings(), database_probe=failing_database_probe)
+    app = create_app(
+        settings(),
+        database_probe=failing_database_probe,
+        storage_probe=lambda: asyncio.sleep(0, result=False),
+    )
 
     response = await request_app(app, "/health/ready")
 
     assert response.status_code == 503
     assert response.json() == {
         "status": "not_ready",
-        "checks": {"configuration": "ok", "database": "failed"},
+        "checks": {"configuration": "ok", "database": "failed", "object_storage": "failed"},
     }
     assert "internal" not in response.text
     assert "diagnostic" not in response.text

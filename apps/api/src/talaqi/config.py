@@ -4,6 +4,7 @@ import re
 from enum import StrEnum
 from functools import lru_cache
 from ipaddress import ip_address
+from pathlib import Path
 from typing import Self
 from urllib.parse import SplitResult, urlsplit
 
@@ -16,6 +17,11 @@ class Environment(StrEnum):
     TEST = "test"
     STAGING = "staging"
     PRODUCTION = "production"
+
+
+class MediaStorageBackend(StrEnum):
+    LOCAL = "local"
+    S3 = "s3"
 
 
 class LogLevel(StrEnum):
@@ -129,6 +135,11 @@ class Settings(BaseSettings):
     admin_mfa_required: bool
     database_url: SecretStr
     s3_endpoint: AnyHttpUrl
+    media_storage_backend: MediaStorageBackend = MediaStorageBackend.S3
+    media_local_root: Path = Path(".talaqi-media")
+    media_upload_grant_seconds: int = Field(default=600, ge=60, le=3600)
+    media_max_image_pixels: int = Field(default=40_000_000, ge=1, le=144_000_000)
+    s3_region: str = Field(default="us-east-1", min_length=1, max_length=64)
     s3_bucket: str = Field(min_length=1)
     s3_access_key: SecretStr
     s3_secret_key: SecretStr
@@ -145,6 +156,11 @@ class Settings(BaseSettings):
         if deployed:
             if self.api_public_url.scheme != "https" or self.web_public_url.scheme != "https":
                 raise ValueError("public API and web URLs must use HTTPS")
+            if self.media_storage_backend is MediaStorageBackend.LOCAL:
+                raise ValueError("local media storage is forbidden in staging and production")
+            if self.s3_endpoint.scheme != "https" or _is_local_host(self.s3_endpoint.host):
+                raise ValueError("S3-compatible media storage must use a non-local HTTPS endpoint")
+
             if not self.cookie_secure:
                 raise ValueError("secure cookies are required in staging and production")
             if not self.admin_mfa_required:

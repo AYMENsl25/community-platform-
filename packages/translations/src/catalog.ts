@@ -21,6 +21,7 @@ export const API_MESSAGE_KEYS = [
   "errors.authentication_required",
   "errors.bad_request",
   "errors.conflict",
+  "errors.unavailable",
   "errors.csrf_failed",
   "errors.forbidden",
   "errors.http",

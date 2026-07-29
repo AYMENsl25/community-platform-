@@ -314,6 +314,7 @@ export const turkishDictionary = {
   "errors.authentication_required": "Devam etmek için giriş yapın.",
   "errors.bad_request": "İstek işlenemedi.",
   "errors.conflict": "Bu değişiklik mevcut verilerle çakışıyor.",
+  "errors.unavailable": "Hizmet geçici olarak kullanılamıyor. Yeniden deneyin.",
   "errors.csrf_failed": "Güvenli form oturumunuz sona erdi. Yeniden deneyin.",
   "errors.forbidden": "Bu işlemi yapma izniniz yok.",
   "errors.admin_mfa_required":

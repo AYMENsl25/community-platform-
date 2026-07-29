@@ -306,6 +306,7 @@ export const arabicDictionary: Dictionary = {
   "errors.authentication_required": "سجّل الدخول للمتابعة.",
   "errors.bad_request": "تعذرت معالجة الطلب.",
   "errors.conflict": "يتعارض هذا التغيير مع البيانات الحالية.",
+  "errors.unavailable": "الخدمة غير متاحة مؤقتًا. حاول مرة أخرى.",
   "errors.csrf_failed": "انتهت صلاحية جلسة النموذج الآمنة. حاول مرة أخرى.",
   "errors.forbidden": "ليست لديك صلاحية لتنفيذ ذلك.",
   "errors.admin_mfa_required": "أكمل المصادقة متعددة العوامل للمتابعة.",

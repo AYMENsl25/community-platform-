@@ -16,7 +16,7 @@ The phase does not implement registration state transitions, capacity reservatio
 
 ## Approved product decisions
 
-- Only an active, email-verified member with a complete profile and current organizer/community-rules acceptance may create events or media intended for organizer content.
+- Only an active, email-verified member may create a media upload. The profile, club, and event modules enforce their own eligibility and ownership policy when a verified asset is attached. Event creation additionally requires a complete profile and current organizer/community-rules acceptance.
 - An event is owned by exactly one club or one independent owner. Club owners and admins may manage club events. Independent events are managed only by their owner.
 - A new account may own at most three active independent events unless the configured regional trust limit is higher. Reducing a limit does not delete existing events.
 - Event visibility is `public` or `private_link`. Private-link values are high-entropy, are returned only at creation or explicit rotation, and are stored only as domain-separated hashes.
@@ -46,7 +46,7 @@ The media module owns upload intent creation, owner-scoped storage keys, signed 
 
 `MediaStorage` exposes bounded operations to create an upload grant, read at most a supplied number of bytes, replace an object with canonical bytes, delete an object, and check readiness. `LocalMediaStorage` writes only below a resolved configured root and uses an expiring HMAC capability for its development upload route. `S3MediaStorage` creates path-style SigV4 URLs for the configured endpoint/bucket and performs bounded authenticated object operations. Neither adapter accepts caller-selected storage keys.
 
-`POST /api/v1/media/uploads` requires authentication, CSRF, eligibility, and `Idempotency-Key`. It accepts only the safe original filename, declared content type, and declared byte size. It creates a pending database record before returning a short-lived upload grant. The storage key is derived from the authenticated owner and server-generated UUIDv7 asset ID.
+`POST /api/v1/media/uploads` requires authentication, CSRF, active email verification, and `Idempotency-Key`. It accepts only the safe original filename, declared content type, and declared byte size. It creates a pending database record before returning a short-lived upload grant. The storage key is derived from the authenticated owner and server-generated UUIDv7 asset ID.
 
 The development-only signed `PUT` target accepts a raw body only when its HMAC capability, asset, declared length, and expiry match. It does not use an authenticated session and never logs the capability. S3-compatible deployments upload directly to object storage using the returned grant.
 

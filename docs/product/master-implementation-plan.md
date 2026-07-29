@@ -233,9 +233,9 @@
 
 **Produces:** signed-upload create/complete endpoints and `MediaService` adapter interface.
 
-- [ ] Enforce owner-scoped keys, MIME/signature agreement, image dimensions, 10 MB input limit, safe filenames, re-encoding, metadata stripping, and post-upload verification before attachment.
-- [ ] Provide local development and S3-compatible adapters; delete/quarantine failed assets and expire abandoned uploads.
-- [ ] Gate: malicious/polyglot/path traversal/oversize tests plus adapter contract tests; commit `feat: add secure media pipeline`.
+- [x] Enforce owner-scoped keys, MIME/signature agreement, image dimensions, 10 MB input limit, safe filenames, re-encoding, metadata stripping, and post-upload verification before attachment.
+- [x] Provide local development and S3-compatible adapters; delete/quarantine failed assets and expire abandoned uploads.
+- [x] Gate: malicious/polyglot/path traversal/oversize tests plus adapter contract tests; commit `feat: add secure media pipeline`.
 
 ### Task 3.2: Event domain and publishing
 
