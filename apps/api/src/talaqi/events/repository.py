@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
@@ -315,6 +316,18 @@ class EventRepository:
         if result is None:
             raise RuntimeError("transitioned event could not be reloaded")
         return result
+
+    async def revoke_invite_tokens(self, event_id: UUID, *, occurred_at: datetime) -> None:
+        await self._session.execute(
+            text(
+                """
+                UPDATE talaqi.event_invite_tokens
+                SET revoked_at = :occurred_at
+                WHERE event_id = :event_id AND revoked_at IS NULL
+                """
+            ),
+            {"event_id": event_id, "occurred_at": occurred_at},
+        )
 
     async def delete_draft(self, event_id: UUID, *, expected_revision: int) -> bool:
         deleted = (

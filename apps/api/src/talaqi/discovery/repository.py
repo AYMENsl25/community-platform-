@@ -38,8 +38,12 @@ def _event(row: Mapping[str, object]) -> EventCard:
         price_type="free" if row["registration_method"] == "free" else "cash",
         district=cast(str | None, row["district"]),
         public_meeting_area=cast(str | None, row["public_meeting_area"]),
-        capacity=cast(int, row["capacity"]),
-        available_places=max(0, cast(int, row["capacity"]) - cast(int, row["reserved"])),
+        capacity=cast(int | None, row["capacity"]),
+        available_places=(
+            None
+            if row["capacity"] is None
+            else max(0, cast(int, row["capacity"]) - cast(int, row["reserved"]))
+        ),
         cover_storage_key=cast(str | None, row["cover_storage_key"]),
         club_slug=cast(str | None, row["club_slug"]),
         club_name=cast(str | None, row["club_name"]),
@@ -150,7 +154,8 @@ class DiscoveryRepository:
             SELECT event.id, event.title, event.description, country.code AS country_code,
                    city.slug AS city_slug, category.slug AS category_slug,
                    event.start_at, event.end_at, event.time_zone, event.registration_method,
-                   event.district, event.public_meeting_area, event.capacity,
+                   event.district, event.public_meeting_area,
+                   event.capacity,
                    cover.storage_key AS cover_storage_key, club.slug AS club_slug,
                    club.name AS club_name,
                    coalesce(owner_profile.display_name, club.name) AS organizer_display_name,

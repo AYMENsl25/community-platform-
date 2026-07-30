@@ -135,6 +135,7 @@ export const frenchDictionary: Dictionary = {
   "discovery.club": "Un club",
   "discovery.free": "Gratuit",
   "discovery.cash": "Paiement en espèces confirmé par l’organisateur",
+  "discovery.unlimited": "Places illimit\u00e9es",
   "discovery.available": "Places disponibles",
   "discovery.full": "Complet",
   "discovery.cancelled": "Annulé",

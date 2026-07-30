@@ -134,6 +134,7 @@ export const turkishDictionary = {
   "discovery.club": "Kulüp",
   "discovery.free": "Ücretsiz",
   "discovery.cash": "Nakit ödeme organizatör tarafından onaylandı",
+  "discovery.unlimited": "S\u0131n\u0131rs\u0131z kontenjan",
   "discovery.available": "Boş yer var",
   "discovery.full": "Tüm yerler dolu",
   "discovery.cancelled": "İptal edildi",

@@ -39,7 +39,10 @@ function HomeContent({ landing }: { landing: LandingData }) {
     retry: t("states.retry"),
   };
   const eventLabels = {
-    available: (count: number) => `${count} ${t("discovery.available")}`,
+    available: (count: number | null) =>
+      count === null
+        ? t("discovery.unlimited")
+        : `${count} ${t("discovery.available")}`,
     cash: t("discovery.cash"),
     featuredReason: t("discovery.featuredExplanation"),
     free: t("discovery.free"),

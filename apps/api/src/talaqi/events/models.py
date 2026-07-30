@@ -143,11 +143,12 @@ def _slug(value: str | None) -> str | None:
     if value is None:
         return None
     normalized = value.strip().lower()
+    slug_alphabet = "abcdefghijklmnopqrstuvwxyz0123456789-"  # pragma: allowlist secret
     if (
         not 2 <= len(normalized) <= 80
         or not normalized[0].isalnum()
         or not normalized[-1].isalnum()
-        or any(character not in "abcdefghijklmnopqrstuvwxyz0123456789-" for character in normalized)
+        or any(character not in slug_alphabet for character in normalized)
         or "--" in normalized
     ):
         raise _invalid()

@@ -529,6 +529,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/event-access/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Private Link */
+        post: operations["resolveEventPrivateLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -628,6 +645,41 @@ export interface paths {
         get: operations["getManagedEvent"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/private-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Private Link */
+        post: operations["createEventPrivateLink"];
+        /** Revoke Private Link */
+        delete: operations["revokeEventPrivateLink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/private-link/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate Private Link */
+        post: operations["rotateEventPrivateLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1295,12 +1347,73 @@ export interface components {
         ErrorEnvelope: {
             error: components["schemas"]["ErrorDetail"];
         };
+        /** EventAudienceResponse */
+        EventAudienceResponse: {
+            /** Available Places */
+            available_places: number | null;
+            /** Capacity */
+            capacity: number | null;
+            /** Category Slug */
+            category_slug: string;
+            /** City Slug */
+            city_slug: string;
+            /** Club Name */
+            club_name: string | null;
+            /** Club Slug */
+            club_slug: string | null;
+            /** Country Code */
+            country_code: string;
+            /** Cover Storage Key */
+            cover_storage_key: string | null;
+            /** Description */
+            description: string;
+            /** District */
+            district: string | null;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Exact Address */
+            exact_address: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Saved */
+            is_saved: boolean;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Organizer Display Name */
+            organizer_display_name: string | null;
+            /**
+             * Price Type
+             * @enum {string}
+             */
+            price_type: "free" | "cash";
+            /** Public Meeting Area */
+            public_meeting_area: string | null;
+            /** Registration State */
+            registration_state: string | null;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /** Time Zone */
+            time_zone: string;
+            /** Title */
+            title: string;
+        };
         /** EventCardResponse */
         EventCardResponse: {
             /** Available Places */
-            available_places: number;
+            available_places: number | null;
             /** Capacity */
-            capacity: number;
+            capacity: number | null;
             /** Category Slug */
             category_slug: string;
             /** City Slug */
@@ -1833,6 +1946,37 @@ export interface components {
             new_password: string;
             /** Token */
             token: string;
+        };
+        /** PrivateLinkCreateRequest */
+        PrivateLinkCreateRequest: {
+            /**
+             * Expires In Days
+             * @default 30
+             */
+            expires_in_days: number;
+        };
+        /** PrivateLinkIssuedResponse */
+        PrivateLinkIssuedResponse: {
+            /** Copy Value */
+            copy_value: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** PrivateLinkResolveRequest */
+        PrivateLinkResolveRequest: {
+            /**
+             * Private Link
+             * @description Private-link value from the explicit copy field or URL fragment.
+             */
+            private_link?: string | null;
         };
         /** ProfileReplacementRequest */
         ProfileReplacementRequest: {
@@ -3816,6 +3960,54 @@ export interface operations {
             };
         };
     };
+    resolveEventPrivateLink: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PrivateLinkResolveRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAudienceResponse"];
+                };
+            };
+            /** @description Private event access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+            /** @description Private-link resolution rate limit exceeded. */
+            429: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     listEvents: {
         parameters: {
             query?: {
@@ -3925,7 +4117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EventCardResponse"];
+                    "application/json": components["schemas"]["EventAudienceResponse"];
                 };
             };
             /** @description Public resource not found. */
@@ -4321,6 +4513,194 @@ export interface operations {
             };
             /** @description Event not found. */
             404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    createEventPrivateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrivateLinkCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivateLinkIssuedResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Private event access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Private-link state conflicts with the request. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    revokeEventPrivateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Private event access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    rotateEventPrivateLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PrivateLinkCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivateLinkIssuedResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Private event access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Private-link state conflicts with the request. */
+            409: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

@@ -68,6 +68,8 @@ class EventRepositoryProtocol(Protocol):
 
     async def delete_draft(self, event_id: UUID, *, expected_revision: int) -> bool: ...
 
+    async def revoke_invite_tokens(self, event_id: UUID, *, occurred_at: datetime) -> None: ...
+
 
 class EventEligibility(Protocol):
     async def evaluate(self, principal: AuthPrincipal) -> Capabilities: ...
@@ -238,6 +240,8 @@ class EventService:
             references=references,
             expected_revision=patch.revision,
         )
+        if event.visibility == "private_link" and updated.visibility != "private_link":
+            await self._repository.revoke_invite_tokens(updated.id, occurred_at=current)
         await self._record(
             principal,
             "event.update",

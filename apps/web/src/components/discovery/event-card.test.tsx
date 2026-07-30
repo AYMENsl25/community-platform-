@@ -45,6 +45,16 @@ describe("EventCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("labels events without a capacity as unlimited", () => {
+    render(
+      <EventCard
+        event={{ ...event, capacity: null, available_places: null }}
+        locale="en"
+      />,
+    );
+
+    expect(screen.getByText("Unlimited places")).toBeInTheDocument();
+  });
   it("never renders private or internal values", () => {
     const { container } = render(<EventCard event={event} locale="en" />);
     const rendered = container.textContent ?? "";

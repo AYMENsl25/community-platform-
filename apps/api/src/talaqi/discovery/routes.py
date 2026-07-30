@@ -27,6 +27,8 @@ from talaqi.discovery.schemas import (
     SearchPageResponse,
 )
 from talaqi.discovery.service import DiscoveryCursorCodec
+from talaqi.events.access_runtime import build_event_access_service
+from talaqi.events.access_schemas import EventAudienceResponse
 from talaqi.identity.dependencies import (
     CsrfProtection,
     CurrentPrincipal,
@@ -180,23 +182,23 @@ async def list_events(
 
 @router.get(
     "/events/{event_id}",
-    response_model=EventCardResponse,
+    response_model=EventAudienceResponse,
     operation_id="getEvent",
     responses={404: _NOT_FOUND},
 )
 async def get_event(
     event_id: UUID,
+    request: Request,
     response: Response,
     session: DatabaseSession,
     principal: OptionalPrincipal,
-) -> EventCardResponse:
+) -> EventAudienceResponse:
     _caller_aware_response(response, principal)
-    event = await DiscoveryRepository(session).get_event(
-        event_id, caller_id=principal.user_id if principal else None
+    event = await build_event_access_service(request, session).public(
+        event_id,
+        principal=principal,
     )
-    if event is None:
-        raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
-    return EventCardResponse.model_validate(event)
+    return EventAudienceResponse.model_validate(event)
 
 
 @router.get("/clubs", response_model=ClubPageResponse, operation_id="listClubs")

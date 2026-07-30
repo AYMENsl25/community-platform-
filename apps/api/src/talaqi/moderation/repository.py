@@ -336,15 +336,38 @@ class ModerationRepository:
                 RETURNING status::text
             """,
             ("club", "suspend"): """
-                UPDATE talaqi.clubs SET status = 'suspended', suspended_at = :now,
-                    suspension_reason = :reason
-                WHERE id = :id AND status = 'published'
-                RETURNING status::text
+                WITH changed AS (
+                    UPDATE talaqi.clubs
+                    SET status = 'suspended', suspended_at = :now,
+                        suspension_reason = :reason
+                    WHERE id = :id AND status = 'published'
+                    RETURNING id, status::text
+                ), revoked AS (
+                    UPDATE talaqi.event_invite_tokens AS invite
+                    SET revoked_at = :now
+                    FROM talaqi.events AS event, changed
+                    WHERE event.club_id = changed.id
+                      AND invite.event_id = event.id
+                      AND invite.revoked_at IS NULL
+                    RETURNING invite.id
+                )
+                SELECT status FROM changed
             """,
             ("club", "unpublish"): """
-                UPDATE talaqi.clubs SET status = 'unpublished'
-                WHERE id = :id AND status = 'published'
-                RETURNING status::text
+                WITH changed AS (
+                    UPDATE talaqi.clubs SET status = 'unpublished'
+                    WHERE id = :id AND status = 'published'
+                    RETURNING id, status::text
+                ), revoked AS (
+                    UPDATE talaqi.event_invite_tokens AS invite
+                    SET revoked_at = :now
+                    FROM talaqi.events AS event, changed
+                    WHERE event.club_id = changed.id
+                      AND invite.event_id = event.id
+                      AND invite.revoked_at IS NULL
+                    RETURNING invite.id
+                )
+                SELECT status FROM changed
             """,
             ("club", "restore"): """
                 UPDATE talaqi.clubs SET status = 'published', suspended_at = NULL,
@@ -353,10 +376,21 @@ class ModerationRepository:
                 RETURNING status::text
             """,
             ("event", "suspend"): """
-                UPDATE talaqi.events SET status = 'suspended', suspended_at = :now,
-                    suspension_reason = :reason
-                WHERE id = :id AND status = 'published'
-                RETURNING status::text
+                WITH changed AS (
+                    UPDATE talaqi.events
+                    SET status = 'suspended', suspended_at = :now,
+                        suspension_reason = :reason
+                    WHERE id = :id AND status = 'published'
+                    RETURNING id, status::text
+                ), revoked AS (
+                    UPDATE talaqi.event_invite_tokens AS invite
+                    SET revoked_at = :now
+                    FROM changed
+                    WHERE invite.event_id = changed.id
+                      AND invite.revoked_at IS NULL
+                    RETURNING invite.id
+                )
+                SELECT status FROM changed
             """,
             ("event", "restore"): """
                 UPDATE talaqi.events SET status = 'published', suspended_at = NULL,

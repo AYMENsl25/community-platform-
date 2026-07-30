@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
@@ -12,6 +12,7 @@ from talaqi.audit import AuditRepository, AuditService
 from talaqi.clubs.event_access import ClubEventAccessService
 from talaqi.clubs.repository import ClubRepository
 from talaqi.config import Settings
+from talaqi.events.access_runtime import build_event_access_service
 from talaqi.events.models import Event, EventPatch, NewEvent
 from talaqi.events.repository import EventRepository
 from talaqi.events.schemas import (
@@ -196,7 +197,16 @@ async def get_managed_event(
     session: DatabaseSession,
 ) -> ManagedEventResponse:
     _private(response)
-    return _response(await _service(request, session).get(principal, event_id))
+    event = await _service(request, session).get(principal, event_id)
+    projection = await build_event_access_service(request, session).managed(principal, event)
+    return _response(
+        replace(
+            event,
+            exact_address=projection.exact_address,
+            latitude=projection.latitude,
+            longitude=projection.longitude,
+        )
+    )
 
 
 @router.patch(

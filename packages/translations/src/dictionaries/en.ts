@@ -130,6 +130,7 @@ export const englishDictionary = {
   "discovery.club": "Club",
   "discovery.free": "Free",
   "discovery.cash": "Cash confirmed by organizer",
+  "discovery.unlimited": "Unlimited places",
   "discovery.available": "Places available",
   "discovery.full": "Fully booked",
   "discovery.cancelled": "Cancelled",

@@ -4,7 +4,7 @@ import "./discovery.css";
 
 type Event = components["schemas"]["EventCardResponse"];
 export type EventCardLabels = {
-  available: (count: number) => string;
+  available: (count: number | null) => string;
   cash: string;
   featuredReason: string;
   free: string;
@@ -14,7 +14,9 @@ export type EventCardLabels = {
 function defaults(locale: LocaleCode): EventCardLabels {
   return {
     available: (count) =>
-      `${formatNumber(count, locale)} ${translate(locale, "discovery.available")}`,
+      count === null
+        ? translate(locale, "discovery.unlimited")
+        : `${formatNumber(count, locale)} ${translate(locale, "discovery.available")}`,
     cash: translate(locale, "discovery.cash"),
     featuredReason: translate(locale, "discovery.featuredExplanation"),
     free: translate(locale, "discovery.free"),

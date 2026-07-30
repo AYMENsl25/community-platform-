@@ -52,7 +52,6 @@ def test_public_discovery_schemas_have_no_private_venue_or_identity_fields() -> 
     schemas = cast(dict[str, object], document["components"]["schemas"])
     public_operations = (
         ("/api/v1/events", "get"),
-        ("/api/v1/events/{event_id}", "get"),
         ("/api/v1/clubs", "get"),
         ("/api/v1/clubs/{slug}", "get"),
         ("/api/v1/search", "get"),
@@ -90,3 +89,10 @@ def test_saved_mutations_document_auth_csrf_and_not_found_failures() -> None:
     for method in ("put", "delete"):
         responses = paths["/api/v1/events/{event_id}/saved"][method]["responses"]
         assert {"204", "401", "403", "404"}.issubset(responses)
+
+
+def test_audience_event_detail_declares_explicit_nullable_venue_fields() -> None:
+    document = create_app().openapi()
+    schema = document["components"]["schemas"]["EventAudienceResponse"]
+    properties = schema["properties"]
+    assert {"exact_address", "latitude", "longitude"}.issubset(properties)

@@ -8,6 +8,8 @@ from talaqi.clubs.routes import router as clubs_router
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.discovery.routes import router as discovery_router
+from talaqi.events.access_rate_limits import install_event_access_rate_limits
+from talaqi.events.access_routes import router as event_access_router
 from talaqi.events.routes import router as events_router
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.identity.rate_limits import install_auth_rate_limits
@@ -32,6 +34,7 @@ def create_app(
     session_factory: SessionFactory | None = None,
     storage_probe: ReadinessProbe | None = None,
     auth_rate_limiter: RateLimiter | None = None,
+    event_access_rate_limiter: RateLimiter | None = None,
     media_storage: MediaStorage | None = None,
 ) -> FastAPI:
     registry = readiness_registry or ReadinessRegistry()
@@ -70,6 +73,11 @@ def create_app(
         registry.register("object_storage", storage_probe or media_runtime.ready)
 
     install_auth_rate_limits(application, settings_factory, provider=auth_rate_limiter)
+    install_event_access_rate_limits(
+        application,
+        settings_factory,
+        provider=event_access_rate_limiter,
+    )
     install_http_security(application, settings_factory)
     install_request_logging(application)
     application.include_router(create_health_router(registry))
@@ -79,6 +87,7 @@ def create_app(
     application.include_router(clubs_router)
     application.include_router(club_memberships_router)
     application.include_router(events_router)
+    application.include_router(event_access_router)
     application.include_router(discovery_router)
     application.include_router(media_router)
     application.include_router(moderation_router)

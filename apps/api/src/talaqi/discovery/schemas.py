@@ -22,8 +22,8 @@ class EventCardResponse(BaseModel):
     price_type: Literal["free", "cash"]
     district: str | None
     public_meeting_area: str | None
-    capacity: int
-    available_places: int
+    capacity: int | None
+    available_places: int | None
     cover_storage_key: str | None
     club_slug: str | None
     club_name: str | None

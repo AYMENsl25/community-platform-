@@ -1476,16 +1476,245 @@
         "title": "ErrorEnvelope",
         "type": "object"
       },
+      "EventAudienceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "available_places": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Places"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "category_slug": {
+            "title": "Category Slug",
+            "type": "string"
+          },
+          "city_slug": {
+            "title": "City Slug",
+            "type": "string"
+          },
+          "club_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Name"
+          },
+          "club_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Slug"
+          },
+          "country_code": {
+            "title": "Country Code",
+            "type": "string"
+          },
+          "cover_storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Storage Key"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "district": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "exact_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Address"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_saved": {
+            "title": "Is Saved",
+            "type": "boolean"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "organizer_display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organizer Display Name"
+          },
+          "price_type": {
+            "enum": [
+              "free",
+              "cash"
+            ],
+            "title": "Price Type",
+            "type": "string"
+          },
+          "public_meeting_area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Public Meeting Area"
+          },
+          "registration_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration State"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "time_zone": {
+            "title": "Time Zone",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "country_code",
+          "city_slug",
+          "category_slug",
+          "start_at",
+          "end_at",
+          "time_zone",
+          "price_type",
+          "district",
+          "public_meeting_area",
+          "exact_address",
+          "latitude",
+          "longitude",
+          "capacity",
+          "available_places",
+          "cover_storage_key",
+          "club_slug",
+          "club_name",
+          "organizer_display_name",
+          "is_saved",
+          "registration_state"
+        ],
+        "title": "EventAudienceResponse",
+        "type": "object"
+      },
       "EventCardResponse": {
         "additionalProperties": false,
         "properties": {
           "available_places": {
-            "title": "Available Places",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Places"
           },
           "capacity": {
-            "title": "Capacity",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
           },
           "category_slug": {
             "title": "Category Slug",
@@ -3418,6 +3647,67 @@
           "new_password"
         ],
         "title": "PasswordResetConfirm",
+        "type": "object"
+      },
+      "PrivateLinkCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "expires_in_days": {
+            "default": 30,
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Expires In Days",
+            "type": "integer"
+          }
+        },
+        "title": "PrivateLinkCreateRequest",
+        "type": "object"
+      },
+      "PrivateLinkIssuedResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "copy_value": {
+            "title": "Copy Value",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "copy_value",
+          "expires_at"
+        ],
+        "title": "PrivateLinkIssuedResponse",
+        "type": "object"
+      },
+      "PrivateLinkResolveRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "private_link": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Private-link value from the explicit copy field or URL fragment.",
+            "title": "Private Link"
+          }
+        },
+        "title": "PrivateLinkResolveRequest",
         "type": "object"
       },
       "ProfileReplacementRequest": {
@@ -7141,6 +7431,100 @@
         ]
       }
     },
+    "/api/v1/event-access/resolve": {
+      "post": {
+        "operationId": "resolveEventPrivateLink",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PrivateLinkResolveRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventAudienceResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private event access is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private-link resolution rate limit exceeded.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Resolve Private Link",
+        "tags": [
+          "event access"
+        ]
+      }
+    },
     "/api/v1/events": {
       "get": {
         "operationId": "listEvents",
@@ -7543,7 +7927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventCardResponse"
+                  "$ref": "#/components/schemas/EventAudienceResponse"
                 }
               }
             },
@@ -8107,6 +8491,305 @@
         "summary": "Get Managed Event",
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/private-link": {
+      "delete": {
+        "operationId": "revokeEventPrivateLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Capability, object authorization, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private event access is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Revoke Private Link",
+        "tags": [
+          "event access"
+        ]
+      },
+      "post": {
+        "operationId": "createEventPrivateLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateLinkCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateLinkIssuedResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Capability, object authorization, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private event access is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private-link state conflicts with the request.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Create Private Link",
+        "tags": [
+          "event access"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/private-link/rotate": {
+      "post": {
+        "operationId": "rotateEventPrivateLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrivateLinkCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivateLinkIssuedResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Capability, object authorization, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private event access is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Private-link state conflicts with the request.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Rotate Private Link",
+        "tags": [
+          "event access"
         ]
       }
     },

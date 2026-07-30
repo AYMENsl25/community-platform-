@@ -77,6 +77,7 @@ class FakeRepository:
     def __init__(self) -> None:
         self.events: dict[UUID, Event] = {}
         self.locked: list[UUID] = []
+        self.revoked_invite_tokens: list[tuple[UUID, datetime]] = []
 
     async def lock_creation(self, user_id: UUID) -> None:
         self.locked.append(user_id)
@@ -117,6 +118,9 @@ class FakeRepository:
         updated = replace(event, **values)
         self.events[event_id] = updated
         return updated
+
+    async def revoke_invite_tokens(self, event_id: UUID, *, occurred_at: datetime) -> None:
+        self.revoked_invite_tokens.append((event_id, occurred_at))
 
     async def delete_draft(self, event_id: UUID, *, expected_revision: int) -> bool:
         event = self.events[event_id]

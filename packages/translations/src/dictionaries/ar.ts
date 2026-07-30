@@ -130,6 +130,8 @@ export const arabicDictionary: Dictionary = {
   "discovery.club": "نادٍ",
   "discovery.free": "مجاني",
   "discovery.cash": "الدفع النقدي مؤكّد من المنظّم",
+  "discovery.unlimited":
+    "\u0623\u0645\u0627\u0643\u0646 \u063a\u064a\u0631 \u0645\u062d\u062f\u0648\u062f\u0629",
   "discovery.available": "أماكن متاحة",
   "discovery.full": "الحجز مكتمل",
   "discovery.cancelled": "ملغاة",
