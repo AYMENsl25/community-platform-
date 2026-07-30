@@ -539,7 +539,8 @@ export interface paths {
         /** List Events */
         get: operations["listEvents"];
         put?: never;
-        post?: never;
+        /** Create Event */
+        post: operations["createEvent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -555,6 +556,76 @@ export interface paths {
         };
         /** Get Event */
         get: operations["getEvent"];
+        put?: never;
+        post?: never;
+        /** Delete Draft Event */
+        delete: operations["deleteDraftEvent"];
+        options?: never;
+        head?: never;
+        /** Update Event */
+        patch: operations["updateEvent"];
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Event */
+        post: operations["cancelEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Event */
+        post: operations["completeEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate Event */
+        post: operations["duplicateEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/managed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Managed Event */
+        get: operations["getManagedEvent"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1279,12 +1350,129 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** EventCreateRequest */
+        EventCreateRequest: {
+            /** Cancellation Cutoff Minutes */
+            cancellation_cutoff_minutes?: number | null;
+            /** Capacity */
+            capacity?: number | null;
+            /** Cash Expiry Minutes */
+            cash_expiry_minutes?: number | null;
+            /** Category Slug */
+            category_slug?: string | null;
+            /** City Slug */
+            city_slug?: string | null;
+            /** Club Id */
+            club_id?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            /** Cover Media Id */
+            cover_media_id?: string | null;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** District */
+            district?: string | null;
+            /** End At */
+            end_at?: string | null;
+            /** Exact Address */
+            exact_address?: string | null;
+            /**
+             * Exact Venue Is Public
+             * @default false
+             */
+            exact_venue_is_public: boolean;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /**
+             * Ownership Type
+             * @enum {string}
+             */
+            ownership_type: "club" | "independent";
+            /** Public Meeting Area */
+            public_meeting_area?: string | null;
+            /**
+             * Publish
+             * @default false
+             */
+            publish: boolean;
+            /** Registration Method */
+            registration_method?: ("free" | "cash_organizer_confirmed") | null;
+            /** Start At */
+            start_at?: string | null;
+            /** Time Zone */
+            time_zone?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Visibility
+             * @default public
+             * @enum {string}
+             */
+            visibility: "public" | "private_link";
+        };
         /** EventPageResponse */
         EventPageResponse: {
             /** Items */
             items: components["schemas"]["EventCardResponse"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /** EventPatchRequest */
+        EventPatchRequest: {
+            /** Cancellation Cutoff Minutes */
+            cancellation_cutoff_minutes?: number | null;
+            /** Capacity */
+            capacity?: number | null;
+            /** Cash Expiry Minutes */
+            cash_expiry_minutes?: number | null;
+            /** Category Slug */
+            category_slug?: string | null;
+            /** City Slug */
+            city_slug?: string | null;
+            /** Country Code */
+            country_code?: string | null;
+            /** Cover Media Id */
+            cover_media_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** District */
+            district?: string | null;
+            /** End At */
+            end_at?: string | null;
+            /** Exact Address */
+            exact_address?: string | null;
+            /** Exact Venue Is Public */
+            exact_venue_is_public?: boolean | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** Public Meeting Area */
+            public_meeting_area?: string | null;
+            /** Publish */
+            publish?: boolean | null;
+            /** Registration Method */
+            registration_method?: ("free" | "cash_organizer_confirmed") | null;
+            /** Revision */
+            revision: number;
+            /** Start At */
+            start_at?: string | null;
+            /** Time Zone */
+            time_zone?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Visibility */
+            visibility?: ("public" | "private_link") | null;
+        };
+        /** EventRevisionRequest */
+        EventRevisionRequest: {
+            /** Revision */
+            revision: number;
         };
         /** FieldError */
         FieldError: {
@@ -1443,6 +1631,93 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** ManagedEventResponse */
+        ManagedEventResponse: {
+            /** Cancellation Cutoff Minutes */
+            cancellation_cutoff_minutes: number | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Capacity */
+            capacity: number | null;
+            /** Cash Expiry Minutes */
+            cash_expiry_minutes: number | null;
+            /** Category Slug */
+            category_slug: string | null;
+            /** City Slug */
+            city_slug: string | null;
+            /** Club Id */
+            club_id: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Country Code */
+            country_code: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /** District */
+            district: string | null;
+            /** End At */
+            end_at: string | null;
+            /** Exact Address */
+            exact_address: string | null;
+            /** Exact Venue Is Public */
+            exact_venue_is_public: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Owner User Id */
+            owner_user_id: string | null;
+            /**
+             * Ownership Type
+             * @enum {string}
+             */
+            ownership_type: "club" | "independent";
+            /** Public Meeting Area */
+            public_meeting_area: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Registration Method */
+            registration_method: ("free" | "cash_organizer_confirmed") | null;
+            /** Revision */
+            revision: number;
+            /** Start At */
+            start_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "draft" | "published" | "cancelled" | "completed" | "suspended";
+            /** Suspended At */
+            suspended_at: string | null;
+            /** Suspension Reason */
+            suspension_reason: string | null;
+            /** Time Zone */
+            time_zone: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "private_link";
         };
         /** MediaAssetResponse */
         MediaAssetResponse: {
@@ -3573,6 +3848,65 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    createEvent: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying event creation or duplication. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     getEvent: {
         parameters: {
             query?: never;
@@ -3595,6 +3929,397 @@ export interface operations {
                 };
             };
             /** @description Public resource not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    deleteDraftEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    updateEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    cancelEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    completeEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRevisionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    duplicateEvent: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying event creation or duplication. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision, lifecycle, or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getManagedEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Capability, object authorization, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event not found. */
             404: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];

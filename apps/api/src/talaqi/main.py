@@ -8,6 +8,7 @@ from talaqi.clubs.routes import router as clubs_router
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.discovery.routes import router as discovery_router
+from talaqi.events.routes import router as events_router
 from talaqi.health import ReadinessProbe, ReadinessRegistry, create_health_router
 from talaqi.identity.rate_limits import install_auth_rate_limits
 from talaqi.identity.routes import router as identity_router
@@ -77,6 +78,7 @@ def create_app(
     application.include_router(profiles_router)
     application.include_router(clubs_router)
     application.include_router(club_memberships_router)
+    application.include_router(events_router)
     application.include_router(discovery_router)
     application.include_router(media_router)
     application.include_router(moderation_router)

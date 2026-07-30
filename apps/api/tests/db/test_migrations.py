@@ -52,7 +52,10 @@ REQUIRED_TABLES = {
 def test_alembic_has_exactly_one_head() -> None:
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
 
-    assert scripts.get_heads() == ["0007_moderation_priority"]
+    assert scripts.get_heads() == ["0008_event_publishing"]
+    assert scripts.get_revision("0008_event_publishing").down_revision == (
+        "0007_moderation_priority"
+    )
     assert scripts.get_revision("0007_moderation_priority").down_revision == (
         "0006_discovery_indexes"
     )
@@ -402,7 +405,7 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0007_moderation_priority"
+    assert revision == "0008_event_publishing"
     assert asyncio.run(_regional_seed_counts(test_database_url)) == (2, 2, 6, 2, 1)
     assert asyncio.run(_regional_catalog_state(test_database_url)) == APPROVED_CATALOG
     assert asyncio.run(_server_uuid_version(test_database_url)) == 7
@@ -453,4 +456,4 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0007_moderation_priority"
+    assert revision == "0008_event_publishing"

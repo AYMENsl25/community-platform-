@@ -543,51 +543,54 @@ createServer(async (request, response) => {
       sort: "featured",
     });
   }
+  const targetIsPublic = adminTargetStatus === "published";
   if (url.pathname === "/api/v1/events")
     return send(response, 200, {
-      items: empty ? [] : events,
+      items: empty || !targetIsPublic ? [] : events,
       next_cursor: null,
     });
   if (url.pathname === `/api/v1/events/${events[0].id}`)
-    return send(response, 200, events[0]);
+    return targetIsPublic
+      ? send(response, 200, events[0])
+      : send(response, 404, { error: { code: "not_found" } });
   if (url.pathname === "/api/v1/clubs")
     return send(response, 200, {
-      items:
-        empty || (platformAdmin && adminTargetStatus !== "published")
-          ? []
-          : clubs,
+      items: empty || !targetIsPublic ? [] : clubs,
       next_cursor: null,
     });
   if (url.pathname === `/api/v1/clubs/${clubs[0].slug}`)
-    return send(response, 200, { ...clubs[0], events });
+    return targetIsPublic
+      ? send(response, 200, { ...clubs[0], events })
+      : send(response, 404, { error: { code: "not_found" } });
   if (url.pathname === "/api/v1/search") {
     return send(response, 200, {
-      items: empty
-        ? []
-        : [
-            {
-              id: events[0].id,
-              kind: "event",
-              slug: null,
-              title: events[0].title,
-              description: events[0].description,
-              category_slug: events[0].category_slug,
-              country_code: "TR",
-              city_slug: "istanbul",
-              start_at: events[0].start_at,
-            },
-            {
-              id: clubs[0].id,
-              kind: "club",
-              slug: clubs[0].slug,
-              title: clubs[0].name,
-              description: clubs[0].description,
-              category_slug: clubs[0].category_slug,
-              country_code: "TR",
-              city_slug: "istanbul",
-              start_at: null,
-            },
-          ],
+      items:
+        empty || !targetIsPublic
+          ? []
+          : [
+              {
+                id: events[0].id,
+                kind: "event",
+                slug: null,
+                title: events[0].title,
+                description: events[0].description,
+                category_slug: events[0].category_slug,
+                country_code: "TR",
+                city_slug: "istanbul",
+                start_at: events[0].start_at,
+              },
+              {
+                id: clubs[0].id,
+                kind: "club",
+                slug: clubs[0].slug,
+                title: clubs[0].name,
+                description: clubs[0].description,
+                category_slug: clubs[0].category_slug,
+                country_code: "TR",
+                city_slug: "istanbul",
+                start_at: null,
+              },
+            ],
       next_cursor: null,
     });
   }

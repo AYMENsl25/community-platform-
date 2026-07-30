@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from talaqi.main import create_app
 
 
@@ -27,18 +29,47 @@ def test_discovery_openapi_is_connection_free_and_complete() -> None:
         "/api/v1/me/saved-events": {"get"},
     }
     for path, methods in expected.items():
-        assert set(document["paths"][path]) == methods
+        assert methods.issubset(document["paths"][path])
+
+
+def _schema_names(value: object) -> set[str]:
+    names: set[str] = set()
+    if isinstance(value, dict):
+        mapping = cast(dict[str, object], value)
+        reference = mapping.get("$ref")
+        if isinstance(reference, str) and reference.startswith("#/components/schemas/"):
+            names.add(reference.rsplit("/", maxsplit=1)[-1])
+        for nested in mapping.values():
+            names.update(_schema_names(nested))
+    elif isinstance(value, list):
+        for nested in cast(list[object], value):
+            names.update(_schema_names(nested))
+    return names
 
 
 def test_public_discovery_schemas_have_no_private_venue_or_identity_fields() -> None:
-    schemas = create_app().openapi()["components"]["schemas"]
-    rendered = repr(
-        {
-            name: value
-            for name, value in schemas.items()
-            if name.startswith(("Event", "Club", "Search"))
-        }
-    ).casefold()
+    document = create_app().openapi()
+    schemas = cast(dict[str, object], document["components"]["schemas"])
+    public_operations = (
+        ("/api/v1/events", "get"),
+        ("/api/v1/events/{event_id}", "get"),
+        ("/api/v1/clubs", "get"),
+        ("/api/v1/clubs/{slug}", "get"),
+        ("/api/v1/search", "get"),
+        ("/api/v1/metadata", "get"),
+    )
+    pending: set[str] = set()
+    for path, method in public_operations:
+        pending.update(_schema_names(document["paths"][path][method]["responses"]))
+    reachable: dict[str, object] = {}
+    while pending:
+        name = pending.pop()
+        if name in reachable:
+            continue
+        schema = schemas[name]
+        reachable[name] = schema
+        pending.update(_schema_names(schema))
+    rendered = repr(reachable).casefold()
 
     for forbidden in (
         "exact_address",
