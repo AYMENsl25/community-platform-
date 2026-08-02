@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import io
 from pathlib import Path
 from uuid import UUID
@@ -11,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.media.local_storage import LocalMediaStorage
+from talaqi.media.models import build_verified_storage_key
 
 from .conftest import app_for, create_user, media_settings
 
@@ -193,3 +195,87 @@ async def test_media_routes_enforce_verification_csrf_owner_and_safe_failures(
     assert foreign.status_code == 404
     assert tampered.status_code == 404
     assert "storage_key" not in created.text
+
+
+@pytest.mark.asyncio
+async def test_public_media_requires_verified_attachment_to_eligible_content(
+    media_engine: AsyncEngine,
+    tmp_path: Path,
+) -> None:
+    owner = await create_user(media_engine)
+    asset_id = generate_uuid7()
+    club_id = generate_uuid7()
+    content = b"RIFF-canonical-webp"
+    key = build_verified_storage_key(owner.user_id, asset_id)
+    adapter = storage(tmp_path)
+    await adapter.replace(key, content, "image/webp")
+    async with media_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                INSERT INTO talaqi.media_assets (
+                    id, owner_user_id, status, storage_key, original_filename,
+                    content_type, byte_size, width, height, sha256, verified_at
+                ) VALUES (
+                    :id, :owner, 'verified', :key, 'cover.webp', 'image/webp',
+                    :byte_size, 8, 6, :sha256, clock_timestamp()
+                )
+                """
+            ),
+            {
+                "id": asset_id,
+                "owner": owner.user_id,
+                "key": key,
+                "byte_size": len(content),
+                "sha256": hashlib.sha256(content).digest(),
+            },
+        )
+        await connection.execute(
+            text(
+                """
+                INSERT INTO talaqi.clubs (
+                    id, owner_user_id, slug, name, description, category_id,
+                    country_id, city_id, cover_media_id, membership_policy,
+                    status, published_at
+                )
+                SELECT :id, :owner, :slug, 'Public Media Club', 'Safe cover.',
+                       category.id, country.id, city.id, :asset_id, 'open',
+                       'published', clock_timestamp()
+                FROM talaqi.categories AS category
+                CROSS JOIN talaqi.countries AS country
+                JOIN talaqi.cities AS city ON city.country_id = country.id
+                WHERE category.slug = 'sports' AND country.code = 'TR'
+                  AND city.slug = 'istanbul'
+                """
+            ),
+            {
+                "id": club_id,
+                "owner": owner.user_id,
+                "slug": f"public-media-{club_id}",
+                "asset_id": asset_id,
+            },
+        )
+    app = app_for(media_engine, adapter)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app),
+        base_url="http://localhost",
+    ) as client:
+        public = await client.get(f"/api/v1/media/public/{asset_id}")
+        missing = await client.get(f"/api/v1/media/public/{generate_uuid7()}")
+        async with media_engine.begin() as connection:
+            await connection.execute(
+                text(
+                    """
+                    UPDATE talaqi.clubs SET suspended_at = clock_timestamp()
+                    WHERE id = :club_id
+                    """
+                ),
+                {"club_id": club_id},
+            )
+        suspended = await client.get(f"/api/v1/media/public/{asset_id}")
+    assert public.status_code == 200
+    assert public.content == content
+    assert public.headers["content-type"] == "image/webp"
+    assert public.headers["cache-control"] == "public, max-age=60, s-maxage=300, must-revalidate"
+    assert public.headers["x-content-type-options"] == "nosniff"
+    assert missing.status_code == suspended.status_code == 404

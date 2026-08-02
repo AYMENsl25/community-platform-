@@ -14,12 +14,14 @@ const event = {
   start_at: "2035-04-12T07:00:00Z",
   end_at: "2035-04-12T09:00:00Z",
   time_zone: "Europe/Istanbul",
+  ownership_type: "independent",
+  cancellation_cutoff_minutes: 60,
   price_type: "free",
   district: "Kadikoy",
   public_meeting_area: "Waterfront meeting point",
   capacity: 30,
   available_places: 12,
-  cover_storage_key: "private/storage/key",
+  cover_media_id: "018f0000-0000-7000-8000-000000000299",
   club_slug: "istanbul-community",
   club_name: "Istanbul Community Club",
   organizer_display_name: "Fixture Owner",
@@ -59,7 +61,7 @@ describe("EventCard", () => {
     const { container } = render(<EventCard event={event} locale="en" />);
     const rendered = container.textContent ?? "";
 
-    expect(rendered).not.toContain(event.cover_storage_key);
+    expect(rendered).not.toContain(event.cover_media_id);
     expect(rendered).not.toMatch(
       /latitude|longitude|exact.address|ranking.score/i,
     );

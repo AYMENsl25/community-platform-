@@ -19,6 +19,8 @@ class EventAudienceResponse(BaseModel):
     start_at: datetime
     end_at: datetime
     time_zone: str
+    ownership_type: Literal["club", "independent"]
+    cancellation_cutoff_minutes: int = Field(ge=0)
     price_type: Literal["free", "cash"]
     district: str | None
     public_meeting_area: str | None
@@ -27,7 +29,7 @@ class EventAudienceResponse(BaseModel):
     longitude: float | None
     capacity: int | None
     available_places: int | None
-    cover_storage_key: str | None
+    cover_media_id: UUID | None
     club_slug: str | None
     club_name: str | None
     organizer_display_name: str | None

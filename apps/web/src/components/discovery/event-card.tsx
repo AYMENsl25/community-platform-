@@ -1,6 +1,8 @@
 import type { components } from "@talaqi/api-client";
 import { formatNumber, translate, type LocaleCode } from "@talaqi/translations";
+import { CanonicalCover } from "./canonical-cover";
 import "./discovery.css";
+import { SaveEventButton } from "./save-event-button";
 
 type Event = components["schemas"]["EventCardResponse"];
 export type EventCardLabels = {
@@ -46,6 +48,7 @@ export function EventCard({
   }).format(new Date(event.start_at));
   return (
     <article className="tq-discovery-card tq-event-card" lang={locale}>
+      <CanonicalCover mediaId={event.cover_media_id} alt="" />
       <p className="tq-discovery-card__eyebrow">
         {humanize(event.category_slug)} ·{" "}
         {event.price_type === "free" ? labels.free : labels.cash}
@@ -83,9 +86,11 @@ export function EventCard({
         <p className="tq-discovery-note">{labels.featuredReason}</p>
       ) : null}
       {showSave ? (
-        <button className="tq-discovery-control" type="button">
-          {event.is_saved ? labels.saved : labels.save}
-        </button>
+        <SaveEventButton
+          eventId={event.id}
+          initialSaved={event.is_saved}
+          locale={locale}
+        />
       ) : null}
     </article>
   );

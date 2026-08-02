@@ -773,6 +773,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/media/public/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Media */
+        get: operations["getPublicMedia"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/media/uploads": {
         parameters: {
             query?: never;
@@ -1122,8 +1139,8 @@ export interface components {
             city_slug: string;
             /** Country Code */
             country_code: string;
-            /** Cover Storage Key */
-            cover_storage_key: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
             /** Description */
             description: string;
             /**
@@ -1175,8 +1192,8 @@ export interface components {
             city_slug: string;
             /** Country Code */
             country_code: string;
-            /** Cover Storage Key */
-            cover_storage_key: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
             /** Description */
             description: string;
             /** Events */
@@ -1368,6 +1385,8 @@ export interface components {
         EventAudienceResponse: {
             /** Available Places */
             available_places: number | null;
+            /** Cancellation Cutoff Minutes */
+            cancellation_cutoff_minutes: number;
             /** Capacity */
             capacity: number | null;
             /** Category Slug */
@@ -1380,8 +1399,8 @@ export interface components {
             club_slug: string | null;
             /** Country Code */
             country_code: string;
-            /** Cover Storage Key */
-            cover_storage_key: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
             /** Description */
             description: string;
             /** District */
@@ -1407,6 +1426,11 @@ export interface components {
             /** Organizer Display Name */
             organizer_display_name: string | null;
             /**
+             * Ownership Type
+             * @enum {string}
+             */
+            ownership_type: "club" | "independent";
+            /**
              * Price Type
              * @enum {string}
              */
@@ -1429,6 +1453,8 @@ export interface components {
         EventCardResponse: {
             /** Available Places */
             available_places: number | null;
+            /** Cancellation Cutoff Minutes */
+            cancellation_cutoff_minutes: number;
             /** Capacity */
             capacity: number | null;
             /** Category Slug */
@@ -1441,8 +1467,8 @@ export interface components {
             club_slug: string | null;
             /** Country Code */
             country_code: string;
-            /** Cover Storage Key */
-            cover_storage_key: string | null;
+            /** Cover Media Id */
+            cover_media_id: string | null;
             /** Description */
             description: string;
             /** District */
@@ -1461,6 +1487,11 @@ export interface components {
             is_saved: boolean;
             /** Organizer Display Name */
             organizer_display_name: string | null;
+            /**
+             * Ownership Type
+             * @enum {string}
+             */
+            ownership_type: "club" | "independent";
             /**
              * Price Type
              * @enum {string}
@@ -5021,6 +5052,40 @@ export interface operations {
             };
             /** @description Authentication required. */
             401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getPublicMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Media asset not found. */
+            404: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

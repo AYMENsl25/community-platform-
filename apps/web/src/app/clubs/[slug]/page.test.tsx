@@ -20,7 +20,7 @@ const club = {
   country_code: "TR",
   city_slug: "istanbul",
   category_slug: "sports",
-  cover_storage_key: "private/key",
+  cover_media_id: "018f0000-0000-7000-8000-000000000299",
   member_count: 42,
   events: [],
 } satisfies components["schemas"]["ClubDetailResponse"];

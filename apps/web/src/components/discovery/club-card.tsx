@@ -5,6 +5,7 @@ import {
   type TranslationKey,
 } from "@talaqi/translations";
 import "./discovery.css";
+import { CanonicalCover } from "./canonical-cover";
 type Club = components["schemas"]["ClubCardResponse"];
 export type ClubCardLabels = { location: string };
 
@@ -20,6 +21,7 @@ export function ClubCard({
   const copy = { location: translate(locale, "filters.city"), ...labels };
   return (
     <article className="tq-discovery-card tq-club-card" lang={locale}>
+      <CanonicalCover mediaId={club.cover_media_id} alt="" />
       <p className="tq-discovery-card__eyebrow">
         {translate(
           locale,

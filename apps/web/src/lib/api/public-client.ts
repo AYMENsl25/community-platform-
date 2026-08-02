@@ -13,11 +13,12 @@ export type ApiResult<T> =
   | { ok: false; key: UiErrorKey; status: number; requestId?: string };
 
 type EventPage = components["schemas"]["EventPageResponse"];
-type EventCard = components["schemas"]["EventCardResponse"];
+type EventDetail = components["schemas"]["EventAudienceResponse"];
 type ClubPage = components["schemas"]["ClubPageResponse"];
 type ClubDetail = components["schemas"]["ClubDetailResponse"];
 type SearchPage = components["schemas"]["SearchPageResponse"];
 type Metadata = components["schemas"]["DiscoveryMetadataResponse"];
+type RegionPolicy = components["schemas"]["RegionPolicyResponse"];
 type EventQuery = NonNullable<operations["listEvents"]["parameters"]["query"]>;
 type ClubQuery = NonNullable<operations["listClubs"]["parameters"]["query"]>;
 type SearchQuery = operations["searchDiscovery"]["parameters"]["query"];
@@ -38,11 +39,12 @@ export interface PublicClientOptions {
 
 export interface PublicClient {
   listEvents(query: EventQuery): Promise<ApiResult<EventPage>>;
-  getEvent(eventId: string): Promise<ApiResult<EventCard>>;
+  getEvent(eventId: string): Promise<ApiResult<EventDetail>>;
   listClubs(query: ClubQuery): Promise<ApiResult<ClubPage>>;
   getClub(slug: string): Promise<ApiResult<ClubDetail>>;
   search(query: SearchQuery): Promise<ApiResult<SearchPage>>;
   getMetadata(): Promise<ApiResult<Metadata>>;
+  getRegionPolicy(countryCode: string): Promise<ApiResult<RegionPolicy>>;
   listSavedEvents(query: SavedQuery): Promise<ApiResult<EventPage>>;
   saveEvent(eventId: string): Promise<ApiResult<void>>;
   unsaveEvent(eventId: string): Promise<ApiResult<void>>;
@@ -164,6 +166,10 @@ export function createPublicClient(options: PublicClientOptions): PublicClient {
       }),
     getMetadata: () =>
       request("/api/v1/metadata", { tag: "discovery:metadata" }),
+    getRegionPolicy: (countryCode) =>
+      request(`/api/v1/regions/${encodeURIComponent(countryCode)}/policy`, {
+        tag: `region:policy:${countryCode}`,
+      }),
     listSavedEvents: (query) =>
       request(`/api/v1/me/saved-events${queryString(query)}`, {
         private: true,

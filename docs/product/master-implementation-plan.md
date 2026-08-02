@@ -241,31 +241,31 @@
 
 **Produces:** create/get/update/cancel/complete/delete-draft/duplicate event endpoints.
 
-- [ ] Support club/independent ownership, draft/published lifecycle, public/private-link visibility, future start/end, IANA zone, country/city, capacity, category, free/cash method, deadlines, media, and revision.
-- [ ] Enforce manager policy, event-country regional rules, paired coordinates, exact-venue policy, ownership limits, canonical cover media, and audit records.
-- [ ] Test invalid dates/zones/coordinates, unauthorized club use, limit/rule violations, stale revisions, cancellation, duplicate-as-draft, and suspended owners.
-- [ ] Gate: event domain/repository/API/security tests, migration round trip, client check; commit `feat: add club and independent events`.
+- [x] Support club/independent ownership, draft/published lifecycle, public/private-link visibility, future start/end, IANA zone, country/city, capacity, category, free/cash method, deadlines, media, and revision.
+- [x] Enforce manager policy, event-country regional rules, paired coordinates, exact-venue policy, ownership limits, canonical cover media, and audit records.
+- [x] Test invalid dates/zones/coordinates, unauthorized club use, limit/rule violations, stale revisions, cancellation, duplicate-as-draft, and suspended owners.
+- [x] Gate: event domain/repository/API/security tests, migration round trip, client check; commit `feat: add club and independent events`.
 
 ### Task 3.3: Private-link access and venue disclosure
 
 **Produces:** tokenized private-event resolver and audience-aware event detail projection.
 
-- [ ] Generate high-entropy tokens, store only token hashes, support rotation/revocation, exclude tokens from logs/referrers/analytics, and rate-limit access attempts.
-- [ ] Return city/district publicly and exact address/coordinates only to managers, confirmed attendees, or unexpired cash-pending attendees unless explicitly public.
-- [ ] Gate: token leakage/brute-force/privacy matrix tests; commit `feat: protect private events and venue details`.
+- [x] Generate high-entropy tokens, store only token hashes, support rotation/revocation, exclude tokens from logs/referrers/analytics, and rate-limit access attempts.
+- [x] Return city/district publicly and exact address/coordinates only to managers, confirmed attendees, or unexpired cash-pending attendees unless explicitly public.
+- [x] Gate: token leakage/brute-force/privacy matrix tests; commit `feat: protect private events and venue details`.
 
 ### Task 3.4: Shared event form and organizer operations UI
 
-- [ ] Build one schema-driven form for create/edit/duplicate with ownership selector, regional policy hints, date/time-zone controls, visibility, media, capacity, method, deadlines, and venue disclosure preview.
-- [ ] Add organizer event list/detail, attendee placeholder, lifecycle actions, optimistic-revision conflict recovery, and canonical preview cards.
-- [ ] Gate: component tests, club/independent organizer Playwright journeys, mobile/RTL/accessibility, and build.
-- [ ] Commit `feat: add event organizer workspace`.
+- [x] Build one schema-driven form for create/edit/duplicate with ownership selector, regional policy hints, date/time-zone controls, visibility, media, capacity, method, deadlines, and venue disclosure preview.
+- [x] Add organizer event list/detail, attendee placeholder, lifecycle actions, optimistic-revision conflict recovery, and canonical preview cards.
+- [x] Gate: component tests, club/independent organizer Playwright journeys, mobile/RTL/accessibility, and build.
+- [x] Commit `feat: add event organizer workspace`.
 
 ### Task 3.5: Complete public club/event details
 
-- [ ] Add canonical media, organizer trust/ownership, localized schedule, coarse venue/map, availability, rules/cancellation summary, save affordance, club events, and related rule-based events.
-- [ ] Ensure private/suspended/draft content cannot appear in metadata, sitemaps, caches, or public fetches.
-- [ ] Gate: SEO/privacy/component/Playwright tests in four locales; commit `feat: complete public event and club experiences`.
+- [x] Add canonical media, organizer trust/ownership, localized schedule, coarse venue/map, availability, rules/cancellation summary, save affordance, club events, and related rule-based events.
+- [x] Ensure private/suspended/draft content cannot appear in metadata, sitemaps, caches, or public fetches.
+- [x] Gate: SEO/privacy/component/Playwright tests in four locales; commit `feat: complete public event and club experiences`.
 
 **Phase 3 exit:** Eligible members publish safe club or independent events, private links remain unindexed and secret, and exact venues obey the approved audience policy.
 

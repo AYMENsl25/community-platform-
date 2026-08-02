@@ -166,6 +166,19 @@ export const turkishDictionary = {
   "discovery.loadMore": "Daha fazla sonuç yükle",
   "discovery.rules": "Etkinlik kuralları",
   "discovery.cancellation": "İptal özeti",
+  "discovery.relatedEvents": "\u0130lgili etkinlikler",
+  "discovery.clubOrganized":
+    "Yay\u0131mlanm\u0131\u015f bir kul\u00fcp taraf\u0131ndan d\u00fczenleniyor",
+  "discovery.independentOrganized":
+    "Ba\u011f\u0131ms\u0131z topluluk organizat\u00f6r\u00fc",
+  "discovery.openMap": "Haritay\u0131 a\u00e7",
+  "discovery.registrationRuleFree": "\u00dccretsiz kay\u0131t",
+  "discovery.registrationRuleCash":
+    "Organizat\u00f6r taraf\u0131ndan onaylanan nakit kay\u0131t",
+  "discovery.minutesBeforeStart": "etkinlik ba\u015flamadan \u00f6nceki dakika",
+  "discovery.members": "\u00fcye",
+  "discovery.noClubEvents":
+    "Hen\u00fcz planlanm\u0131\u015f herkese a\u00e7\u0131k etkinlik yok.",
   "states.errorTitle": "İçerik kullanılamıyor",
   "states.retry": "Yeniden dene",
   "filters.title": "Filtreler",

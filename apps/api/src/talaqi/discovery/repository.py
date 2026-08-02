@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime
-from typing import cast
+from typing import Literal, cast
 from uuid import UUID
 
 from sqlalchemy import text
@@ -35,6 +35,8 @@ def _event(row: Mapping[str, object]) -> EventCard:
         start_at=cast(datetime, row["start_at"]),
         end_at=cast(datetime, row["end_at"]),
         time_zone=cast(str, row["time_zone"]),
+        ownership_type=cast(Literal["club", "independent"], row["ownership_type"]),
+        cancellation_cutoff_minutes=cast(int, row["cancellation_cutoff_minutes"]),
         price_type="free" if row["registration_method"] == "free" else "cash",
         district=cast(str | None, row["district"]),
         public_meeting_area=cast(str | None, row["public_meeting_area"]),
@@ -44,7 +46,7 @@ def _event(row: Mapping[str, object]) -> EventCard:
             if row["capacity"] is None
             else max(0, cast(int, row["capacity"]) - cast(int, row["reserved"]))
         ),
-        cover_storage_key=cast(str | None, row["cover_storage_key"]),
+        cover_media_id=cast(UUID | None, row["cover_media_id"]),
         club_slug=cast(str | None, row["club_slug"]),
         club_name=cast(str | None, row["club_name"]),
         organizer_display_name=cast(str | None, row["organizer_display_name"]),
@@ -64,7 +66,7 @@ def _club(row: Mapping[str, object]) -> ClubCard:
         country_code=cast(str, row["country_code"]).strip(),
         city_slug=cast(str, row["city_slug"]),
         category_slug=cast(str, row["category_slug"]),
-        cover_storage_key=cast(str | None, row["cover_storage_key"]),
+        cover_media_id=cast(UUID | None, row["cover_media_id"]),
         member_count=cast(int, row["member_count"]),
     )
 
@@ -153,10 +155,11 @@ class DiscoveryRepository:
         query = f"""
             SELECT event.id, event.title, event.description, country.code AS country_code,
                    city.slug AS city_slug, category.slug AS category_slug,
-                   event.start_at, event.end_at, event.time_zone, event.registration_method,
+                   event.start_at, event.end_at, event.time_zone, event.ownership_type,
+                   event.registration_method, event.cancellation_cutoff_minutes,
                    event.district, event.public_meeting_area,
                    event.capacity,
-                   cover.storage_key AS cover_storage_key, club.slug AS club_slug,
+                   cover.id AS cover_media_id, club.slug AS club_slug,
                    club.name AS club_name,
                    coalesce(owner_profile.display_name, club.name) AS organizer_display_name,
                    {_SCORE} AS featured_score,
@@ -180,7 +183,7 @@ class DiscoveryRepository:
             LEFT JOIN talaqi.saved_events AS saved ON saved.event_id = event.id
                 AND saved.user_id = :caller_id
             WHERE {" AND ".join(conditions)}
-            GROUP BY event.id, country.code, city.slug, category.slug, cover.storage_key,
+            GROUP BY event.id, country.code, city.slug, category.slug, cover.id,
                      club.slug, club.name, owner_profile.display_name
             ORDER BY featured_score DESC, event.start_at ASC, event.id ASC
             LIMIT :limit
@@ -236,7 +239,7 @@ class DiscoveryRepository:
                                club.description,
                                country.code AS country_code, city.slug AS city_slug,
                                category.slug AS category_slug,
-                               cover.storage_key AS cover_storage_key,
+                               cover.id AS cover_media_id,
                                (
                                    SELECT count(*)::integer
                                    FROM talaqi.club_memberships AS membership

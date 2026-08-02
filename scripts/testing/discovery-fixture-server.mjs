@@ -12,14 +12,19 @@ const events = [
     country_code: "TR",
     city_slug: "istanbul",
     district: "Kadikoy",
+    exact_address: null,
+    latitude: null,
+    longitude: null,
     public_meeting_area: "Park entrance",
     start_at: "2026-09-20T08:00:00Z",
     end_at: "2026-09-20T10:00:00Z",
     time_zone: "Europe/Istanbul",
+    ownership_type: "club",
+    cancellation_cutoff_minutes: 60,
     price_type: "free",
     capacity: 30,
     available_places: 12,
-    cover_storage_key: null,
+    cover_media_id: null,
     club_name: "Istanbul Neighbours",
     club_slug: "istanbul-neighbours",
     organizer_display_name: "Talaqi Fixtures",
@@ -27,6 +32,15 @@ const events = [
     registration_state: null,
   },
 ];
+
+events.push({
+  ...events[0],
+  id: "11111111-1111-4111-8111-111111111112",
+  title: "Istanbul Park Yoga",
+  description: "A related public activity selected by city and category.",
+  start_at: "2026-09-21T08:00:00Z",
+  end_at: "2026-09-21T09:00:00Z",
+});
 
 const clubs = [
   {
@@ -37,7 +51,8 @@ const clubs = [
     category_slug: "community",
     country_code: "TR",
     city_slug: "istanbul",
-    cover_storage_key: null,
+    cover_media_id: null,
+    member_count: 42,
   },
 ];
 
@@ -621,6 +636,27 @@ createServer(async (request, response) => {
     });
   }
   const targetIsPublic = adminTargetStatus === "published";
+  const savedPath = `/api/v1/events/${events[0].id}/saved`;
+  if (
+    url.pathname === savedPath &&
+    ["PUT", "DELETE"].includes(request.method)
+  ) {
+    if (!(request.headers.cookie ?? "").includes("talaqi_access="))
+      return send(
+        response,
+        401,
+        { error: { code: "unauthorized" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    return send(response, 204, undefined, "private, no-store");
+  }
   if (url.pathname === "/api/v1/events")
     return send(response, 200, {
       items: empty || !targetIsPublic ? [] : events,

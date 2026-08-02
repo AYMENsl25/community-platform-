@@ -168,6 +168,19 @@ export const frenchDictionary: Dictionary = {
   "discovery.loadMore": "Afficher plus de résultats",
   "discovery.rules": "Règles de l’événement",
   "discovery.cancellation": "Résumé des conditions d’annulation",
+  "discovery.relatedEvents": "\u00c9v\u00e9nements associ\u00e9s",
+  "discovery.clubOrganized": "Organis\u00e9 par un club publi\u00e9",
+  "discovery.independentOrganized":
+    "Organisateur communautaire ind\u00e9pendant",
+  "discovery.openMap": "Ouvrir la carte",
+  "discovery.registrationRuleFree": "Inscription gratuite",
+  "discovery.registrationRuleCash":
+    "Inscription en esp\u00e8ces confirm\u00e9e par l\u2019organisateur",
+  "discovery.minutesBeforeStart":
+    "minutes avant le d\u00e9but de l\u2019\u00e9v\u00e9nement",
+  "discovery.members": "membres",
+  "discovery.noClubEvents":
+    "Aucun \u00e9v\u00e9nement public n\u2019est encore programm\u00e9.",
   "states.errorTitle": "Contenu indisponible",
   "states.retry": "Réessayer",
   "filters.title": "Filtres de recherche",

@@ -127,6 +127,34 @@ async def _acquire(
     return repository, acquisition, current
 
 
+@router.get(
+    "/public/{asset_id:uuid}",
+    operation_id="getPublicMedia",
+    responses={404: _NOT_FOUND},
+)
+async def get_public_media(
+    asset_id: UUID,
+    request: Request,
+    session: DatabaseSession,
+) -> Response:
+    asset = await MediaRepository(session).get_public(asset_id)
+    if asset is None:
+        raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
+    runtime: LazyMediaStorage = request.app.state.media_storage_runtime
+    try:
+        content = await runtime.resolve().read(asset.storage_key, max_bytes=MAX_UPLOAD_BYTES)
+    except StorageError:
+        raise ApiError(code="not_found", message_key="errors.not_found", status_code=404) from None
+    return Response(
+        content=content,
+        media_type=asset.content_type,
+        headers={
+            "Cache-Control": "public, max-age=60, s-maxage=300, must-revalidate",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 @router.post(
     "/uploads",
     response_model=MediaUploadResponse,

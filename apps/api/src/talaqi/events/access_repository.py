@@ -35,6 +35,8 @@ def _projection(row: Mapping[str, object]) -> EventAudienceProjection:
         start_at=cast(datetime, row["start_at"]),
         end_at=cast(datetime, row["end_at"]),
         time_zone=cast(str, row["time_zone"]),
+        ownership_type=cast(Literal["club", "independent"], row["ownership_type"]),
+        cancellation_cutoff_minutes=cast(int, row["cancellation_cutoff_minutes"]),
         price_type="free" if row["registration_method"] == "free" else "cash",
         district=cast(str | None, row["district"]),
         public_meeting_area=cast(str | None, row["public_meeting_area"]),
@@ -47,7 +49,7 @@ def _projection(row: Mapping[str, object]) -> EventAudienceProjection:
             if row["capacity"] is None
             else max(0, cast(int, row["capacity"]) - cast(int, row["reserved"]))
         ),
-        cover_storage_key=cast(str | None, row["cover_storage_key"]),
+        cover_media_id=cast(UUID | None, row["cover_media_id"]),
         club_slug=cast(str | None, row["club_slug"]),
         club_name=cast(str | None, row["club_name"]),
         organizer_display_name=cast(str | None, row["organizer_display_name"]),
@@ -230,10 +232,11 @@ class EventAccessRepository:
                         SELECT event.id, event.title, event.description,
                                country.code AS country_code, city.slug AS city_slug,
                                category.slug AS category_slug, event.start_at, event.end_at,
-                               event.time_zone, event.registration_method, event.district,
+                               event.time_zone, event.ownership_type, event.registration_method,
+                               event.cancellation_cutoff_minutes, event.district,
                                event.public_meeting_area,
                                event.capacity,
-                               cover.storage_key AS cover_storage_key,
+                               cover.id AS cover_media_id,
                                club.slug AS club_slug, club.name AS club_name,
                                coalesce(owner_profile.display_name, club.name)
                                    AS organizer_display_name,

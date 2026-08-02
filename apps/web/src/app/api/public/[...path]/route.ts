@@ -1,0 +1,65 @@
+import type { NextRequest } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function allowed(method: string, path: string[]): boolean {
+  return Boolean(
+    (method === "PUT" || method === "DELETE") &&
+    path.length === 5 &&
+    path[0] === "api" &&
+    path[1] === "v1" &&
+    path[2] === "events" &&
+    UUID.test(path[3] ?? "") &&
+    path[4] === "saved",
+  );
+}
+
+async function forward(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> },
+): Promise<Response> {
+  const { path } = await context.params;
+  if (!allowed(request.method, path))
+    return Response.json({ error: { code: "not_found" } }, { status: 404 });
+  const baseUrl = (
+    process.env.API_PUBLIC_URL ?? "http://localhost:8000"
+  ).replace(/\/$/, "");
+  const access = request.cookies.get("talaqi_access")?.value;
+  const csrfCookie = request.cookies.get("talaqi_csrf")?.value;
+  const csrf = request.headers.get("x-csrf-token");
+  const cookie = [
+    access ? `talaqi_access=${access}` : undefined,
+    csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
+  ]
+    .filter(Boolean)
+    .join("; ");
+  const headers: Record<string, string> = {};
+  if (cookie) headers.Cookie = cookie;
+  if (csrf) headers["X-CSRF-Token"] = csrf;
+  try {
+    const response = await fetch(`${baseUrl}/${path.join("/")}`, {
+      method: request.method,
+      headers,
+      cache: "no-store",
+    });
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        "Content-Type":
+          response.headers.get("content-type") ?? "application/json",
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch {
+    return Response.json(
+      { error: { code: "upstream_unavailable" } },
+      { status: 502, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
+}
+
+export const PUT = forward;
+export const DELETE = forward;

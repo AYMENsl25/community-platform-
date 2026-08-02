@@ -30,6 +30,8 @@ class MediaRepositoryProtocol(Protocol):
         for_update: bool = False,
     ) -> MediaAsset | None: ...
 
+    async def get_public(self, asset_id: UUID) -> MediaAsset | None: ...
+
     async def mark_verified(
         self,
         asset: MediaAsset,
@@ -163,6 +165,53 @@ class MediaRepository:
                 await self._session.execute(
                     statement,
                     {"asset_id": asset_id, "owner_user_id": owner_user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return None if row is None else _asset(dict(row))
+
+    async def get_public(self, asset_id: UUID) -> MediaAsset | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT asset.id, asset.owner_user_id, asset.status::text AS status,
+                               asset.storage_key, asset.original_filename, asset.content_type,
+                               asset.byte_size, asset.width, asset.height, asset.sha256,
+                               asset.verified_at, asset.quarantine_reason,
+                               asset.created_at, asset.updated_at
+                        FROM talaqi.media_assets AS asset
+                        WHERE asset.id = :asset_id
+                          AND asset.status = 'verified'
+                          AND (
+                              EXISTS (
+                                  SELECT 1 FROM talaqi.events AS event
+                                  LEFT JOIN talaqi.clubs AS club ON club.id = event.club_id
+                                  WHERE event.cover_media_id = asset.id
+                                    AND event.status = 'published'
+                                    AND event.visibility = 'public'
+                                    AND event.suspended_at IS NULL
+                                    AND (
+                                        event.ownership_type <> 'club'
+                                        OR (
+                                            club.status = 'published'
+                                            AND club.suspended_at IS NULL
+                                        )
+                                    )
+                              )
+                              OR EXISTS (
+                                  SELECT 1 FROM talaqi.clubs AS club
+                                  WHERE club.cover_media_id = asset.id
+                                    AND club.status = 'published'
+                                    AND club.suspended_at IS NULL
+                              )
+                          )
+                        """
+                    ),
+                    {"asset_id": asset_id},
                 )
             )
             .mappings()

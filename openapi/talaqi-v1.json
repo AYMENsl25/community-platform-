@@ -660,16 +660,17 @@
             "title": "Country Code",
             "type": "string"
           },
-          "cover_storage_key": {
+          "cover_media_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Cover Storage Key"
+            "title": "Cover Media Id"
           },
           "description": {
             "title": "Description",
@@ -702,7 +703,7 @@
           "country_code",
           "city_slug",
           "category_slug",
-          "cover_storage_key",
+          "cover_media_id",
           "member_count"
         ],
         "title": "ClubCardResponse",
@@ -840,16 +841,17 @@
             "title": "Country Code",
             "type": "string"
           },
-          "cover_storage_key": {
+          "cover_media_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Cover Storage Key"
+            "title": "Cover Media Id"
           },
           "description": {
             "title": "Description",
@@ -889,7 +891,7 @@
           "country_code",
           "city_slug",
           "category_slug",
-          "cover_storage_key",
+          "cover_media_id",
           "member_count",
           "events"
         ],
@@ -1490,6 +1492,11 @@
             ],
             "title": "Available Places"
           },
+          "cancellation_cutoff_minutes": {
+            "minimum": 0.0,
+            "title": "Cancellation Cutoff Minutes",
+            "type": "integer"
+          },
           "capacity": {
             "anyOf": [
               {
@@ -1535,16 +1542,17 @@
             "title": "Country Code",
             "type": "string"
           },
-          "cover_storage_key": {
+          "cover_media_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Cover Storage Key"
+            "title": "Cover Media Id"
           },
           "description": {
             "title": "Description",
@@ -1619,6 +1627,14 @@
             ],
             "title": "Organizer Display Name"
           },
+          "ownership_type": {
+            "enum": [
+              "club",
+              "independent"
+            ],
+            "title": "Ownership Type",
+            "type": "string"
+          },
           "price_type": {
             "enum": [
               "free",
@@ -1673,6 +1689,8 @@
           "start_at",
           "end_at",
           "time_zone",
+          "ownership_type",
+          "cancellation_cutoff_minutes",
           "price_type",
           "district",
           "public_meeting_area",
@@ -1681,7 +1699,7 @@
           "longitude",
           "capacity",
           "available_places",
-          "cover_storage_key",
+          "cover_media_id",
           "club_slug",
           "club_name",
           "organizer_display_name",
@@ -1704,6 +1722,11 @@
               }
             ],
             "title": "Available Places"
+          },
+          "cancellation_cutoff_minutes": {
+            "minimum": 0.0,
+            "title": "Cancellation Cutoff Minutes",
+            "type": "integer"
           },
           "capacity": {
             "anyOf": [
@@ -1750,16 +1773,17 @@
             "title": "Country Code",
             "type": "string"
           },
-          "cover_storage_key": {
+          "cover_media_id": {
             "anyOf": [
               {
+                "format": "uuid",
                 "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Cover Storage Key"
+            "title": "Cover Media Id"
           },
           "description": {
             "title": "Description",
@@ -1800,6 +1824,14 @@
               }
             ],
             "title": "Organizer Display Name"
+          },
+          "ownership_type": {
+            "enum": [
+              "club",
+              "independent"
+            ],
+            "title": "Ownership Type",
+            "type": "string"
           },
           "price_type": {
             "enum": [
@@ -1855,12 +1887,14 @@
           "start_at",
           "end_at",
           "time_zone",
+          "ownership_type",
+          "cancellation_cutoff_minutes",
           "price_type",
           "district",
           "public_meeting_area",
           "capacity",
           "available_places",
-          "cover_storage_key",
+          "cover_media_id",
           "club_slug",
           "club_name",
           "organizer_display_name",
@@ -9267,6 +9301,60 @@
         "summary": "List Saved Events",
         "tags": [
           "discovery"
+        ]
+      }
+    },
+    "/api/v1/media/public/{asset_id}": {
+      "get": {
+        "operationId": "getPublicMedia",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Asset Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Media asset not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Public Media",
+        "tags": [
+          "media"
         ]
       }
     },

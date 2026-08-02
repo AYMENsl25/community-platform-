@@ -12,7 +12,7 @@ const club = {
   country_code: "TR",
   city_slug: "istanbul",
   category_slug: "social",
-  cover_storage_key: "private/club/key",
+  cover_media_id: "018f0000-0000-7000-8000-000000000299",
   member_count: 42,
 } satisfies components["schemas"]["ClubCardResponse"];
 

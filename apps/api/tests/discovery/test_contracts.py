@@ -12,6 +12,7 @@ def test_discovery_openapi_is_connection_free_and_complete() -> None:
         "/api/v1/events": {"get"},
         "/api/v1/events/{event_id}": {"get"},
         "/api/v1/events/{event_id}/saved": {"put", "delete"},
+        "/api/v1/media/public/{asset_id}": {"get"},
         "/api/v1/clubs": {"get", "post"},
         "/api/v1/clubs/{club_id}": {"get", "patch"},
         "/api/v1/clubs/{club_id}/join": {"post"},
@@ -79,6 +80,7 @@ def test_public_discovery_schemas_have_no_private_venue_or_identity_fields() -> 
         "invite_token",
         "attendee",
         "featured_score",
+        "storage_key",
     ):
         assert forbidden not in rendered
 
