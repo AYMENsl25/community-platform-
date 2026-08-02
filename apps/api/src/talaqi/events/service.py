@@ -49,6 +49,8 @@ class EventRepositoryProtocol(Protocol):
 
     async def get(self, event_id: UUID, *, for_update: bool = False) -> Event | None: ...
 
+    async def list_managed(self, user_id: UUID) -> list[Event]: ...
+
     async def update(
         self,
         event: Event,
@@ -129,6 +131,9 @@ class EventService:
         self._clubs = clubs
         self._media = media
         self._audit = audit
+
+    async def list_managed(self, principal: AuthPrincipal) -> list[Event]:
+        return await self._repository.list_managed(principal.user_id)
 
     async def create(
         self,

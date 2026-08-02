@@ -19,6 +19,7 @@ from talaqi.events.schemas import (
     EventCreateRequest,
     EventPatchRequest,
     EventRevisionRequest,
+    ManagedEventPageResponse,
     ManagedEventResponse,
 )
 from talaqi.events.service import EventService
@@ -88,8 +89,44 @@ def _service(request: Request, session: AsyncSession) -> EventService:
     )
 
 
+def _workspace_capabilities(event: Event) -> tuple[str, ...]:
+    if event.status == "draft":
+        return ("edit", "duplicate", "delete_draft", "preview")
+    if event.status == "published":
+        return ("edit", "duplicate", "cancel", "complete", "preview")
+    if event.status in ("cancelled", "completed"):
+        return ("duplicate", "preview")
+    return ("preview",)
+
+
+def _validation_blockers(event: Event) -> tuple[str, ...]:
+    required = {
+        "description": event.description.strip(),
+        "category_slug": event.category_slug,
+        "country_code": event.country_code,
+        "city_slug": event.city_slug,
+        "start_at": event.start_at,
+        "end_at": event.end_at,
+        "time_zone": event.time_zone,
+        "registration_method": event.registration_method,
+        "cancellation_cutoff_minutes": event.cancellation_cutoff_minutes,
+    }
+    blockers = [name for name, value in required.items() if value is None or value == ""]
+    if event.start_at is not None and event.end_at is not None and event.end_at <= event.start_at:
+        blockers.append("schedule")
+    if (event.latitude is None) != (event.longitude is None):
+        blockers.append("coordinates")
+    return tuple(blockers)
+
+
 def _response(event: Event) -> ManagedEventResponse:
-    return ManagedEventResponse.model_validate(asdict(event))
+    return ManagedEventResponse.model_validate(
+        {
+            **asdict(event),
+            "capabilities": _workspace_capabilities(event),
+            "validation_blockers": _validation_blockers(event),
+        }
+    )
 
 
 def _private(response: Response) -> None:
@@ -106,6 +143,26 @@ def _patch(body: EventPatchRequest) -> EventPatch:
         revision=body.revision,
         changed_fields=frozenset(body.model_fields_set - {"revision"}),
         **body.model_dump(exclude={"revision"}),
+    )
+
+
+@router.get(
+    "/managed",
+    response_model=ManagedEventPageResponse,
+    operation_id="listManagedEvents",
+    responses={401: _AUTH},
+)
+async def list_managed_events(
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+) -> ManagedEventPageResponse:
+    _private(response)
+    return ManagedEventPageResponse(
+        items=[
+            _response(event) for event in await _service(request, session).list_managed(principal)
+        ]
     )
 
 

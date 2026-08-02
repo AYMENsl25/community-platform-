@@ -98,6 +98,9 @@ class FakeRepository:
         del for_update
         return self.events.get(event_id)
 
+    async def list_managed(self, user_id: UUID) -> list[Event]:
+        return [event for event in self.events.values() if event.owner_user_id == user_id]
+
     async def update(
         self, event: Event, *, references: EventReferences, expected_revision: int
     ) -> Event:

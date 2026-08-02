@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { GET, PATCH, POST } from "./route";
+import { DELETE, GET, PATCH, POST } from "./route";
 
 const clubId = "77777777-7777-4777-8777-777777777777";
 
@@ -168,5 +168,58 @@ describe("organizer API proxy", () => {
     expect(await response.json()).toEqual({
       error: { code: "upstream_unavailable" },
     });
+  });
+  it("allowlists event workflows and forwards only CSRF and idempotency headers", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const eventId = "99999999-9999-4999-8999-999999999999";
+    const request = new NextRequest(
+      `http://web.test/api/organizer/api/v1/events/${eventId}`,
+      {
+        method: "DELETE",
+        body: JSON.stringify({ revision: 1 }),
+        headers: {
+          Cookie: "talaqi_access=access; talaqi_csrf=csrf; private=never",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": "csrf",
+          "Idempotency-Key": "event-operation-key",
+          Authorization: "never-forward",
+        },
+      },
+    );
+    const response = await DELETE(
+      request,
+      context(["api", "v1", "events", eventId]),
+    );
+    expect(response.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledWith(
+      `http://api.test/api/v1/events/${eventId}`,
+      expect.objectContaining({
+        method: "DELETE",
+        headers: {
+          Cookie: "talaqi_access=access; talaqi_csrf=csrf",
+          "Content-Type": "application/json",
+          "X-CSRF-Token": "csrf",
+          "Idempotency-Key": "event-operation-key",
+        },
+      }),
+    );
+    const denied = await POST(
+      new NextRequest(
+        "http://web.test/api/organizer/api/v1/events/not-a-uuid",
+        {
+          method: "POST",
+        },
+      ),
+      context(["api", "v1", "events", "not-a-uuid"]),
+    );
+    expect(denied.status).toBe(404);
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });

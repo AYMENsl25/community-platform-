@@ -62,6 +62,16 @@ class EventPatchRequest(BaseModel):
     publish: bool | None = None
 
 
+EventWorkspaceCapability = Literal[
+    "edit",
+    "duplicate",
+    "cancel",
+    "complete",
+    "delete_draft",
+    "preview",
+]
+
+
 class EventRevisionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -104,3 +114,11 @@ class ManagedEventResponse(BaseModel):
     suspension_reason: str | None
     created_at: datetime
     updated_at: datetime
+    capabilities: tuple[EventWorkspaceCapability, ...] = ()
+    validation_blockers: tuple[str, ...] = ()
+
+
+class ManagedEventPageResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    items: list[ManagedEventResponse]

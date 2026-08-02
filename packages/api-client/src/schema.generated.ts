@@ -704,6 +704,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/managed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Managed Events */
+        get: operations["listManagedEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -1745,12 +1762,22 @@ export interface components {
              */
             updated_at: string;
         };
+        /** ManagedEventPageResponse */
+        ManagedEventPageResponse: {
+            /** Items */
+            items: components["schemas"]["ManagedEventResponse"][];
+        };
         /** ManagedEventResponse */
         ManagedEventResponse: {
             /** Cancellation Cutoff Minutes */
             cancellation_cutoff_minutes: number | null;
             /** Cancelled At */
             cancelled_at: string | null;
+            /**
+             * Capabilities
+             * @default []
+             */
+            capabilities: ("edit" | "duplicate" | "cancel" | "complete" | "delete_draft" | "preview")[];
             /** Capacity */
             capacity: number | null;
             /** Cash Expiry Minutes */
@@ -1826,6 +1853,11 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+            /**
+             * Validation Blockers
+             * @default []
+             */
+            validation_blockers: string[];
             /**
              * Visibility
              * @enum {string}
@@ -4814,6 +4846,37 @@ export interface operations {
                 };
             };
             422: components["responses"]["PlatformError"];
+        };
+    };
+    listManagedEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedEventPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
         };
     };
     getMyProfile: {

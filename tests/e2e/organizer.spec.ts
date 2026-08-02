@@ -379,3 +379,55 @@ test("Arabic organizer workspace is RTL, narrow-screen safe, and dismisses confi
   );
   expect(hasOverflow).toBe(false);
 });
+
+test("event owner sees server-owned club and independent workflows", async ({
+  page,
+}) => {
+  await signInAs(page, "owner");
+  await page.goto("/organizer/events");
+  await expect(
+    page.getByRole("heading", { name: "Event organizer workspace" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("option", { name: "Independent event" }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("option", { name: "Workspace Runners" }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("button", { name: "Duplicate as draft" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Delete draft" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Attendee management arrives in Phase 4."),
+  ).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("link", { name: "Skip to main content" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+});
+
+test("ordinary member is denied event ownership and Arabic stays RTL on mobile", async ({
+  page,
+}) => {
+  await signInAs(page, "member", "ar");
+  await page.setViewportSize({ width: 360, height: 760 });
+  await page.goto("/organizer/events");
+  await expect(page.locator(".tq-workspace-shell")).toHaveAttribute(
+    "dir",
+    "rtl",
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.locator(".tq-organizer__header button")).toBeDisabled();
+  await expect(page.getByRole("option")).toHaveCount(0);
+  const hasOverflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth >
+      document.documentElement.clientWidth,
+  );
+  expect(hasOverflow).toBe(false);
+});

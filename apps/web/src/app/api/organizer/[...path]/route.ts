@@ -6,8 +6,53 @@ const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function allowed(method: string, path: string[]): boolean {
-  if (path[0] !== "api" || path[1] !== "v1" || path[2] !== "clubs")
-    return false;
+  if (path[0] !== "api" || path[1] !== "v1") return false;
+  const resource = path[2];
+  if (
+    resource === "profiles" &&
+    method === "GET" &&
+    path.length === 4 &&
+    path[3] === "capabilities"
+  )
+    return true;
+  if (
+    resource === "regions" &&
+    method === "GET" &&
+    path.length === 5 &&
+    /^[a-z]{2}$/i.test(path[3] ?? "") &&
+    path[4] === "policy"
+  )
+    return true;
+  if (resource === "media") {
+    if (method === "POST" && path.length === 4 && path[3] === "uploads")
+      return true;
+    return Boolean(
+      method === "POST" &&
+      path.length === 6 &&
+      path[3] === "uploads" &&
+      UUID.test(path[4] ?? "") &&
+      path[5] === "complete",
+    );
+  }
+  if (resource === "events") {
+    if (method === "GET" && path.length === 4 && path[3] === "managed")
+      return true;
+    if (method === "POST" && path.length === 3) return true;
+    const eventId = path[3];
+    if (!eventId || !UUID.test(eventId)) return false;
+    if (path.length === 4 && (method === "PATCH" || method === "DELETE"))
+      return true;
+    if (method === "GET" && path.length === 5 && path[4] === "managed")
+      return true;
+    return Boolean(
+      method === "POST" &&
+      path.length === 5 &&
+      (path[4] === "duplicate" ||
+        path[4] === "cancel" ||
+        path[4] === "complete"),
+    );
+  }
+  if (resource !== "clubs") return false;
   if (method === "GET" && path.length === 4 && path[3] === "managed")
     return true;
   const clubId = path[3];
@@ -66,6 +111,9 @@ async function forward(
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-CSRF-Token"] = csrf;
   if (contentType) headers["Content-Type"] = contentType;
+  const idempotencyKey = request.headers.get("idempotency-key");
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+
   try {
     const response = await fetch(`${baseUrl}/${path.join("/")}`, {
       method: request.method,
@@ -97,3 +145,4 @@ async function forward(
 export const GET = forward;
 export const PATCH = forward;
 export const POST = forward;
+export const DELETE = forward;

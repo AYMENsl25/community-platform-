@@ -5,6 +5,15 @@ export type ManagedClub = components["schemas"]["ManagedClubResponse"];
 export type ClubMember = components["schemas"]["MemberResponse"];
 export type ClubJoinRequest = components["schemas"]["JoinRequestResponse"];
 export type ClubPatch = components["schemas"]["ClubPatchRequest"];
+export type ManagedEvent = components["schemas"]["ManagedEventResponse"];
+export type EventCreate = components["schemas"]["EventCreateRequest"];
+export type EventPatch = components["schemas"]["EventPatchRequest"];
+export type RegionPolicy = components["schemas"]["RegionPolicyResponse"];
+export type Capabilities = components["schemas"]["Capabilities"];
+export type MediaUploadCreate =
+  components["schemas"]["MediaUploadCreateRequest"];
+export type MediaUpload = components["schemas"]["MediaUploadResponse"];
+export type MediaAsset = components["schemas"]["MediaAssetResponse"];
 
 export type OrganizerResult<T> =
   | { ok: true; data: T }
@@ -20,6 +29,7 @@ type ManagedClubPage = components["schemas"]["ManagedClubPageResponse"];
 type MemberPage = components["schemas"]["MemberPageResponse"];
 type JoinRequestPage = components["schemas"]["JoinRequestPageResponse"];
 type ClubResponse = components["schemas"]["ClubResponse"];
+type ManagedEventPage = components["schemas"]["ManagedEventPageResponse"];
 
 type ErrorBody = {
   error?: {
@@ -37,6 +47,32 @@ export interface OrganizerClientOptions {
 }
 
 export interface OrganizerClient {
+  createMediaUpload(
+    value: MediaUploadCreate,
+  ): Promise<OrganizerResult<MediaUpload>>;
+  completeMediaUpload(assetId: string): Promise<OrganizerResult<MediaAsset>>;
+  listManagedEvents(): Promise<OrganizerResult<ManagedEventPage>>;
+  getManagedEvent(eventId: string): Promise<OrganizerResult<ManagedEvent>>;
+  createEvent(value: EventCreate): Promise<OrganizerResult<ManagedEvent>>;
+  updateEvent(
+    eventId: string,
+    value: EventPatch,
+  ): Promise<OrganizerResult<ManagedEvent>>;
+  duplicateEvent(eventId: string): Promise<OrganizerResult<ManagedEvent>>;
+  cancelEvent(
+    eventId: string,
+    revision: number,
+  ): Promise<OrganizerResult<ManagedEvent>>;
+  completeEvent(
+    eventId: string,
+    revision: number,
+  ): Promise<OrganizerResult<ManagedEvent>>;
+  deleteDraftEvent(
+    eventId: string,
+    revision: number,
+  ): Promise<OrganizerResult<void>>;
+  getCapabilities(): Promise<OrganizerResult<Capabilities>>;
+  getRegionPolicy(countryCode: string): Promise<OrganizerResult<RegionPolicy>>;
   listManagedClubs(): Promise<OrganizerResult<ManagedClubPage>>;
   listMembers(clubId: string): Promise<OrganizerResult<MemberPage>>;
   listRequests(clubId: string): Promise<OrganizerResult<JoinRequestPage>>;
@@ -98,7 +134,11 @@ export function createOrganizerClient(
 
   async function request<T>(
     path: string,
-    init: { method?: "GET" | "PATCH" | "POST"; body?: unknown } = {},
+    init: {
+      method?: "GET" | "PATCH" | "POST" | "DELETE";
+      body?: unknown;
+      idempotencyKey?: string;
+    } = {},
   ): Promise<OrganizerResult<T>> {
     const headers: Record<string, string> = {};
     if (options.cookie) headers.Cookie = options.cookie;
@@ -106,6 +146,7 @@ export function createOrganizerClient(
     if (init.method && init.method !== "GET" && options.csrfToken)
       headers["X-CSRF-Token"] = options.csrfToken;
     try {
+      if (init.idempotencyKey) headers["Idempotency-Key"] = init.idempotencyKey;
       const response = await fetcher(`${baseUrl}${path}`, {
         method: init.method ?? "GET",
         headers,
@@ -144,7 +185,53 @@ export function createOrganizerClient(
 
   const clubPath = (clubId: string) =>
     `/api/v1/clubs/${encodeURIComponent(clubId)}`;
+  const eventPath = (eventId: string) =>
+    `/api/v1/events/${encodeURIComponent(eventId)}`;
   return {
+    listManagedEvents: () => request("/api/v1/events/managed"),
+    createMediaUpload: (value) =>
+      request("/api/v1/media/uploads", {
+        method: "POST",
+        body: value,
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      }),
+    completeMediaUpload: (assetId) =>
+      request(`/api/v1/media/uploads/${encodeURIComponent(assetId)}/complete`, {
+        method: "POST",
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      }),
+    getManagedEvent: (eventId) => request(`${eventPath(eventId)}/managed`),
+    createEvent: (value) =>
+      request("/api/v1/events", {
+        method: "POST",
+        body: value,
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      }),
+    updateEvent: (eventId, value) =>
+      request(eventPath(eventId), { method: "PATCH", body: value }),
+    duplicateEvent: (eventId) =>
+      request(`${eventPath(eventId)}/duplicate`, {
+        method: "POST",
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      }),
+    cancelEvent: (eventId, revision) =>
+      request(`${eventPath(eventId)}/cancel`, {
+        method: "POST",
+        body: { revision },
+      }),
+    completeEvent: (eventId, revision) =>
+      request(`${eventPath(eventId)}/complete`, {
+        method: "POST",
+        body: { revision },
+      }),
+    deleteDraftEvent: (eventId, revision) =>
+      request(eventPath(eventId), {
+        method: "DELETE",
+        body: { revision },
+      }),
+    getCapabilities: () => request("/api/v1/profiles/capabilities"),
+    getRegionPolicy: (countryCode) =>
+      request(`/api/v1/regions/${encodeURIComponent(countryCode)}/policy`),
     listManagedClubs: () => request("/api/v1/clubs/managed"),
     listMembers: (clubId) => request(`${clubPath(clubId)}/members`),
     listRequests: (clubId) => request(`${clubPath(clubId)}/join-requests`),

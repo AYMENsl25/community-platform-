@@ -228,6 +228,31 @@ class EventRepository:
         )
         return _event(dict(row)) if row is not None else None
 
+    async def list_managed(self, user_id: UUID) -> list[Event]:
+        rows = (
+            (
+                await self._session.execute(
+                    text(
+                        _EVENT_SELECT  # noqa: S608 -- fixed SQL; input is bound
+                        + """
+                        WHERE event.owner_user_id = :user_id
+                           OR EXISTS (
+                               SELECT 1 FROM talaqi.club_memberships AS membership
+                               WHERE membership.club_id = event.club_id
+                                 AND membership.user_id = :user_id
+                                 AND membership.role IN ('owner', 'admin')
+                           )
+                        ORDER BY event.updated_at DESC, event.id DESC
+                        """
+                    ),
+                    {"user_id": user_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [_event(dict(row)) for row in rows]
+
     async def update(
         self,
         event: Event,

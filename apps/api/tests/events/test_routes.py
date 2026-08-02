@@ -140,11 +140,19 @@ async def test_club_owner_and_admin_can_create_but_member_and_outsider_cannot(
                     ),
                 ]
             )
+        managed_lists = [
+            await client.get("/api/v1/events/managed", headers={"cookie": actor.cookie})
+            for actor in (owner, admin, member, outsider)
+        ]
 
     assert [response.status_code for response in responses] == [201, 201, 403, 403, 403]
     assert admin_update.status_code == 200
     assert admin_update.json()["title"] == "Updated by another club manager"
     assert [response.status_code for response in denied] == [403] * 15
+    assert [response.status_code for response in managed_lists] == [200] * 4
+    assert [len(response.json()["items"]) for response in managed_lists] == [2, 2, 0, 0]
+    assert managed_lists[0].headers["cache-control"] == "private, no-store"
+    assert managed_lists[1].json()["items"][0]["capabilities"]
     assert responses[0].json()["club_id"] == str(club_id)
     assert responses[0].json()["owner_user_id"] is None
     assert responses[2].json()["error"]["code"] == "forbidden"

@@ -81,6 +81,44 @@ const secondOrganizerClub = {
   published_at: "2026-07-26T12:00:00Z",
 };
 
+const organizerEvent = {
+  id: "55555555-5555-4555-8555-555555555555",
+  ownership_type: "independent",
+  club_id: null,
+  owner_user_id: "88888888-8888-4888-8888-888888888888",
+  title: "Organizer fixture event",
+  description: "A safe organizer event.",
+  category_slug: "sports",
+  country_code: "TR",
+  city_slug: "istanbul",
+  start_at: "2026-09-20T08:00:00Z",
+  end_at: "2026-09-20T10:00:00Z",
+  time_zone: "Europe/Istanbul",
+  capacity: 30,
+  visibility: "public",
+  status: "draft",
+  registration_method: "free",
+  cash_expiry_minutes: null,
+  cancellation_cutoff_minutes: 60,
+  district: "Kadikoy",
+  public_meeting_area: "Park entrance",
+  exact_address: privateCanary,
+  latitude: 40.99,
+  longitude: 29.02,
+  exact_venue_is_public: false,
+  cover_media_id: null,
+  revision: 1,
+  published_at: null,
+  cancelled_at: null,
+  completed_at: null,
+  suspended_at: null,
+  suspension_reason: null,
+  created_at: "2026-08-02T08:00:00Z",
+  updated_at: "2026-08-02T08:00:00Z",
+  capabilities: ["edit", "duplicate", "delete_draft", "preview"],
+  validation_blockers: [],
+};
+
 const workspaceMembers = [
   {
     user_id: "88888888-8888-4888-8888-888888888888",
@@ -383,6 +421,45 @@ createServer(async (request, response) => {
       response,
       200,
       { items: adminAuditEvents, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/profiles/capabilities") {
+    return send(
+      response,
+      200,
+      {
+        create_club: role !== "member",
+        create_independent_event: role === "owner",
+        save_event: true,
+        register_event: true,
+        access_admin: false,
+        blockers: role === "member" ? ["rules_acceptance_required"] : [],
+      },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/regions/TR/policy") {
+    return send(response, 200, {
+      country_code: "TR",
+      default_locale: "tr",
+      default_currency: "TRY",
+      allowed_registration_methods: ["free", "cash_organizer_confirmed"],
+      cash_default_minutes: 1440,
+      cash_bounds: [120, 4320],
+      cancellation_default_minutes: 1440,
+      cancellation_bounds: [0, 10080],
+      club_limit: 3,
+      independent_event_limit: 3,
+      exact_venue_public_by_default: false,
+      revision: 1,
+    });
+  }
+  if (url.pathname === "/api/v1/events/managed") {
+    return send(
+      response,
+      200,
+      { items: role === "member" ? [] : [organizerEvent] },
       "private, no-store",
     );
   }

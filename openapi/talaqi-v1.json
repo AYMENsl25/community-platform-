@@ -2955,6 +2955,23 @@
         "title": "ManagedClubResponse",
         "type": "object"
       },
+      "ManagedEventPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ManagedEventResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ManagedEventPageResponse",
+        "type": "object"
+      },
       "ManagedEventResponse": {
         "additionalProperties": false,
         "properties": {
@@ -2980,6 +2997,22 @@
               }
             ],
             "title": "Cancelled At"
+          },
+          "capabilities": {
+            "default": [],
+            "items": {
+              "enum": [
+                "edit",
+                "duplicate",
+                "cancel",
+                "complete",
+                "delete_draft",
+                "preview"
+              ],
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
           },
           "capacity": {
             "anyOf": [
@@ -3273,6 +3306,14 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
+          },
+          "validation_blockers": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Validation Blockers",
+            "type": "array"
           },
           "visibility": {
             "enum": [
@@ -7800,6 +7841,47 @@
           }
         },
         "summary": "Create Event",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/managed": {
+      "get": {
+        "operationId": "listManagedEvents",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManagedEventPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Managed Events",
         "tags": [
           "events"
         ]
