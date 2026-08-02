@@ -275,9 +275,9 @@
 
 **Produces:** typed transition commands and immutable registration-transition history.
 
-- [ ] Add unique active member/event constraint, state/method, seat-held flag, waitlist sequence, deadlines, idempotency record, and actor/reason history.
-- [ ] Centralize allowed transitions; reject arbitrary repository state updates and transitions after event cancellation/start.
-- [ ] Gate: exhaustive state-table/property tests and migration round trip; commit `feat: define registration state machine`.
+- [x] Add unique active member/event constraint, state/method, seat-held flag, waitlist sequence, deadlines, idempotency record, and actor/reason history.
+- [x] Centralize allowed transitions; reject arbitrary repository state updates and transitions after event cancellation/start.
+- [x] Gate: exhaustive state-table/property tests and migration round trip; commit `feat: define registration state machine`.
 
 ### Task 4.2: Concurrency-safe registration
 

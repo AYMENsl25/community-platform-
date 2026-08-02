@@ -73,6 +73,10 @@ class FakeRepository:
         asset = self.assets.get(asset_id)
         return asset if asset is not None and asset.owner_user_id == owner_user_id else None
 
+    async def get_public(self, asset_id: UUID) -> MediaAsset | None:
+        asset = self.assets.get(asset_id)
+        return asset if asset is not None and asset.status == "verified" else None
+
     async def mark_verified(
         self,
         asset: MediaAsset,
