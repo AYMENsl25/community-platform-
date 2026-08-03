@@ -35,6 +35,10 @@ class CurrentProfileRegionResolver(Protocol):
     ) -> ProfileRegion: ...
 
 
+class RegistrationPrincipalLocker(Protocol):
+    async def lock_principal(self, principal: AuthPrincipal) -> AuthPrincipal: ...
+
+
 class CreationEligibilityService:
     def __init__(
         self,
@@ -126,6 +130,22 @@ class CreationEligibilityService:
             access_admin=access_admin,
             blockers=tuple(code for code in BLOCKER_ORDER if code in blockers),
         )
+
+
+class RegistrationEligibilityService:
+    """Public profiles-module boundary for a locked registration eligibility check."""
+
+    def __init__(
+        self,
+        repository: RegistrationPrincipalLocker,
+        eligibility: CreationEligibilityService,
+    ) -> None:
+        self._repository = repository
+        self._eligibility = eligibility
+
+    async def evaluate(self, principal: AuthPrincipal) -> Capabilities:
+        current = await self._repository.lock_principal(principal)
+        return await self._eligibility.evaluate(current)
 
 
 def _profile_matches_region(profile: Profile, region: ProfileRegion) -> bool:

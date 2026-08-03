@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from dataclasses import replace
 from datetime import datetime
 from typing import cast
 from uuid import UUID
@@ -9,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
 from talaqi.profiles.models import EligibilityState, Profile, ProfileReplacement
 from talaqi.regions.models import Locale
@@ -37,6 +39,38 @@ def _profile_from_row(row: Mapping[str, object]) -> Profile:
 class ProfileRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def lock_principal(self, principal: AuthPrincipal) -> AuthPrincipal:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT status::text AS status, email_verified_at,
+                               is_platform_admin
+                        FROM talaqi.users
+                        WHERE id = :user_id
+                        FOR UPDATE
+                        """
+                    ),
+                    {"user_id": principal.user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            raise ApiError(
+                code="authentication_required",
+                message_key="errors.authentication_required",
+                status_code=401,
+            )
+        return replace(
+            principal,
+            status=cast(str, row["status"]),  # type: ignore[arg-type]
+            email_verified=row["email_verified_at"] is not None,
+            is_platform_admin=cast(bool, row["is_platform_admin"]),
+        )
 
     async def get(self, user_id: UUID) -> Profile | None:
         row = (

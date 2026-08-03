@@ -331,6 +331,10 @@ export const turkishDictionary = {
   "errors.unavailable": "Hizmet geçici olarak kullanılamıyor. Yeniden deneyin.",
   "errors.csrf_failed": "Güvenli form oturumunuz sona erdi. Yeniden deneyin.",
   "errors.forbidden": "Bu işlemi yapma izniniz yok.",
+  "errors.registration_not_allowed":
+    "Hesab\u0131n\u0131z bu etkinli\u011fe kaydolmaya uygun de\u011fil.",
+  "errors.registration_closed":
+    "Bu etkinlik i\u00e7in kay\u0131t kapanm\u0131\u015ft\u0131r.",
   "errors.admin_mfa_required":
     "Devam etmek için çok faktörlü kimlik doğrulamayı tamamlayın.",
   "errors.http": "İstek başarısız oldu.",

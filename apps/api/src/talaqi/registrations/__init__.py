@@ -3,6 +3,7 @@
 from talaqi.registrations.models import (
     Registration,
     RegistrationContext,
+    RegistrationCreationResult,
     RegistrationMethod,
     RegistrationState,
     RegistrationTransition,
@@ -10,11 +11,17 @@ from talaqi.registrations.models import (
     TransitionResult,
 )
 from talaqi.registrations.repository import RegistrationRepository
-from talaqi.registrations.service import RegistrationTransitionError, RegistrationTransitionService
+from talaqi.registrations.service import (
+    RegistrationCreationService,
+    RegistrationTransitionError,
+    RegistrationTransitionService,
+)
 
 __all__ = [
     "Registration",
     "RegistrationContext",
+    "RegistrationCreationResult",
+    "RegistrationCreationService",
     "RegistrationMethod",
     "RegistrationRepository",
     "RegistrationState",

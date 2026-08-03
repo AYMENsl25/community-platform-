@@ -328,6 +328,10 @@ export const arabicDictionary: Dictionary = {
   "errors.unavailable": "الخدمة غير متاحة مؤقتًا. حاول مرة أخرى.",
   "errors.csrf_failed": "انتهت صلاحية جلسة النموذج الآمنة. حاول مرة أخرى.",
   "errors.forbidden": "ليست لديك صلاحية لتنفيذ ذلك.",
+  "errors.registration_not_allowed":
+    "\u062d\u0633\u0627\u0628\u0643 \u063a\u064a\u0631 \u0645\u0624\u0647\u0644 \u0644\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
+  "errors.registration_closed":
+    "\u0623\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
   "errors.admin_mfa_required": "أكمل المصادقة متعددة العوامل للمتابعة.",
   "errors.http": "فشل الطلب.",
   "errors.idempotency_conflict": "سبق استخدام مفتاح الطلب هذا لبيانات مختلفة.",

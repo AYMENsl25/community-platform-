@@ -51,6 +51,15 @@ class ManagerVenueProjection:
 
 
 @dataclass(frozen=True, slots=True)
+class EventRegistrationTerms:
+    id: UUID
+    start_at: datetime
+    capacity: int | None
+    method: Literal["free", "cash_organizer_confirmed"]
+    cash_expiry_minutes: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class PrivateLinkRecord:
     id: UUID
     event_id: UUID
@@ -60,6 +69,7 @@ class PrivateLinkRecord:
 
 __all__ = [
     "EventAudienceProjection",
+    "EventRegistrationTerms",
     "ManagerVenueProjection",
     "PrivateLinkRecord",
     "RegistrationState",

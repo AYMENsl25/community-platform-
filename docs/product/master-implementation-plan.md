@@ -283,9 +283,9 @@
 
 **Produces:** `POST /events/{event_id}/registrations`.
 
-- [ ] Lock the event capacity row, re-check eligibility/availability inside the transaction, create `confirmed` for free or `cash_pending` for cash when a seat exists, otherwise allocate deterministic FIFO waitlist sequence.
-- [ ] Return existing active registration for a safe identical retry; reject conflicting idempotency reuse; enqueue committed notifications via outbox.
-- [ ] Gate: 50-client last-seat contention, duplicate/retry, suspended/private eligibility, deadline, and capacity invariant tests; commit `feat: add atomic event registration`.
+- [x] Lock the event capacity row, re-check eligibility/availability inside the transaction, create `confirmed` for free or `cash_pending` for cash when a seat exists, otherwise allocate deterministic FIFO waitlist sequence.
+- [x] Return existing active registration for a safe identical retry; reject conflicting idempotency reuse; enqueue committed notifications via outbox.
+- [x] Gate: 50-client last-seat contention, duplicate/retry, suspended/private eligibility, deadline, and capacity invariant tests; commit `feat: add atomic event registration`.
 
 ### Task 4.3: Cancellation and FIFO promotion
 

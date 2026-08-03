@@ -191,6 +191,33 @@ class EventAccessRepository:
         )
         return cast(UUID, event_id)
 
+    async def authorize_registration_link(
+        self, event_id: UUID, token_hash: bytes, *, now: datetime
+    ) -> bool:
+        invite_id = (
+            await self._session.execute(
+                text(
+                    """
+                    SELECT invite.id
+                    FROM talaqi.event_invite_tokens AS invite
+                    WHERE invite.event_id = :event_id
+                      AND invite.token_hash = CAST(:token_hash AS bytea)
+                      AND invite.revoked_at IS NULL
+                      AND (invite.expires_at IS NULL OR invite.expires_at > :now)
+                    FOR UPDATE OF invite
+                    """
+                ),
+                {"event_id": event_id, "token_hash": token_hash, "now": now},
+            )
+        ).scalar_one_or_none()
+        if invite_id is None:
+            return False
+        await self._session.execute(
+            text("UPDATE talaqi.event_invite_tokens SET last_used_at = :now WHERE id = :invite_id"),
+            {"invite_id": invite_id, "now": now},
+        )
+        return True
+
     async def project_manager_venue(self, event_id: UUID) -> ManagerVenueProjection | None:
         row = (
             (

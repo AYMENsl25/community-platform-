@@ -686,6 +686,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Registration */
+        post: operations["createEventRegistration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/saved": {
         parameters: {
             query?: never;
@@ -2172,6 +2189,11 @@ export interface components {
             /** Revision */
             revision: number;
         };
+        /** RegistrationCreateRequest */
+        RegistrationCreateRequest: {
+            /** Private Link */
+            private_link?: string | null;
+        };
         /** RegistrationRequest */
         RegistrationRequest: {
             /**
@@ -2187,15 +2209,6 @@ export interface components {
             privacy_version: string;
             /** Terms Version */
             terms_version: string;
-        };
-        /** RegistrationResponse */
-        RegistrationResponse: {
-            /**
-             * Accepted
-             * @default true
-             * @constant
-             */
-            accepted: true;
         };
         /** RevokedResponse */
         RevokedResponse: {
@@ -2276,6 +2289,67 @@ export interface components {
         SessionsResponse: {
             /** Sessions */
             sessions: components["schemas"]["SessionResponse"][];
+        };
+        /** RegistrationResponse */
+        talaqi__identity__schemas__RegistrationResponse: {
+            /**
+             * Accepted
+             * @default true
+             * @constant
+             */
+            accepted: true;
+        };
+        /** RegistrationResponse */
+        talaqi__registrations__schemas__RegistrationResponse: {
+            /** Cancellation Reason */
+            cancellation_reason: string | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Cash Expires At */
+            cash_expires_at: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Expired At */
+            expired_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "free" | "cash_organizer_confirmed";
+            /** Seat Held */
+            seat_held: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "confirmed" | "cash_pending" | "waitlisted" | "cancelled" | "expired";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Waitlist Sequence */
+            waitlist_sequence: number | null;
         };
         /** TargetPageResponse */
         TargetPageResponse: {
@@ -2865,7 +2939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegistrationResponse"];
+                    "application/json": components["schemas"]["talaqi__identity__schemas__RegistrationResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];
@@ -4763,6 +4837,88 @@ export interface operations {
                 };
             };
             /** @description Private-link state conflicts with the request. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    createEventRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization?: string | null;
+                /** @description Stable key for retrying event registration. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RegistrationCreateRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Existing active registration. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration deadline or idempotency conflict. */
             409: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];

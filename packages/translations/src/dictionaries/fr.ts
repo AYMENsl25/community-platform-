@@ -335,6 +335,10 @@ export const frenchDictionary: Dictionary = {
   "errors.csrf_failed":
     "Votre formulaire sécurisé a expiré. Veuillez réessayer.",
   "errors.forbidden": "Vous n’avez pas le droit d’effectuer cette action.",
+  "errors.registration_not_allowed":
+    "Votre compte n\u2019est pas admissible \u00e0 l\u2019inscription \u00e0 cet \u00e9v\u00e9nement.",
+  "errors.registration_closed":
+    "Les inscriptions \u00e0 cet \u00e9v\u00e9nement sont closes.",
   "errors.admin_mfa_required":
     "Terminez l’authentification multifacteur pour continuer.",
   "errors.http": "La demande a échoué.",

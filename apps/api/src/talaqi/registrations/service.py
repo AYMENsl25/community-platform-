@@ -4,15 +4,21 @@ import hashlib
 import json
 import re
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Final, Protocol
 from uuid import UUID
 
 from talaqi.audit.models import ActorKind
 from talaqi.db.identifiers import generate_uuid7, validate_uuid7
+from talaqi.events.access_models import EventRegistrationTerms
+from talaqi.identity.models import AuthPrincipal
+from talaqi.platform import ApiError
+from talaqi.profiles.schemas import Capabilities
 from talaqi.registrations.models import (
     Registration,
     RegistrationContext,
+    RegistrationCreationResult,
+    RegistrationMethod,
     RegistrationMutation,
     RegistrationState,
     RegistrationTransition,
@@ -57,6 +63,46 @@ class RegistrationRepositoryProtocol(Protocol):
         command_hash: bytes,
         mutation: RegistrationMutation,
     ) -> TransitionResult: ...
+
+
+class RegistrationCreationRepositoryProtocol(Protocol):
+    async def get_active(self, event_id: UUID, user_id: UUID) -> Registration | None: ...
+
+    async def held_seat_count(self, event_id: UUID) -> int: ...
+
+    async def next_waitlist_sequence(self, event_id: UUID) -> int: ...
+
+    async def create_registration(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        method: RegistrationMethod,
+        state: RegistrationState,
+        seat_held: bool,
+        waitlist_sequence: int | None,
+        cash_expires_at: datetime | None,
+        confirmed_at: datetime | None,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> Registration: ...
+
+
+class RegistrationEligibilityProtocol(Protocol):
+    async def evaluate(self, principal: AuthPrincipal) -> Capabilities: ...
+
+
+class RegistrationEventAccessProtocol(Protocol):
+    async def registration_terms(
+        self,
+        event_id: UUID,
+        *,
+        private_link_hash: bytes | None,
+        now: datetime,
+    ) -> EventRegistrationTerms: ...
 
 
 def is_transition_allowed(current: RegistrationState, target: RegistrationState) -> bool:
@@ -172,6 +218,104 @@ def _mutation(current: Registration, command: TransitionCommand) -> Registration
             cancellation_reason=None,
         )
     raise RegistrationTransitionError("invalid_registration_transition")
+
+
+class RegistrationCreationService:
+    def __init__(
+        self,
+        repository: RegistrationCreationRepositoryProtocol,
+        events: RegistrationEventAccessProtocol,
+        eligibility: RegistrationEligibilityProtocol,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._eligibility = eligibility
+
+    async def register(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        private_link_hash: bytes | None,
+        request_id: UUID,
+        now: datetime,
+    ) -> RegistrationCreationResult:
+        current = _instant(now, field="registration_time")
+        event = await self._events.registration_terms(
+            event_id, private_link_hash=private_link_hash, now=current
+        )
+        capabilities = await self._eligibility.evaluate(principal)
+        if not capabilities.register_event:
+            raise ApiError(
+                code="registration_not_allowed",
+                message_key="errors.registration_not_allowed",
+                status_code=403,
+            )
+        existing = await self._repository.get_active(event.id, principal.user_id)
+        if existing is not None:
+            return RegistrationCreationResult(registration=existing, created=False)
+        if event.start_at <= current:
+            raise ApiError(
+                code="registration_closed",
+                message_key="errors.registration_closed",
+                status_code=409,
+            )
+        registration = await self._create(principal, event, request_id=request_id, now=current)
+        return RegistrationCreationResult(registration=registration, created=True)
+
+    async def _create(
+        self,
+        principal: AuthPrincipal,
+        event: EventRegistrationTerms,
+        *,
+        request_id: UUID,
+        now: datetime,
+    ) -> Registration:
+        held = await self._repository.held_seat_count(event.id)
+        seat_available = event.capacity is None or held < event.capacity
+        state: RegistrationState
+        if not seat_available:
+            state = "waitlisted"
+        elif event.method == "free":
+            state = "confirmed"
+        else:
+            state = "cash_pending"
+
+        waitlist_sequence = (
+            await self._repository.next_waitlist_sequence(event.id)
+            if state == "waitlisted"
+            else None
+        )
+        cash_expires_at = None
+        if state == "cash_pending":
+            if event.cash_expiry_minutes is None:
+                raise RuntimeError("published cash event has no expiry policy")
+            cash_expires_at = min(
+                now + timedelta(minutes=event.cash_expiry_minutes), event.start_at
+            )
+        registration_id = generate_uuid7()
+        command_id = generate_uuid7()
+        command_hash = hashlib.sha256(
+            (
+                f"registration-create-v1:{command_id}:{registration_id}:"
+                f"{event.id}:{principal.user_id}:{state}"
+            ).encode("ascii")
+        ).digest()
+        return await self._repository.create_registration(
+            registration_id=registration_id,
+            command_id=command_id,
+            command_hash=command_hash,
+            event_id=event.id,
+            user_id=principal.user_id,
+            method=event.method,
+            state=state,
+            seat_held=state in ("confirmed", "cash_pending"),
+            waitlist_sequence=waitlist_sequence,
+            cash_expires_at=cash_expires_at,
+            confirmed_at=now if state == "confirmed" else None,
+            request_id=request_id,
+            occurred_at=now,
+        )
 
 
 class RegistrationTransitionService:

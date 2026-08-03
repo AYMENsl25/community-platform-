@@ -323,6 +323,9 @@ export const englishDictionary = {
   "errors.unavailable": "The service is temporarily unavailable. Try again.",
   "errors.csrf_failed": "Your secure form session expired. Try again.",
   "errors.forbidden": "You do not have permission to do that.",
+  "errors.registration_not_allowed":
+    "Your account is not eligible to register for this event.",
+  "errors.registration_closed": "Registration for this event is closed.",
   "errors.admin_mfa_required":
     "Complete multi-factor authentication to continue.",
   "errors.http": "The request failed.",

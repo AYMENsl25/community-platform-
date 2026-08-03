@@ -38,6 +38,12 @@ class RegistrationContext:
 
 
 @dataclass(frozen=True, slots=True)
+class RegistrationCreationResult:
+    registration: Registration
+    created: bool
+
+
+@dataclass(frozen=True, slots=True)
 class RegistrationMutation:
     state: RegistrationState
     seat_held: bool

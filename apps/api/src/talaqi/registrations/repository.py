@@ -80,6 +80,179 @@ class RegistrationRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def get_active(self, event_id: UUID, user_id: UUID) -> Registration | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.user_id = :user_id
+                          AND registration.state IN ('confirmed', 'cash_pending', 'waitlisted')
+                        """  # noqa: S608 -- fixed fields; bound identifiers
+                    ),
+                    {"event_id": event_id, "user_id": user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def held_seat_count(self, event_id: UUID) -> int:
+        count = await self._session.execute(
+            text(
+                """
+                SELECT count(*) FROM talaqi.registrations
+                WHERE event_id = :event_id AND seat_held
+                """
+            ),
+            {"event_id": event_id},
+        )
+        return cast(int, count.scalar_one())
+
+    async def next_waitlist_sequence(self, event_id: UUID) -> int:
+        sequence = await self._session.execute(
+            text(
+                """
+                SELECT coalesce(max(waitlist_sequence), 0) + 1
+                FROM talaqi.registrations
+                WHERE event_id = :event_id AND state = 'waitlisted'
+                """
+            ),
+            {"event_id": event_id},
+        )
+        return cast(int, sequence.scalar_one())
+
+    async def create_registration(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        method: RegistrationMethod,
+        state: RegistrationState,
+        seat_held: bool,
+        waitlist_sequence: int | None,
+        cash_expires_at: datetime | None,
+        confirmed_at: datetime | None,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> Registration:
+        result = await self._session.execute(
+            text(
+                f"""
+                INSERT INTO talaqi.registrations AS registration (
+                    id, event_id, user_id, method, state, seat_held,
+                    waitlist_sequence, cash_expires_at, confirmed_at
+                ) VALUES (
+                    :id, :event_id, :user_id,
+                    CAST(:method AS talaqi.registration_method),
+                    CAST(:state AS talaqi.registration_state), :seat_held,
+                    :waitlist_sequence, :cash_expires_at, :confirmed_at
+                )
+                RETURNING {_REGISTRATION_FIELDS}
+                """  # noqa: S608 -- fixed fields; bound values
+            ),
+            {
+                "id": registration_id,
+                "event_id": event_id,
+                "user_id": user_id,
+                "method": method,
+                "state": state,
+                "seat_held": seat_held,
+                "waitlist_sequence": waitlist_sequence,
+                "cash_expires_at": cash_expires_at,
+                "confirmed_at": confirmed_at,
+            },
+        )
+        row = result.mappings().one()
+        await self._append_creation_records(
+            registration_id=registration_id,
+            command_id=command_id,
+            command_hash=command_hash,
+            event_id=event_id,
+            user_id=user_id,
+            state=state,
+            request_id=request_id,
+            occurred_at=occurred_at,
+        )
+        return _registration(cast(Mapping[str, object], row))
+
+    async def _append_creation_records(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        state: RegistrationState,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> None:
+        reason_code = "member_waitlisted" if state == "waitlisted" else "member_registered"
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.registration_transitions (
+                    id, command_id, command_hash, registration_id,
+                    actor_user_id, actor_kind, previous_state, new_state,
+                    reason_code, request_id, occurred_at
+                ) VALUES (
+                    :id, :command_id, :command_hash, :registration_id,
+                    :user_id, 'member', NULL,
+                    CAST(:state AS talaqi.registration_state),
+                    :reason_code, :request_id, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "command_id": command_id,
+                "command_hash": command_hash,
+                "registration_id": registration_id,
+                "user_id": user_id,
+                "state": state,
+                "reason_code": reason_code,
+                "request_id": request_id,
+                "occurred_at": occurred_at,
+            },
+        )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', CAST(:registration_id AS uuid), :event_type,
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'user_id', CAST(:user_id AS uuid),
+                        'state', CAST(:state AS text)
+                    ),
+                    :deduplication_key, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": registration_id,
+                "event_id": event_id,
+                "user_id": user_id,
+                "state": state,
+                "event_type": f"registration.{state}",
+                "deduplication_key": f"registration.created:{registration_id}",
+                "occurred_at": occurred_at,
+            },
+        )
+
     async def get_context(
         self, registration_id: UUID, *, for_update: bool
     ) -> RegistrationContext | None:

@@ -31,5 +31,10 @@ class ClubEventAccessService:
         )
         can_edit_club(principal, club, access)
 
+    async def require_registration_available(self, club_id: UUID, *, for_update: bool) -> None:
+        club = await self._repository.get(club_id, for_update=for_update)
+        if club is None or club.status != "published" or club.suspended_at is not None:
+            raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
+
 
 __all__ = ["ClubEventAccessService"]
