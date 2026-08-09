@@ -56,6 +56,17 @@ class AttendeePageResponse(BaseModel):
     next_cursor: str | None
 
 
+class AttendeeSummaryResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    held: int = Field(ge=0)
+    confirmed: int = Field(ge=0)
+    cash_pending: int = Field(ge=0)
+    waitlisted: int = Field(ge=0)
+    cancelled: int = Field(ge=0)
+    expired: int = Field(ge=0)
+
+
 class AttendeeExportRequest(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -75,6 +86,7 @@ __all__ = [
     "AttendeeExportResponse",
     "AttendeePageResponse",
     "AttendeeResponse",
+    "AttendeeSummaryResponse",
     "RegistrationCreateRequest",
     "RegistrationResponse",
 ]

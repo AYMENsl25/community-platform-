@@ -17,6 +17,7 @@ from talaqi.platform import ApiError
 from talaqi.profiles.schemas import Capabilities
 from talaqi.registrations.models import (
     Attendee,
+    AttendeeSummary,
     Registration,
     RegistrationContext,
     RegistrationCreationResult,
@@ -152,6 +153,8 @@ class AttendeeRepositoryProtocol(Protocol):
         after_created_at: datetime | None,
         after_id: UUID | None,
     ) -> list[Attendee]: ...
+
+    async def attendee_summary(self, event_id: UUID) -> AttendeeSummary: ...
 
     async def enqueue_attendee_export(
         self,
@@ -723,6 +726,10 @@ class AttendeeService:
             safe_after={"request_id": str(export_request_id), "state": state},
             request_id=request_id,
         )
+
+    async def summary(self, principal: AuthPrincipal, event_id: UUID) -> AttendeeSummary:
+        await self._events.require_manager(principal, event_id, for_update=False)
+        return await self._repository.attendee_summary(event_id)
 
 
 def _normalize_attendee_search(value: str | None) -> str | None:

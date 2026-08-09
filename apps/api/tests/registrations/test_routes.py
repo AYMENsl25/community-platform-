@@ -964,6 +964,12 @@ async def test_manager_confirms_cash_and_lists_privacy_safe_attendees_with_expor
         attendee_denied = await client.get(
             f"/api/v1/events/{event_id}/attendees", headers=unrelated.headers()
         )
+        summary = await client.get(
+            f"/api/v1/events/{event_id}/attendees/summary", headers=owner.headers()
+        )
+        summary_denied = await client.get(
+            f"/api/v1/events/{event_id}/attendees/summary", headers=unrelated.headers()
+        )
         export_key = f"attendee-export-{generate_uuid7()}"
         export = await client.post(
             f"/api/v1/events/{event_id}/attendees/export",
@@ -983,6 +989,16 @@ async def test_manager_confirms_cash_and_lists_privacy_safe_attendees_with_expor
     assert denied.status_code == 403
     assert cross_event.status_code == 404
     assert attendee_denied.status_code == 403
+    assert summary_denied.status_code == 403
+    assert summary.status_code == 200
+    assert summary.json() == {
+        "held": 2,
+        "confirmed": 1,
+        "cash_pending": 1,
+        "waitlisted": 0,
+        "cancelled": 0,
+        "expired": 0,
+    }
     assert first_page.status_code == second_page.status_code == 200
     assert [item["user_id"] for item in searched.json()["items"]] == [str(members[0].user_id)]
     assert [item["state"] for item in confirmed_only.json()["items"]] == ["confirmed"]
@@ -1026,6 +1042,40 @@ async def test_manager_confirms_cash_and_lists_privacy_safe_attendees_with_expor
             .one()
         )
     assert evidence == {"audits": 1, "outbox": 1}
+
+
+@pytest.mark.asyncio
+async def test_club_owner_and_admin_can_read_summary_but_unrelated_organizer_cannot(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    admin = await create_user(registration_engine)
+    unrelated = await create_user(registration_engine)
+    club_id = await create_club(registration_engine, owner)
+    async with registration_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                INSERT INTO talaqi.club_memberships (id, club_id, user_id, role)
+                VALUES (uuidv7(), :club_id, :user_id, 'admin')
+                """
+            ),
+            {"club_id": club_id, "user_id": admin.user_id},
+        )
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(client, owner, ownership_type="club", club_id=str(club_id))
+        responses = [
+            await client.get(
+                f"/api/v1/events/{event_id}/attendees/summary", headers=actor.headers()
+            )
+            for actor in (owner, admin, unrelated)
+        ]
+
+    assert [response.status_code for response in responses] == [200, 200, 403]
+    assert responses[0].json() == responses[1].json()
 
 
 @pytest.mark.asyncio

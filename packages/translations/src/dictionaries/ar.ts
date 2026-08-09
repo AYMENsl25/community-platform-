@@ -454,6 +454,30 @@ export const arabicDictionary: Dictionary = {
   "events.attendees.title": "\u0627\u0644\u062d\u0636\u0648\u0631",
   "events.attendees.phase4":
     "\u0633\u062a\u062a\u0648\u0641\u0631 \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u062d\u0636\u0648\u0631 \u0641\u064a \u0627\u0644\u0645\u0631\u062d\u0644\u0629 \u0627\u0644\u0631\u0627\u0628\u0639\u0629.",
+  "events.attendees.capacity": "الأماكن المحجوزة",
+  "events.attendees.confirmed": "مؤكد",
+  "events.attendees.cashPending": "النقد قيد الانتظار",
+  "events.attendees.waitlisted": "قائمة الانتظار",
+  "events.attendees.search": "البحث عن الحضور",
+  "events.attendees.state": "حالة التسجيل",
+  "events.attendees.allStates": "كل الحالات",
+  "events.attendees.apply": "تطبيق المرشحات",
+  "events.attendees.export": "إعداد CSV خاص",
+  "events.attendees.exportQueued":
+    "تمت إضافة إعداد CSV الخاص إلى قائمة الانتظار. سيتم تسليمه عبر مسار المنظم الآمن.",
+  "events.attendees.confirmedNotice":
+    "تم تأكيد التسجيل النقدي من أحدث حالة للخادم.",
+  "events.attendees.empty": "لا يوجد حضور يطابق هذه المرشحات.",
+  "events.attendees.member": "العضو",
+  "events.attendees.method": "الطريقة",
+  "events.attendees.action": "الإجراء",
+  "events.attendees.confirmCash": "تأكيد الدفع النقدي",
+  "events.attendees.loadMore": "تحميل المزيد من الحضور",
+  "events.attendees.state.confirmed": "مؤكد",
+  "events.attendees.state.cash_pending": "النقد قيد الانتظار",
+  "events.attendees.state.waitlisted": "قائمة الانتظار",
+  "events.attendees.state.cancelled": "ملغى",
+  "events.attendees.state.expired": "منتهي الصلاحية",
   "events.form.regionPolicy":
     "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u0646 \u0627\u0644\u062e\u0627\u062f\u0645",
   "events.media.pending":

@@ -140,6 +140,33 @@ const organizerEvent = {
   validation_blockers: [],
 };
 
+let organizerAttendees = [
+  {
+    registration_id: "44444444-4444-4444-8444-444444444441",
+    user_id: "44444444-4444-4444-8444-444444444451",
+    username: "cash-member",
+    display_name: "Cash Fixture Member",
+    method: "cash_organizer_confirmed",
+    state: "cash_pending",
+    waitlist_sequence: null,
+    cash_expires_at: "2036-09-20T07:30:00Z",
+    confirmed_at: null,
+    created_at: "2026-08-09T10:00:00Z",
+  },
+  {
+    registration_id: "44444444-4444-4444-8444-444444444442",
+    user_id: "44444444-4444-4444-8444-444444444452",
+    username: "waiting-member",
+    display_name: "Waiting Fixture Member",
+    method: "free",
+    state: "waitlisted",
+    waitlist_sequence: 1,
+    cash_expires_at: null,
+    confirmed_at: null,
+    created_at: "2026-08-09T09:00:00Z",
+  },
+];
+
 const workspaceMembers = [
   {
     user_id: "88888888-8888-4888-8888-888888888888",
@@ -505,6 +532,106 @@ createServer(async (request, response) => {
       { items: role === "member" ? [] : [organizerEvent] },
       "private, no-store",
     );
+  }
+  const attendeePath = `/api/v1/events/${organizerEvent.id}/attendees`;
+  if (url.pathname === attendeePath && request.method === "GET") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    const state = url.searchParams.get("state");
+    const search = (url.searchParams.get("search") ?? "").toLowerCase();
+    const items = organizerAttendees.filter(
+      (item) =>
+        (!state || item.state === state) &&
+        (!search ||
+          item.username.toLowerCase().includes(search) ||
+          item.display_name.toLowerCase().includes(search)),
+    );
+    return send(
+      response,
+      200,
+      { items, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === `${attendeePath}/summary` && request.method === "GET") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      {
+        held: organizerAttendees.filter((item) =>
+          ["confirmed", "cash_pending"].includes(item.state),
+        ).length,
+        confirmed: organizerAttendees.filter(
+          (item) => item.state === "confirmed",
+        ).length,
+        cash_pending: organizerAttendees.filter(
+          (item) => item.state === "cash_pending",
+        ).length,
+        waitlisted: organizerAttendees.filter(
+          (item) => item.state === "waitlisted",
+        ).length,
+        cancelled: 0,
+        expired: 0,
+      },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === `${attendeePath}/export` && request.method === "POST") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      202,
+      { request_id: "44444444-4444-4444-8444-444444444499", status: "queued" },
+      "private, no-store",
+    );
+  }
+  const cashConfirmPath = `${attendeePath.replace("/attendees", "/registrations")}/${organizerAttendees[0].registration_id}/confirm-cash`;
+  if (url.pathname === cashConfirmPath && request.method === "POST") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    organizerAttendees = organizerAttendees.map((item) =>
+      item.registration_id === organizerAttendees[0].registration_id
+        ? { ...item, state: "confirmed", confirmed_at: "2026-08-10T00:00:00Z" }
+        : item,
+    );
+    return send(response, 200, organizerAttendees[0], "private, no-store");
   }
   if (url.pathname === "/api/v1/clubs/managed") {
     return send(

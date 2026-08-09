@@ -10,6 +10,12 @@ import { LocaleProvider } from "@/lib/locale/locale-context";
 
 import { EventWorkspace } from "./event-workspace";
 
+vi.mock("./attendee-workspace", () => ({
+  AttendeeWorkspace: () => (
+    <section aria-label="Attendees">Attendee workspace</section>
+  ),
+}));
+
 const managedEvent: ManagedEvent = {
   id: "019f9e7d-d7a0-7d86-9166-2053f7de2401",
   ownership_type: "independent",
@@ -121,9 +127,7 @@ describe("event organizer workspace", () => {
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "Delete draft" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Cancel event" })).toBeNull();
-    expect(
-      screen.getByText("Attendee management arrives in Phase 4."),
-    ).toBeVisible();
+    expect(screen.getByText("Attendee workspace")).toBeVisible();
   });
 
   it("recovers a stale edit using the latest private revision", async () => {

@@ -33,6 +33,7 @@ from talaqi.registrations.schemas import (
     AttendeeExportResponse,
     AttendeePageResponse,
     AttendeeResponse,
+    AttendeeSummaryResponse,
     RegistrationCreateRequest,
     RegistrationResponse,
 )
@@ -389,6 +390,24 @@ async def list_event_attendees(
     return AttendeePageResponse(
         items=[_attendee(item) for item in visible], next_cursor=next_cursor
     )
+
+
+@router.get(
+    "/{event_id:uuid}/attendees/summary",
+    response_model=AttendeeSummaryResponse,
+    operation_id="getEventAttendeeSummary",
+    responses={401: _AUTH, 403: _FORBIDDEN, 404: _NOT_FOUND},
+)
+async def get_event_attendee_summary(
+    event_id: UUID,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+) -> AttendeeSummaryResponse:
+    _private(response)
+    summary = await build_attendee_service(request, session).summary(principal, event_id)
+    return AttendeeSummaryResponse.model_validate(asdict(summary))
 
 
 @router.post(

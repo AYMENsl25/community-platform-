@@ -313,16 +313,16 @@
 
 ### Task 4.6: Member registration and ticket experience
 
-- [ ] Add register/cancel/waitlist controls, free confirmation, cash instructions/countdown, ticket/reservation views, capacity states, venue disclosure, and actionable localized errors.
-- [ ] Revalidate server state after mutations; never infer confirmation from optimistic UI.
-- [ ] Gate: component tests and Playwright free, cash, full/waitlist, cancel/promote, and unauthorized journeys in mobile/RTL modes.
-- [ ] Commit `feat: deliver member registration experience`.
+- [x] Add register/cancel/waitlist controls, free confirmation, cash instructions/countdown, ticket/reservation views, capacity states, venue disclosure, and actionable localized errors.
+- [x] Revalidate server state after mutations; never infer confirmation from optimistic UI.
+- [x] Gate: component tests and Playwright free, cash, full/waitlist, cancel/promote, and unauthorized journeys in mobile/RTL modes.
+- [x] Commit `feat: deliver member registration experience`.
 
 ### Task 4.7: Organizer attendee experience
 
-- [ ] Build filterable/paginated attendee table, cash-confirm confirmation, waitlist/capacity summary, privacy-safe CSV generation status, and narrow responsive layout.
-- [ ] Gate: owner/admin/independent-owner positive paths, unrelated organizer negative path, keyboard/RTL, and build.
-- [ ] Commit `feat: deliver attendee and cash operations UI`.
+- [x] Build filterable/paginated attendee table, cash-confirm confirmation, waitlist/capacity summary, privacy-safe CSV generation status, and narrow responsive layout.
+- [x] Gate: owner/admin/independent-owner positive paths, unrelated organizer negative path, keyboard/RTL, and build.
+- [x] Commit `feat: deliver attendee and cash operations UI`.
 
 **Phase 4 exit:** Last-seat and waitlist invariants hold under concurrency; workers recover after interruption; members and managers can complete all free/cash journeys without direct database intervention.
 

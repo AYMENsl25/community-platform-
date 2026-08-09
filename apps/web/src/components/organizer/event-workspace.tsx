@@ -16,6 +16,7 @@ import {
 import { useLocale } from "@/lib/locale/locale-context";
 
 import "./organizer.css";
+import { AttendeeWorkspace } from "./attendee-workspace";
 
 type Metadata = {
   countries: { code: string; name_key: string }[];
@@ -702,10 +703,13 @@ export function EventWorkspace({
             </div>
           ) : null}
 
-          <Card aria-label={translate(locale, "events.attendees.title")}>
-            <h2>{translate(locale, "events.attendees.title")}</h2>
-            <p>{translate(locale, "events.attendees.phase4")}</p>
-          </Card>
+          {!creating && selected ? (
+            <AttendeeWorkspace
+              key={selected.id}
+              eventId={selected.id}
+              capacity={selected.capacity}
+            />
+          ) : null}
         </section>
       </div>
     </main>

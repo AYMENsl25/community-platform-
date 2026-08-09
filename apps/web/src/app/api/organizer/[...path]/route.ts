@@ -44,6 +44,21 @@ function allowed(method: string, path: string[]): boolean {
       return true;
     if (method === "GET" && path.length === 5 && path[4] === "managed")
       return true;
+    if (
+      method === "GET" &&
+      ((path.length === 5 && path[4] === "attendees") ||
+        (path.length === 6 && path[4] === "attendees" && path[5] === "summary"))
+    )
+      return true;
+    if (
+      method === "POST" &&
+      ((path.length === 6 && path[4] === "attendees" && path[5] === "export") ||
+        (path.length === 7 &&
+          path[4] === "registrations" &&
+          UUID.test(path[5] ?? "") &&
+          path[6] === "confirm-cash"))
+    )
+      return true;
     return Boolean(
       method === "POST" &&
       path.length === 5 &&
@@ -115,12 +130,15 @@ async function forward(
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
 
   try {
-    const response = await fetch(`${baseUrl}/${path.join("/")}`, {
-      method: request.method,
-      headers,
-      cache: "no-store",
-      ...(request.method === "GET" ? {} : { body: await request.text() }),
-    });
+    const response = await fetch(
+      `${baseUrl}/${path.join("/")}${request.nextUrl.search}`,
+      {
+        method: request.method,
+        headers,
+        cache: "no-store",
+        ...(request.method === "GET" ? {} : { body: await request.text() }),
+      },
+    );
     const responseRequestId = response.headers.get("x-request-id");
     return new Response(response.body, {
       status: response.status,

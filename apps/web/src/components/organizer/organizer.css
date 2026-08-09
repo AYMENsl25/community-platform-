@@ -366,6 +366,60 @@
   margin-block: var(--space-4);
 }
 
+.tq-attendee-summary,
+.tq-attendee-filters {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.tq-attendee-summary div,
+.tq-attendee-filters label {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.tq-attendee-summary dt {
+  font-weight: 700;
+}
+
+.tq-attendee-filters input,
+.tq-attendee-filters select,
+.tq-attendee-filters button {
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+}
+
+.tq-attendee-filters button {
+  align-self: end;
+}
+
+.tq-attendee-notice {
+  min-block-size: 1.5rem;
+}
+
+.tq-attendee-table-wrap {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.tq-attendee-table {
+  border-collapse: collapse;
+  inline-size: 100%;
+}
+
+.tq-attendee-table th,
+.tq-attendee-table td {
+  border-block-end: 1px solid var(--border-subtle);
+  padding: var(--space-3);
+  text-align: start;
+}
+
+.tq-attendee-table td:first-child {
+  display: grid;
+  gap: var(--space-1);
+}
+
 @media (max-width: 48rem) {
   .tq-event-workspace__layout,
   .tq-event-form {
@@ -374,6 +428,40 @@
 
   .tq-event-form__wide {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 38rem) {
+  .tq-attendee-table thead {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .tq-attendee-table,
+  .tq-attendee-table tbody,
+  .tq-attendee-table tr,
+  .tq-attendee-table td {
+    display: block;
+  }
+
+  .tq-attendee-table tr {
+    border-block-end: 1px solid var(--border-subtle);
+    padding-block: var(--space-2);
+  }
+
+  .tq-attendee-table td {
+    border: 0;
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: minmax(7rem, 0.7fr) minmax(0, 1fr);
+  }
+
+  .tq-attendee-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
   }
 }
 

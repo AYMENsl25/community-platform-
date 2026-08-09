@@ -222,4 +222,49 @@ describe("organizer API proxy", () => {
     expect(denied.status).toBe(404);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+
+  it("allowlists attendee reads and actions while preserving only validated query text", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const eventId = "99999999-9999-4999-8999-999999999999";
+    const registrationId = "88888888-8888-4888-8888-888888888888";
+    await GET(
+      new NextRequest(
+        `http://web.test/api/organizer/api/v1/events/${eventId}/attendees?state=waitlisted&limit=20`,
+      ),
+      context(["api", "v1", "events", eventId, "attendees"]),
+    );
+    await GET(
+      new NextRequest(
+        `http://web.test/api/organizer/api/v1/events/${eventId}/attendees/summary`,
+      ),
+      context(["api", "v1", "events", eventId, "attendees", "summary"]),
+    );
+    await POST(
+      new NextRequest(
+        `http://web.test/api/organizer/api/v1/events/${eventId}/registrations/${registrationId}/confirm-cash`,
+        { method: "POST" },
+      ),
+      context([
+        "api",
+        "v1",
+        "events",
+        eventId,
+        "registrations",
+        registrationId,
+        "confirm-cash",
+      ]),
+    );
+    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      `http://api.test/api/v1/events/${eventId}/attendees?state=waitlisted&limit=20`,
+      `http://api.test/api/v1/events/${eventId}/attendees/summary`,
+      `http://api.test/api/v1/events/${eventId}/registrations/${registrationId}/confirm-cash`,
+    ]);
+  });
 });

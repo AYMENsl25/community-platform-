@@ -191,4 +191,44 @@ describe("organizer API client", () => {
       fieldNames: [],
     });
   });
+
+  it("encodes attendee filters and applies idempotency to cash/export actions", async () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(
+      "019f9e7d-d7a0-7d86-9166-2053f7de2999",
+    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(json({ items: [], next_cursor: null }))
+      .mockResolvedValueOnce(json({ state: "confirmed" }))
+      .mockResolvedValueOnce(
+        json({ request_id: "request", status: "queued" }, 202),
+      );
+    const client = createOrganizerClient({
+      baseUrl: "/api/organizer",
+      csrfToken: "csrf",
+      fetch: fetcher,
+    });
+    await client.listAttendees("event", {
+      state: "cash_pending",
+      search: "A B",
+      cursor: "cursor/value",
+    });
+    await client.confirmCash("event", "registration");
+    await client.requestAttendeeExport("event", {
+      state: "cash_pending",
+      search: "A B",
+    });
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      "/api/organizer/api/v1/events/event/attendees?limit=20&state=cash_pending&search=A+B&cursor=cursor%2Fvalue",
+    );
+    for (const call of fetcher.mock.calls.slice(1)) {
+      expect(call[1]).toMatchObject({
+        method: "POST",
+        headers: expect.objectContaining({
+          "X-CSRF-Token": "csrf",
+          "Idempotency-Key": "019f9e7d-d7a0-7d86-9166-2053f7de2999",
+        }),
+      });
+    }
+  });
 });

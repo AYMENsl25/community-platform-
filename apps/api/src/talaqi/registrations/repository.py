@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.registrations.models import (
     Attendee,
+    AttendeeSummary,
     Registration,
     RegistrationContext,
     RegistrationEventStatus,
@@ -258,6 +259,37 @@ class RegistrationRepository:
                 "deduplication_key": f"attendees.export:{request_id}",
                 "requested_at": requested_at,
             },
+        )
+
+    async def attendee_summary(self, event_id: UUID) -> AttendeeSummary:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                    SELECT count(*) FILTER (WHERE seat_held)::integer AS held,
+                           count(*) FILTER (WHERE state = 'confirmed')::integer AS confirmed,
+                           count(*) FILTER (WHERE state = 'cash_pending')::integer AS cash_pending,
+                           count(*) FILTER (WHERE state = 'waitlisted')::integer AS waitlisted,
+                           count(*) FILTER (WHERE state = 'cancelled')::integer AS cancelled,
+                           count(*) FILTER (WHERE state = 'expired')::integer AS expired
+                    FROM talaqi.registrations
+                    WHERE event_id = :event_id
+                    """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        return AttendeeSummary(
+            held=cast(int, row["held"]),
+            confirmed=cast(int, row["confirmed"]),
+            cash_pending=cast(int, row["cash_pending"]),
+            waitlisted=cast(int, row["waitlisted"]),
+            cancelled=cast(int, row["cancelled"]),
+            expired=cast(int, row["expired"]),
         )
 
     async def held_seat_count(self, event_id: UUID) -> int:

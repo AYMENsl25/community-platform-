@@ -51,6 +51,16 @@ class Attendee:
 
 
 @dataclass(frozen=True, slots=True)
+class AttendeeSummary:
+    held: int
+    confirmed: int
+    cash_pending: int
+    waitlisted: int
+    cancelled: int
+    expired: int
+
+
+@dataclass(frozen=True, slots=True)
 class RegistrationMutation:
     state: RegistrationState
     seat_held: bool

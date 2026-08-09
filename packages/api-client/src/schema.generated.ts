@@ -617,6 +617,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/attendees/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Attendee Summary */
+        get: operations["getEventAttendeeSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/cancel": {
         parameters: {
             query?: never;
@@ -1098,6 +1115,21 @@ export interface components {
             username: string;
             /** Waitlist Sequence */
             waitlist_sequence: number | null;
+        };
+        /** AttendeeSummaryResponse */
+        AttendeeSummaryResponse: {
+            /** Cancelled */
+            cancelled: number;
+            /** Cash Pending */
+            cash_pending: number;
+            /** Confirmed */
+            confirmed: number;
+            /** Expired */
+            expired: number;
+            /** Held */
+            held: number;
+            /** Waitlisted */
+            waitlisted: number;
         };
         /** AuditPageResponse */
         AuditPageResponse: {
@@ -4664,6 +4696,60 @@ export interface operations {
             };
             /** @description Registration deadline or idempotency conflict. */
             409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getEventAttendeeSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendeeSummaryResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

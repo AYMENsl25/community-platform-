@@ -296,6 +296,51 @@
         "title": "AttendeeResponse",
         "type": "object"
       },
+      "AttendeeSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "cancelled": {
+            "minimum": 0.0,
+            "title": "Cancelled",
+            "type": "integer"
+          },
+          "cash_pending": {
+            "minimum": 0.0,
+            "title": "Cash Pending",
+            "type": "integer"
+          },
+          "confirmed": {
+            "minimum": 0.0,
+            "title": "Confirmed",
+            "type": "integer"
+          },
+          "expired": {
+            "minimum": 0.0,
+            "title": "Expired",
+            "type": "integer"
+          },
+          "held": {
+            "minimum": 0.0,
+            "title": "Held",
+            "type": "integer"
+          },
+          "waitlisted": {
+            "minimum": 0.0,
+            "title": "Waitlisted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "held",
+          "confirmed",
+          "cash_pending",
+          "waitlisted",
+          "cancelled",
+          "expired"
+        ],
+        "title": "AttendeeSummaryResponse",
+        "type": "object"
+      },
       "AuditPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -8863,6 +8908,92 @@
           }
         },
         "summary": "Request Event Attendee Export",
+        "tags": [
+          "registrations"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/attendees/summary": {
+      "get": {
+        "operationId": "getEventAttendeeSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendeeSummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Registration eligibility or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Event or private access is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Event Attendee Summary",
         "tags": [
           "registrations"
         ]
