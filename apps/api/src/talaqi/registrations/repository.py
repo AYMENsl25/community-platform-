@@ -80,7 +80,10 @@ class RegistrationRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_active(self, event_id: UUID, user_id: UUID) -> Registration | None:
+    async def get_active(
+        self, event_id: UUID, user_id: UUID, *, for_update: bool = False
+    ) -> Registration | None:
+        lock = "FOR UPDATE" if for_update else ""
         row = (
             (
                 await self._session.execute(
@@ -91,9 +94,33 @@ class RegistrationRepository:
                         WHERE registration.event_id = :event_id
                           AND registration.user_id = :user_id
                           AND registration.state IN ('confirmed', 'cash_pending', 'waitlisted')
+                        {lock}
                         """  # noqa: S608 -- fixed fields; bound identifiers
                     ),
                     {"event_id": event_id, "user_id": user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def oldest_waitlisted(self, event_id: UUID) -> Registration | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.state = 'waitlisted'
+                        ORDER BY registration.waitlist_sequence, registration.id
+                        FOR UPDATE
+                        LIMIT 1
+                        """  # noqa: S608 -- fixed fields; bound identifier
+                    ),
+                    {"event_id": event_id},
                 )
             )
             .mappings()
@@ -388,6 +415,39 @@ class RegistrationRepository:
             )
             .mappings()
             .one()
+        )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', CAST(:registration_id AS uuid), :event_type,
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'user_id', CAST(:user_id AS uuid),
+                        'previous_state', CAST(:previous_state AS text),
+                        'state', CAST(:state AS text),
+                        'reason_code', CAST(:reason_code AS text)
+                    ),
+                    :deduplication_key, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": current.id,
+                "event_id": current.event_id,
+                "user_id": current.user_id,
+                "previous_state": current.state,
+                "state": mutation.state,
+                "reason_code": command.reason_code,
+                "event_type": f"registration.{mutation.state}",
+                "deduplication_key": f"registration.transition:{command.command_id}",
+                "occurred_at": command.occurred_at,
+            },
         )
         return TransitionResult(
             registration=_registration(cast(Mapping[str, object], row)),

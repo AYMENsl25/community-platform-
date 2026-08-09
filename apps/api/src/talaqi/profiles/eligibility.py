@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from typing import Protocol
 from uuid import UUID
 
-from talaqi.identity.models import AuthPrincipal
+from talaqi.identity.models import AuthPrincipal, UserStatus
 from talaqi.profiles.models import EligibilityState, Profile
 from talaqi.profiles.schemas import Capabilities
 from talaqi.regions.models import ProfileRegion
@@ -38,6 +39,32 @@ class CurrentProfileRegionResolver(Protocol):
 class RegistrationPrincipalLocker(Protocol):
     async def lock_principal(self, principal: AuthPrincipal) -> AuthPrincipal: ...
 
+    async def lock_registration_subject(
+        self, user_id: UUID
+    ) -> RegistrationEligibilitySubject | None: ...
+
+
+class EligibilitySubject(Protocol):
+    @property
+    def user_id(self) -> UUID: ...
+
+    @property
+    def email_verified(self) -> bool: ...
+
+    @property
+    def status(self) -> UserStatus: ...
+
+    @property
+    def is_platform_admin(self) -> bool: ...
+
+
+@dataclass(frozen=True, slots=True)
+class RegistrationEligibilitySubject:
+    user_id: UUID
+    email_verified: bool
+    status: UserStatus
+    is_platform_admin: bool
+
 
 class CreationEligibilityService:
     def __init__(
@@ -59,7 +86,7 @@ class CreationEligibilityService:
         self._community = current_community_rules_version
         self._admin_mfa_required = admin_mfa_required
 
-    async def evaluate(self, principal: AuthPrincipal) -> Capabilities:
+    async def evaluate(self, principal: EligibilitySubject) -> Capabilities:
         state = await self._repository.eligibility_state(principal.user_id)
         blockers: set[str] = set()
         if principal.status != "active":
@@ -146,6 +173,10 @@ class RegistrationEligibilityService:
     async def evaluate(self, principal: AuthPrincipal) -> Capabilities:
         current = await self._repository.lock_principal(principal)
         return await self._eligibility.evaluate(current)
+
+    async def evaluate_user(self, user_id: UUID) -> Capabilities | None:
+        current = await self._repository.lock_registration_subject(user_id)
+        return None if current is None else await self._eligibility.evaluate(current)
 
 
 def _profile_matches_region(profile: Profile, region: ProfileRegion) -> bool:

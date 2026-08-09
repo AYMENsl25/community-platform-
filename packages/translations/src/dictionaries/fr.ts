@@ -339,6 +339,8 @@ export const frenchDictionary: Dictionary = {
     "Votre compte n\u2019est pas admissible \u00e0 l\u2019inscription \u00e0 cet \u00e9v\u00e9nement.",
   "errors.registration_closed":
     "Les inscriptions \u00e0 cet \u00e9v\u00e9nement sont closes.",
+  "errors.cancellation_closed":
+    "Le d\u00e9lai d\u2019annulation pour cet \u00e9v\u00e9nement est d\u00e9pass\u00e9.",
   "errors.admin_mfa_required":
     "Terminez l’authentification multifacteur pour continuer.",
   "errors.http": "La demande a échoué.",

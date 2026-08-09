@@ -38,6 +38,7 @@ export const API_MESSAGE_KEYS = [
   "errors.method_not_allowed",
   "errors.not_found",
   "errors.rate_limited",
+  "errors.cancellation_closed",
   "errors.registration_closed",
   "errors.registration_not_allowed",
   "errors.region_not_found",

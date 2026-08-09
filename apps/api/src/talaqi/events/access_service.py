@@ -9,6 +9,7 @@ from talaqi.audit import AuditService
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.events.access_models import (
     EventAudienceProjection,
+    EventCancellationTerms,
     EventRegistrationTerms,
     ManagerVenueProjection,
 )
@@ -220,6 +221,28 @@ class EventAccessService:
             capacity=event.capacity,
             method=event.registration_method,
             cash_expiry_minutes=event.cash_expiry_minutes,
+        )
+
+    async def cancellation_terms(
+        self,
+        event_id: UUID,
+    ) -> EventCancellationTerms:
+        event = await self._events.get(event_id, for_update=True)
+        if (
+            event is None
+            or event.status != "published"
+            or event.start_at is None
+            or event.registration_method is None
+            or event.cancellation_cutoff_minutes is None
+        ):
+            raise _not_found()
+        return EventCancellationTerms(
+            id=event.id,
+            start_at=event.start_at,
+            capacity=event.capacity,
+            method=event.registration_method,
+            cash_expiry_minutes=event.cash_expiry_minutes,
+            cancellation_cutoff_minutes=event.cancellation_cutoff_minutes,
         )
 
     async def _authorize_manager(

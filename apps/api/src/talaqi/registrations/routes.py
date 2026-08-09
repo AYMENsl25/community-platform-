@@ -15,7 +15,7 @@ from talaqi.events.access_tokens import PrivateLinkTokenCodec
 from talaqi.identity.dependencies import CsrfProtection, CurrentPrincipal, DatabaseSession
 from talaqi.platform import IdempotencyCoordinator, IdempotencyRepository
 from talaqi.platform.errors import ApiError, ErrorEnvelope, request_id_for
-from talaqi.registrations.runtime import build_registration_service
+from talaqi.registrations.runtime import build_cancellation_service, build_registration_service
 from talaqi.registrations.schemas import RegistrationCreateRequest, RegistrationResponse
 from talaqi.runtime import LazySessionFactory
 
@@ -42,7 +42,7 @@ IdempotencyKey = Annotated[
         alias="Idempotency-Key",
         min_length=16,
         max_length=200,
-        description="Stable key for retrying event registration.",
+        description="Stable key for retrying a registration mutation.",
     ),
 ]
 
@@ -77,6 +77,12 @@ def _request_hash(event_id: UUID, private_link_hash: bytes | None) -> bytes:
     visibility_proof = b"\x00" if private_link_hash is None else b"\x01" + private_link_hash
     return hashlib.sha256(
         b"talaqi:event-registration-request:v1\x00" + event_id.bytes + visibility_proof
+    ).digest()
+
+
+def _cancellation_hash(event_id: UUID) -> bytes:
+    return hashlib.sha256(
+        b"talaqi:event-registration-cancellation:v1\x00" + event_id.bytes
     ).digest()
 
 
@@ -156,6 +162,67 @@ async def create_registration(
     await idempotency.complete(
         acquisition.claim,
         response_status=response.status_code,
+        response_body=response_body.model_dump(mode="json"),
+        completed_at=datetime.now(UTC),
+        session=session,
+    )
+    return response_body
+
+
+@router.delete(
+    "/{event_id:uuid}/registrations/me",
+    response_model=RegistrationResponse,
+    status_code=status.HTTP_200_OK,
+    operation_id="cancelMyEventRegistration",
+    responses={
+        401: _AUTH,
+        403: _FORBIDDEN,
+        404: _NOT_FOUND,
+        409: _CONFLICT,
+    },
+)
+async def cancel_my_registration(
+    event_id: UUID,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+    idempotency_key: IdempotencyKey,
+) -> RegistrationResponse:
+    _private(response)
+    current = datetime.now(UTC)
+    runtime: LazySessionFactory = request.app.state.database_runtime
+    idempotency = IdempotencyRepository(runtime.resolve())
+    acquisition = await IdempotencyCoordinator(idempotency).acquire(
+        actor_id=principal.user_id,
+        http_method="DELETE",
+        route_fingerprint="/api/v1/events/{event_id}/registrations/me",
+        key=idempotency_key,
+        request_hash=_cancellation_hash(event_id),
+        now=current,
+        lease_duration=timedelta(seconds=30),
+        expires_at=current + timedelta(hours=24),
+        session=session,
+    )
+    if acquisition.outcome == "replay":
+        if acquisition.response_status is None:
+            raise RuntimeError("completed idempotency operation has no response status")
+        response.status_code = acquisition.response_status
+        return RegistrationResponse.model_validate(acquisition.response_body)
+    if acquisition.claim is None:
+        raise RuntimeError("acquired idempotency operation has no claim")
+
+    cancelled = await build_cancellation_service(request, session).cancel(
+        principal,
+        event_id,
+        request_id=UUID(request_id_for(request)),
+        now=current,
+    )
+    response_body = _response(cancelled)
+    await idempotency.complete(
+        acquisition.claim,
+        response_status=status.HTTP_200_OK,
         response_body=response_body.model_dump(mode="json"),
         completed_at=datetime.now(UTC),
         session=session,

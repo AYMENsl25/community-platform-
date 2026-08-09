@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
+from talaqi.profiles.eligibility import RegistrationEligibilitySubject
 from talaqi.profiles.models import EligibilityState, Profile, ProfileReplacement
 from talaqi.regions.models import Locale
 
@@ -67,6 +68,36 @@ class ProfileRepository:
             )
         return replace(
             principal,
+            status=cast(str, row["status"]),  # type: ignore[arg-type]
+            email_verified=row["email_verified_at"] is not None,
+            is_platform_admin=cast(bool, row["is_platform_admin"]),
+        )
+
+    async def lock_registration_subject(
+        self, user_id: UUID
+    ) -> RegistrationEligibilitySubject | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT status::text AS status, email_verified_at,
+                               is_platform_admin
+                        FROM talaqi.users
+                        WHERE id = :user_id
+                        FOR UPDATE
+                        """
+                    ),
+                    {"user_id": user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        return RegistrationEligibilitySubject(
+            user_id=user_id,
             status=cast(str, row["status"]),  # type: ignore[arg-type]
             email_verified=row["email_verified_at"] is not None,
             is_platform_admin=cast(bool, row["is_platform_admin"]),

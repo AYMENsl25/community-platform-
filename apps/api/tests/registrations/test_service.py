@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
 from talaqi.db.identifiers import generate_uuid7
+from talaqi.events.access_models import EventCancellationTerms
+from talaqi.identity.models import AuthPrincipal
+from talaqi.platform import ApiError
+from talaqi.profiles.schemas import Capabilities
 from talaqi.registrations.models import (
     Registration,
     RegistrationContext,
@@ -16,6 +21,8 @@ from talaqi.registrations.models import (
     TransitionResult,
 )
 from talaqi.registrations.service import (
+    PromotionService,
+    RegistrationCancellationService,
     RegistrationTransitionError,
     RegistrationTransitionService,
 )
@@ -152,6 +159,53 @@ class FakeRepository:
         return TransitionResult(self.current, transition)
 
 
+class FakePromotionRepository(FakeRepository):
+    async def held_seat_count(self, event_id: UUID) -> int:
+        assert event_id == EVENT_ID
+        return int(self.current.seat_held)
+
+    async def oldest_waitlisted(self, event_id: UUID) -> Registration | None:
+        assert event_id == EVENT_ID
+        return self.current if self.current.state == "waitlisted" else None
+
+
+class FakeCancellationEvents:
+    def __init__(self, *, start_at: datetime, capacity: int = 1) -> None:
+        self.terms = EventCancellationTerms(
+            id=EVENT_ID,
+            start_at=start_at,
+            capacity=capacity,
+            method="free",
+            cash_expiry_minutes=None,
+            cancellation_cutoff_minutes=0,
+        )
+
+    async def cancellation_terms(self, event_id: UUID) -> EventCancellationTerms:
+        assert event_id == EVENT_ID
+        return self.terms
+
+
+class FakePromotionEligibility:
+    async def evaluate_user(self, user_id: UUID) -> Capabilities:
+        assert user_id == USER_ID
+        return Capabilities(
+            create_club=True,
+            create_independent_event=True,
+            save_event=True,
+            register_event=True,
+            access_admin=False,
+            blockers=(),
+        )
+
+
+class FakeAudit:
+    def __init__(self) -> None:
+        self.actions: list[str] = []
+
+    async def record(self, **values: object) -> None:
+        self.actions.append(cast(str, values["action"]))
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(("current", "target"), [(a, b) for a in STATES for b in STATES])
 async def test_transition_table_is_exhaustive(
@@ -250,3 +304,54 @@ def test_repository_interface_has_no_arbitrary_state_update() -> None:
 
     assert not hasattr(RegistrationRepository, "update")
     assert not hasattr(RegistrationRepository, "set_state")
+
+
+@pytest.mark.asyncio
+async def test_promotion_worker_retry_stops_when_capacity_is_full() -> None:
+    repository = FakePromotionRepository(registration("waitlisted", method="free"))
+    transitions = RegistrationTransitionService(repository)
+    audit = FakeAudit()
+    service = PromotionService(
+        cast(Any, repository),
+        cast(Any, FakeCancellationEvents(start_at=NOW + timedelta(hours=2))),
+        cast(Any, FakePromotionEligibility()),
+        transitions,
+        cast(Any, audit),
+    )
+
+    first = await service.promote_next(EVENT_ID, now=NOW, request_id=generate_uuid7())
+    replay = await service.promote_next(EVENT_ID, now=NOW, request_id=generate_uuid7())
+
+    assert first is not None
+    assert first.state == "confirmed"
+    assert replay is None
+    assert repository.apply_count == 1
+    assert audit.actions == ["registration.promote"]
+
+
+@pytest.mark.asyncio
+async def test_cancellation_is_closed_at_exact_cutoff() -> None:
+    service = RegistrationCancellationService(
+        cast(Any, object()),
+        cast(Any, FakeCancellationEvents(start_at=NOW)),
+        cast(Any, object()),
+        cast(Any, object()),
+        cast(Any, object()),
+    )
+    principal = AuthPrincipal(
+        user_id=USER_ID,
+        session_id=generate_uuid7(),
+        email_verified=True,
+        status="active",
+        is_platform_admin=False,
+    )
+
+    with pytest.raises(ApiError) as error:
+        await service.cancel(
+            principal,
+            EVENT_ID,
+            request_id=generate_uuid7(),
+            now=NOW,
+        )
+
+    assert error.value.code == "cancellation_closed"

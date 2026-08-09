@@ -12,13 +12,17 @@ from talaqi.registrations.models import (
 )
 from talaqi.registrations.repository import RegistrationRepository
 from talaqi.registrations.service import (
+    PromotionService,
+    RegistrationCancellationService,
     RegistrationCreationService,
     RegistrationTransitionError,
     RegistrationTransitionService,
 )
 
 __all__ = [
+    "PromotionService",
     "Registration",
+    "RegistrationCancellationService",
     "RegistrationContext",
     "RegistrationCreationResult",
     "RegistrationCreationService",

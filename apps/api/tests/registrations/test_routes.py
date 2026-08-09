@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from typing import cast
 from uuid import UUID
 
 import httpx
@@ -563,3 +564,313 @@ async def test_private_registration_requires_live_link_and_start_time_is_hard_de
     assert registered.json()["state"] == "confirmed"
     assert closed.status_code == 409
     assert closed.json()["error"]["code"] == "registration_closed"
+
+
+@pytest.mark.asyncio
+async def test_free_cancellation_promotes_fifo_and_replays_with_history_audit_and_outbox(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    members = [await create_user(registration_engine) for _ in range(3)]
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(client, owner, capacity=1)
+        created = [
+            await client.post(
+                f"/api/v1/events/{event_id}/registrations",
+                headers=_registration_headers(member, key=f"free-promotion-{generate_uuid7()}"),
+            )
+            for member in members
+        ]
+        key = f"cancel-free-{generate_uuid7()}"
+        cancelled = await client.delete(
+            f"/api/v1/events/{event_id}/registrations/me",
+            headers=_registration_headers(members[0], key=key),
+        )
+        replay = await client.delete(
+            f"/api/v1/events/{event_id}/registrations/me",
+            headers=_registration_headers(members[0], key=key),
+        )
+
+    assert [response.status_code for response in created] == [201, 201, 201]
+    assert [response.json()["state"] for response in created] == [
+        "confirmed",
+        "waitlisted",
+        "waitlisted",
+    ]
+    assert cancelled.status_code == replay.status_code == 200
+    assert cancelled.json() == replay.json()
+    assert cancelled.json()["state"] == "cancelled"
+
+    async with registration_engine.connect() as connection:
+        rows = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT user_id, state::text AS state, seat_held,
+                               waitlist_sequence
+                        FROM talaqi.registrations
+                        WHERE event_id = :event_id
+                        ORDER BY created_at, id
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        evidence = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT
+                            (SELECT count(*) FROM talaqi.registration_transitions
+                             WHERE registration_id IN (
+                                 SELECT id FROM talaqi.registrations
+                                 WHERE event_id = :event_id
+                             ) AND reason_code IN ('member_cancelled', 'waitlist_promoted'))
+                                AS transitions,
+                            (SELECT count(*) FROM talaqi.audit_events
+                             WHERE target_type = 'registration'
+                               AND action IN ('registration.cancel', 'registration.promote')
+                               AND target_id IN (
+                                   SELECT id FROM talaqi.registrations
+                                   WHERE event_id = :event_id
+                               )) AS audits,
+                            (SELECT count(*) FROM talaqi.outbox_events
+                             WHERE aggregate_type = 'registration'
+                               AND aggregate_id IN (
+                                   SELECT id FROM talaqi.registrations
+                                   WHERE event_id = :event_id
+                               )
+                               AND deduplication_key LIKE 'registration.transition:%')
+                                AS outbox
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+
+    assert [row["user_id"] for row in rows] == [member.user_id for member in members]
+    assert [row["state"] for row in rows] == ["cancelled", "confirmed", "waitlisted"]
+    assert [row["waitlist_sequence"] for row in rows] == [None, None, 2]
+    assert evidence == {"transitions": 2, "audits": 2, "outbox": 2}
+
+
+@pytest.mark.asyncio
+async def test_promotion_skips_ineligible_fifo_member_and_promotes_next(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    holder = await create_user(registration_engine)
+    ineligible = await create_user(registration_engine)
+    eligible = await create_user(registration_engine)
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(client, owner, capacity=1)
+        for member in (holder, ineligible, eligible):
+            response = await client.post(
+                f"/api/v1/events/{event_id}/registrations",
+                headers=_registration_headers(
+                    member, key=f"ineligible-promotion-{generate_uuid7()}"
+                ),
+            )
+            assert response.status_code == 201
+        async with registration_engine.begin() as connection:
+            await connection.execute(
+                text(
+                    """
+                    UPDATE talaqi.users
+                    SET status = 'suspended', suspended_at = clock_timestamp(),
+                        suspension_reason = 'safety_review'
+                    WHERE id = :user_id
+                    """
+                ),
+                {"user_id": ineligible.user_id},
+            )
+        cancelled = await client.delete(
+            f"/api/v1/events/{event_id}/registrations/me",
+            headers=_registration_headers(holder, key=f"skip-ineligible-{generate_uuid7()}"),
+        )
+
+    assert cancelled.status_code == 200
+    async with registration_engine.connect() as connection:
+        state_rows = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT user_id, state::text AS state
+                        FROM talaqi.registrations
+                        WHERE event_id = :event_id
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        states = {cast(UUID, row["user_id"]): cast(str, row["state"]) for row in state_rows}
+        reasons = set(
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT reason_code
+                        FROM talaqi.registration_transitions
+                        WHERE registration_id IN (
+                            SELECT id FROM talaqi.registrations WHERE event_id = :event_id
+                        )
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            ).scalars()
+        )
+    assert states[holder.user_id] == "cancelled"
+    assert states[ineligible.user_id] == "cancelled"
+    assert states[eligible.user_id] == "confirmed"
+    assert "promotion_ineligible" in reasons
+    assert "waitlist_promoted" in reasons
+
+
+@pytest.mark.asyncio
+async def test_simultaneous_cancellations_promote_one_each_without_overcapacity(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    members = [await create_user(registration_engine) for _ in range(4)]
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(client, owner, capacity=2)
+        for member in members:
+            response = await client.post(
+                f"/api/v1/events/{event_id}/registrations",
+                headers=_registration_headers(
+                    member, key=f"concurrent-cancel-setup-{generate_uuid7()}"
+                ),
+            )
+            assert response.status_code == 201
+        responses = await asyncio.gather(
+            *(
+                client.delete(
+                    f"/api/v1/events/{event_id}/registrations/me",
+                    headers=_registration_headers(
+                        member, key=f"concurrent-cancel-{generate_uuid7()}"
+                    ),
+                )
+                for member in members[:2]
+            )
+        )
+
+    assert [response.status_code for response in responses] == [200, 200]
+    async with registration_engine.connect() as connection:
+        invariant = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT count(*) FILTER (WHERE seat_held) AS held,
+                               count(*) FILTER (WHERE state = 'confirmed') AS confirmed,
+                               count(*) FILTER (WHERE state = 'waitlisted') AS waitlisted,
+                               count(*) FILTER (WHERE state = 'cancelled') AS cancelled
+                        FROM talaqi.registrations
+                        WHERE event_id = :event_id
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert invariant == {"held": 2, "confirmed": 2, "waitlisted": 0, "cancelled": 2}
+
+
+@pytest.mark.asyncio
+async def test_cash_promotion_gets_new_bounded_expiry_and_cutoff_fails_closed(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    holder = await create_user(registration_engine)
+    waiting = await create_user(registration_engine)
+    app = app_for(registration_engine)
+    start_at = datetime.now(UTC) + timedelta(hours=3)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(
+            client,
+            owner,
+            capacity=1,
+            registration_method="cash_organizer_confirmed",
+            cash_expiry_minutes=240,
+            cancellation_cutoff_minutes=0,
+            start_at=start_at.isoformat(),
+            end_at=(start_at + timedelta(hours=2)).isoformat(),
+        )
+        for member in (holder, waiting):
+            response = await client.post(
+                f"/api/v1/events/{event_id}/registrations",
+                headers=_registration_headers(member, key=f"cash-promotion-{generate_uuid7()}"),
+            )
+            assert response.status_code == 201
+        cancelled = await client.delete(
+            f"/api/v1/events/{event_id}/registrations/me",
+            headers=_registration_headers(holder, key=f"cash-cancel-{generate_uuid7()}"),
+        )
+
+        closed_start = datetime.now(UTC) + timedelta(hours=1)
+        closed_event = await _create_event(
+            client,
+            owner,
+            capacity=1,
+            cancellation_cutoff_minutes=120,
+            start_at=closed_start.isoformat(),
+            end_at=(closed_start + timedelta(hours=2)).isoformat(),
+        )
+        registered = await client.post(
+            f"/api/v1/events/{closed_event}/registrations",
+            headers=_registration_headers(holder, key=f"closed-cancel-register-{generate_uuid7()}"),
+        )
+        closed = await client.delete(
+            f"/api/v1/events/{closed_event}/registrations/me",
+            headers=_registration_headers(holder, key=f"closed-cancel-{generate_uuid7()}"),
+        )
+
+    assert cancelled.status_code == 200
+    assert registered.status_code == 201
+    assert closed.status_code == 409
+    assert closed.json()["error"]["code"] == "cancellation_closed"
+    async with registration_engine.connect() as connection:
+        promoted = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT state::text AS state, cash_expires_at
+                        FROM talaqi.registrations
+                        WHERE event_id = :event_id AND user_id = :user_id
+                        """
+                    ),
+                    {"event_id": event_id, "user_id": waiting.user_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert promoted["state"] == "cash_pending"
+    assert promoted["cash_expires_at"] == start_at

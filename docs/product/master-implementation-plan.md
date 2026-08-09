@@ -291,9 +291,9 @@
 
 **Produces:** `DELETE /events/{event_id}/registrations/me` and `PromotionService.promote_next()`.
 
-- [ ] Enforce event cutoff, release the seat, and promote exactly one oldest eligible waitlisted member in the same transaction; skip cancelled/ineligible entries deterministically.
-- [ ] For free events promote to confirmed; for cash events promote to cash-pending with a newly bounded expiry; emit transition/audit/outbox records.
-- [ ] Gate: simultaneous cancellations/promotions, cutoff boundary, worker retry, and no-overcapacity tests; commit `feat: add cancellation and FIFO promotion`.
+- [x] Enforce event cutoff, release the seat, and promote exactly one oldest eligible waitlisted member in the same transaction; skip cancelled/ineligible entries deterministically.
+- [x] For free events promote to confirmed; for cash events promote to cash-pending with a newly bounded expiry; emit transition/audit/outbox records.
+- [x] Gate: simultaneous cancellations/promotions, cutoff boundary, worker retry, and no-overcapacity tests; commit `feat: add cancellation and FIFO promotion`.
 
 ### Task 4.4: Organizer cash confirmation and attendee API
 

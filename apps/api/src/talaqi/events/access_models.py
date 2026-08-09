@@ -60,6 +60,16 @@ class EventRegistrationTerms:
 
 
 @dataclass(frozen=True, slots=True)
+class EventCancellationTerms:
+    id: UUID
+    start_at: datetime
+    capacity: int | None
+    method: Literal["free", "cash_organizer_confirmed"]
+    cash_expiry_minutes: int | None
+    cancellation_cutoff_minutes: int
+
+
+@dataclass(frozen=True, slots=True)
 class PrivateLinkRecord:
     id: UUID
     event_id: UUID
@@ -69,6 +79,7 @@ class PrivateLinkRecord:
 
 __all__ = [
     "EventAudienceProjection",
+    "EventCancellationTerms",
     "EventRegistrationTerms",
     "ManagerVenueProjection",
     "PrivateLinkRecord",

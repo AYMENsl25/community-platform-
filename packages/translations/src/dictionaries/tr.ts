@@ -335,6 +335,8 @@ export const turkishDictionary = {
     "Hesab\u0131n\u0131z bu etkinli\u011fe kaydolmaya uygun de\u011fil.",
   "errors.registration_closed":
     "Bu etkinlik i\u00e7in kay\u0131t kapanm\u0131\u015ft\u0131r.",
+  "errors.cancellation_closed":
+    "Bu etkinlik i\u00e7in iptal s\u00fcresi doldu.",
   "errors.admin_mfa_required":
     "Devam etmek için çok faktörlü kimlik doğrulamayı tamamlayın.",
   "errors.http": "İstek başarısız oldu.",
