@@ -221,9 +221,14 @@ async def test_cash_registration_retries_safely_and_conflicting_key_reuse_is_rej
                         SELECT
                             (SELECT count(*) FROM talaqi.registrations
                              WHERE event_id = :event_id AND user_id = :user_id) AS registrations,
-                            (SELECT count(*) FROM talaqi.outbox_events
-                             WHERE aggregate_type = 'registration'
-                               AND aggregate_id = CAST(:registration_id AS uuid)) AS outbox
+                                (SELECT count(*) FROM talaqi.outbox_events
+                                 WHERE aggregate_type = 'registration'
+                                   AND aggregate_id = CAST(:registration_id AS uuid)
+                                   AND event_type <> 'registration.cash_expiry_due') AS outbox,
+                                (SELECT count(*) FROM talaqi.outbox_events
+                                 WHERE aggregate_type = 'registration'
+                                   AND aggregate_id = CAST(:registration_id AS uuid)
+                                   AND event_type = 'registration.cash_expiry_due') AS expiry_jobs
                         """
                     ),
                     {
@@ -236,7 +241,7 @@ async def test_cash_registration_retries_safely_and_conflicting_key_reuse_is_rej
             .mappings()
             .one()
         )
-    assert counts == {"registrations": 1, "outbox": 1}
+    assert counts == {"registrations": 1, "outbox": 1, "expiry_jobs": 1}
 
 
 @pytest.mark.asyncio

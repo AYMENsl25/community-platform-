@@ -399,7 +399,9 @@ class RegistrationTransitionService:
             return replay
 
         current = context.registration
-        if context.event_status != "published" or context.event_start_at <= command.occurred_at:
+        if context.event_status != "published" or (
+            command.target_state != "expired" and context.event_start_at <= command.occurred_at
+        ):
             raise RegistrationTransitionError("event_not_transitionable")
         if not is_transition_allowed(current.state, command.target_state):
             raise RegistrationTransitionError("invalid_registration_transition")

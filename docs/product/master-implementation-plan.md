@@ -307,9 +307,9 @@
 
 **Produces:** lease-based cash-expiry job with bounded retries and dead-letter visibility.
 
-- [ ] Claim due reservations using PostgreSQL `FOR UPDATE SKIP LOCKED`, transition to expired, release capacity, promote waitlist, and emit notifications in one recoverable transaction.
-- [ ] Test multiple workers, crash after claim, restart recovery, clock boundaries, and idempotent replay.
-- [ ] Gate: worker integration/concurrency tests; commit `feat: expire cash reservations reliably`.
+- [x] Claim due reservations using PostgreSQL `FOR UPDATE SKIP LOCKED`, transition to expired, release capacity, promote waitlist, and emit notifications in one recoverable transaction.
+- [x] Test multiple workers, crash after claim, restart recovery, clock boundaries, and idempotent replay.
+- [x] Gate: worker integration/concurrency tests; commit `feat: expire cash reservations reliably`.
 
 ### Task 4.6: Member registration and ticket experience
 

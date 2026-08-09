@@ -1,5 +1,10 @@
 """Registration state and transition services."""
 
+from talaqi.registrations.expiry import (
+    CashExpiryJob,
+    CashExpiryJobRepository,
+    CashExpiryProcessor,
+)
 from talaqi.registrations.models import (
     Attendee,
     Registration,
@@ -26,6 +31,9 @@ __all__ = [
     "Attendee",
     "AttendeeService",
     "CashConfirmationService",
+    "CashExpiryJob",
+    "CashExpiryJobRepository",
+    "CashExpiryProcessor",
     "PromotionService",
     "Registration",
     "RegistrationCancellationService",

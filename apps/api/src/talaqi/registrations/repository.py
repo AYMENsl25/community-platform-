@@ -340,7 +340,46 @@ class RegistrationRepository:
             request_id=request_id,
             occurred_at=occurred_at,
         )
+        if state == "cash_pending" and cash_expires_at is not None:
+            await self._enqueue_cash_expiry(
+                registration_id=registration_id,
+                event_id=event_id,
+                available_at=cash_expires_at,
+            )
         return _registration(cast(Mapping[str, object], row))
+
+    async def _enqueue_cash_expiry(
+        self,
+        *,
+        registration_id: UUID,
+        event_id: UUID,
+        available_at: datetime,
+    ) -> None:
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', :registration_id, 'registration.cash_expiry_due',
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid)
+                    ),
+                    :deduplication_key, :available_at
+                )
+                ON CONFLICT (deduplication_key) DO NOTHING
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": registration_id,
+                "event_id": event_id,
+                "deduplication_key": f"registration.cash_expiry:{registration_id}",
+                "available_at": available_at,
+            },
+        )
 
     async def _append_creation_records(
         self,
@@ -581,6 +620,12 @@ class RegistrationRepository:
                 "occurred_at": command.occurred_at,
             },
         )
+        if mutation.state == "cash_pending" and mutation.cash_expires_at is not None:
+            await self._enqueue_cash_expiry(
+                registration_id=current.id,
+                event_id=current.event_id,
+                available_at=mutation.cash_expires_at,
+            )
         return TransitionResult(
             registration=_registration(cast(Mapping[str, object], row)),
             transition=_transition(cast(Mapping[str, object], transition_row)),
