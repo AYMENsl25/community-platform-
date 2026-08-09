@@ -9,6 +9,8 @@ from talaqi.events.access_runtime import build_event_access_service
 from talaqi.profiles.runtime import build_registration_eligibility_service
 from talaqi.registrations.repository import RegistrationRepository
 from talaqi.registrations.service import (
+    AttendeeService,
+    CashConfirmationService,
     PromotionService,
     RegistrationCancellationService,
     RegistrationCreationService,
@@ -46,4 +48,30 @@ def build_cancellation_service(
     )
 
 
-__all__ = ["build_cancellation_service", "build_registration_service"]
+def build_attendee_service(request: Request, session: AsyncSession) -> AttendeeService:
+    repository = RegistrationRepository(session)
+    return AttendeeService(
+        repository,
+        build_event_access_service(request, session),
+        AuditService(AuditRepository(session)),
+    )
+
+
+def build_cash_confirmation_service(
+    request: Request, session: AsyncSession
+) -> CashConfirmationService:
+    repository = RegistrationRepository(session)
+    return CashConfirmationService(
+        repository,
+        build_event_access_service(request, session),
+        RegistrationTransitionService(repository),
+        AuditService(AuditRepository(session)),
+    )
+
+
+__all__ = [
+    "build_attendee_service",
+    "build_cancellation_service",
+    "build_cash_confirmation_service",
+    "build_registration_service",
+]

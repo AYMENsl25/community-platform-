@@ -341,6 +341,8 @@ export const frenchDictionary: Dictionary = {
     "Les inscriptions \u00e0 cet \u00e9v\u00e9nement sont closes.",
   "errors.cancellation_closed":
     "Le d\u00e9lai d\u2019annulation pour cet \u00e9v\u00e9nement est d\u00e9pass\u00e9.",
+  "errors.cash_confirmation_expired":
+    "Cette r\u00e9servation en esp\u00e8ces a expir\u00e9.",
   "errors.admin_mfa_required":
     "Terminez l’authentification multifacteur pour continuer.",
   "errors.http": "La demande a échoué.",

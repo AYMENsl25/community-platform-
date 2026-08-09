@@ -334,6 +334,8 @@ export const arabicDictionary: Dictionary = {
     "\u0623\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
   "errors.cancellation_closed":
     "\u0627\u0646\u062a\u0647\u062a \u0645\u0647\u0644\u0629 \u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
+  "errors.cash_confirmation_expired":
+    "\u0627\u0646\u062a\u0647\u062a \u0635\u0644\u0627\u062d\u064a\u0629 \u0647\u0630\u0627 \u0627\u0644\u062d\u062c\u0632 \u0627\u0644\u0646\u0642\u062f\u064a.",
   "errors.admin_mfa_required": "أكمل المصادقة متعددة العوامل للمتابعة.",
   "errors.http": "فشل الطلب.",
   "errors.idempotency_conflict": "سبق استخدام مفتاح الطلب هذا لبيانات مختلفة.",

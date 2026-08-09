@@ -874,3 +874,188 @@ async def test_cash_promotion_gets_new_bounded_expiry_and_cutoff_fails_closed(
         )
     assert promoted["state"] == "cash_pending"
     assert promoted["cash_expires_at"] == start_at
+
+
+@pytest.mark.asyncio
+async def test_manager_confirms_cash_and_lists_privacy_safe_attendees_with_export_audit(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    unrelated = await create_user(registration_engine)
+    members = [await create_user(registration_engine) for _ in range(2)]
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(
+            client,
+            owner,
+            capacity=2,
+            registration_method="cash_organizer_confirmed",
+            cash_expiry_minutes=120,
+        )
+        other_event_id = await _create_event(client, unrelated, capacity=2)
+        created = [
+            await client.post(
+                f"/api/v1/events/{event_id}/registrations",
+                headers=_registration_headers(member, key=f"attendee-register-{generate_uuid7()}"),
+            )
+            for member in members
+        ]
+        registration_id = UUID(created[0].json()["id"])
+        key = f"cash-confirm-{generate_uuid7()}"
+        confirmed = await client.post(
+            f"/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash",
+            headers=owner.headers(idempotency_key=key),
+        )
+        replay = await client.post(
+            f"/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash",
+            headers=owner.headers(idempotency_key=key),
+        )
+        denied = await client.post(
+            f"/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash",
+            headers=unrelated.headers(idempotency_key=f"denied-{generate_uuid7()}"),
+        )
+        cross_event = await client.post(
+            f"/api/v1/events/{other_event_id}/registrations/{registration_id}/confirm-cash",
+            headers=unrelated.headers(idempotency_key=f"cross-{generate_uuid7()}"),
+        )
+        async with registration_engine.connect() as connection:
+            member_username = await connection.scalar(
+                text("SELECT username FROM talaqi.profiles WHERE user_id = :user_id"),
+                {"user_id": members[0].user_id},
+            )
+        assert isinstance(member_username, str)
+        first_page = await client.get(
+            f"/api/v1/events/{event_id}/attendees",
+            params={"limit": 1},
+            headers=owner.headers(),
+        )
+        assert first_page.status_code == 200, first_page.text
+        searched = await client.get(
+            f"/api/v1/events/{event_id}/attendees",
+            params={"search": member_username.upper()},
+            headers=owner.headers(),
+        )
+        confirmed_only = await client.get(
+            f"/api/v1/events/{event_id}/attendees",
+            params={"state": "confirmed"},
+            headers=owner.headers(),
+        )
+        second_page = await client.get(
+            f"/api/v1/events/{event_id}/attendees",
+            params={"limit": 1, "cursor": first_page.json()["next_cursor"]},
+            headers=owner.headers(),
+        )
+        cursor_mismatch = await client.get(
+            f"/api/v1/events/{event_id}/attendees",
+            params={
+                "limit": 1,
+                "state": "confirmed",
+                "cursor": first_page.json()["next_cursor"],
+            },
+            headers=owner.headers(),
+        )
+        attendee_denied = await client.get(
+            f"/api/v1/events/{event_id}/attendees", headers=unrelated.headers()
+        )
+        export_key = f"attendee-export-{generate_uuid7()}"
+        export = await client.post(
+            f"/api/v1/events/{event_id}/attendees/export",
+            json={"state": "confirmed"},
+            headers=owner.headers(idempotency_key=export_key),
+        )
+        export_replay = await client.post(
+            f"/api/v1/events/{event_id}/attendees/export",
+            json={"state": "confirmed"},
+            headers=owner.headers(idempotency_key=export_key),
+        )
+
+    assert [response.status_code for response in created] == [201, 201]
+    assert confirmed.status_code == replay.status_code == 200
+    assert confirmed.json() == replay.json()
+    assert confirmed.json()["state"] == "confirmed"
+    assert denied.status_code == 403
+    assert cross_event.status_code == 404
+    assert attendee_denied.status_code == 403
+    assert first_page.status_code == second_page.status_code == 200
+    assert [item["user_id"] for item in searched.json()["items"]] == [str(members[0].user_id)]
+    assert [item["state"] for item in confirmed_only.json()["items"]] == ["confirmed"]
+    assert cursor_mismatch.status_code == 400
+    items = first_page.json()["items"] + second_page.json()["items"]
+    assert {item["user_id"] for item in items} == {str(member.user_id) for member in members}
+    assert set(items[0]) == {
+        "registration_id",
+        "user_id",
+        "username",
+        "display_name",
+        "method",
+        "state",
+        "waitlist_sequence",
+        "cash_expires_at",
+        "confirmed_at",
+        "created_at",
+    }
+    assert "email" not in first_page.text
+    assert export.status_code == export_replay.status_code == 202
+    assert export.json() == export_replay.json()
+    async with registration_engine.connect() as connection:
+        evidence = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                        SELECT
+                            (SELECT count(*) FROM talaqi.audit_events
+                             WHERE action = 'attendees.export_request'
+                               AND target_id = :event_id) AS audits,
+                            (SELECT count(*) FROM talaqi.outbox_events
+                             WHERE event_type = 'attendees.export_requested'
+                               AND aggregate_id = :event_id) AS outbox
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert evidence == {"audits": 1, "outbox": 1}
+
+
+@pytest.mark.asyncio
+async def test_cash_confirmation_rejects_expired_boundary_without_transition(
+    registration_engine: AsyncEngine,
+) -> None:
+    owner = await create_user(registration_engine)
+    member = await create_user(registration_engine)
+    app = app_for(registration_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        event_id = await _create_event(
+            client,
+            owner,
+            registration_method="cash_organizer_confirmed",
+            cash_expiry_minutes=120,
+        )
+        created = await client.post(
+            f"/api/v1/events/{event_id}/registrations",
+            headers=_registration_headers(member, key=f"expiry-register-{generate_uuid7()}"),
+        )
+        registration_id = UUID(created.json()["id"])
+        async with registration_engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "UPDATE talaqi.registrations SET cash_expires_at = clock_timestamp() "
+                    "WHERE id = :registration_id"
+                ),
+                {"registration_id": registration_id},
+            )
+        expired = await client.post(
+            f"/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash",
+            headers=owner.headers(idempotency_key=f"expired-confirm-{generate_uuid7()}"),
+        )
+
+    assert expired.status_code == 409
+    assert expired.json()["error"]["code"] == "cash_confirmation_expired"

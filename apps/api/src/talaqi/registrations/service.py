@@ -16,6 +16,7 @@ from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
 from talaqi.profiles.schemas import Capabilities
 from talaqi.registrations.models import (
+    Attendee,
     Registration,
     RegistrationContext,
     RegistrationCreationResult,
@@ -120,6 +121,47 @@ class RegistrationCancellationRepositoryProtocol(Protocol):
 
 class PromotionEligibilityProtocol(Protocol):
     async def evaluate_user(self, user_id: UUID) -> Capabilities | None: ...
+
+
+class RegistrationManagerAccessProtocol(Protocol):
+    async def require_manager(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        for_update: bool,
+    ) -> object: ...
+
+
+class AttendeeRepositoryProtocol(Protocol):
+    async def get_for_event(
+        self,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Registration | None: ...
+
+    async def list_attendees(
+        self,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]: ...
+
+    async def enqueue_attendee_export(
+        self,
+        event_id: UUID,
+        request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        requested_at: datetime,
+    ) -> None: ...
 
 
 def is_transition_allowed(current: RegistrationState, target: RegistrationState) -> bool:
@@ -547,6 +589,147 @@ class RegistrationCancellationService:
                 request_id=request_id,
             )
         return cancelled.registration
+
+
+class CashConfirmationService:
+    def __init__(
+        self,
+        repository: AttendeeRepositoryProtocol,
+        events: RegistrationManagerAccessProtocol,
+        transitions: RegistrationTransitionService,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._transitions = transitions
+        self._audit = audit
+
+    async def confirm(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        request_id: UUID,
+        now: datetime,
+    ) -> Registration:
+        current = _instant(now, field="confirmation_time")
+        await self._events.require_manager(principal, event_id, for_update=True)
+        registration = await self._repository.get_for_event(
+            event_id, registration_id, for_update=True
+        )
+        if registration is None:
+            raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
+        if registration.method != "cash_organizer_confirmed":
+            raise ApiError(code="conflict", message_key="errors.conflict", status_code=409)
+        if registration.state == "confirmed":
+            return registration
+        if registration.state != "cash_pending":
+            raise ApiError(code="conflict", message_key="errors.conflict", status_code=409)
+        if registration.cash_expires_at is None or registration.cash_expires_at <= current:
+            raise ApiError(
+                code="cash_confirmation_expired",
+                message_key="errors.cash_confirmation_expired",
+                status_code=409,
+            )
+        confirmed = await self._transitions.transition(
+            new_transition_command(
+                registration_id=registration.id,
+                target_state="confirmed",
+                actor_user_id=principal.user_id,
+                actor_kind="organizer",
+                reason_code="cash_confirmed",
+                occurred_at=current,
+                request_id=request_id,
+            )
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="organizer",
+            action="registration.cash_confirm",
+            target_type="registration",
+            target_id=registration.id,
+            reason="cash_confirmed",
+            safe_before={"state": registration.state},
+            safe_after={"state": confirmed.registration.state},
+            request_id=request_id,
+        )
+        return confirmed.registration
+
+
+class AttendeeService:
+    def __init__(
+        self,
+        repository: AttendeeRepositoryProtocol,
+        events: RegistrationManagerAccessProtocol,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._audit = audit
+
+    async def list(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]:
+        await self._events.require_manager(principal, event_id, for_update=False)
+        normalized = _normalize_attendee_search(search)
+        return await self._repository.list_attendees(
+            event_id,
+            state=state,
+            search=normalized or None,
+            limit=limit,
+            after_created_at=after_created_at,
+            after_id=after_id,
+        )
+
+    async def request_export(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        export_request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        request_id: UUID,
+        now: datetime,
+    ) -> None:
+        current = _instant(now, field="export_request_time")
+        await self._events.require_manager(principal, event_id, for_update=False)
+        normalized = _normalize_attendee_search(search)
+        await self._repository.enqueue_attendee_export(
+            event_id,
+            export_request_id,
+            state=state,
+            search=normalized or None,
+            requested_at=current,
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="organizer",
+            action="attendees.export_request",
+            target_type="event",
+            target_id=event_id,
+            reason="attendee_operations",
+            safe_after={"request_id": str(export_request_id), "state": state},
+            request_id=request_id,
+        )
+
+
+def _normalize_attendee_search(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().casefold()
+    if not normalized:
+        return None
+    return normalized
 
 
 def new_transition_command(

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.registrations.models import (
+    Attendee,
     Registration,
     RegistrationContext,
     RegistrationEventStatus,
@@ -127,6 +128,137 @@ class RegistrationRepository:
             .one_or_none()
         )
         return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def get_for_event(
+        self,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Registration | None:
+        lock = "FOR UPDATE" if for_update else ""
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.id = :registration_id
+                        {lock}
+                        """  # noqa: S608 -- fixed fields; bound identifiers
+                    ),
+                    {"event_id": event_id, "registration_id": registration_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def list_attendees(
+        self,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]:
+        rows = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}, profile.username, profile.display_name
+                        FROM talaqi.registrations AS registration
+                        JOIN talaqi.profiles AS profile ON profile.user_id = registration.user_id
+                        WHERE registration.event_id = :event_id
+                          AND (
+                              CAST(:state AS text) IS NULL
+                              OR registration.state = CAST(:state AS talaqi.registration_state)
+                          )
+                          AND (
+                              CAST(:search AS text) IS NULL
+                              OR lower(profile.username) LIKE :search ESCAPE '\\'
+                              OR lower(profile.display_name) LIKE :search ESCAPE '\\'
+                          )
+                          AND (
+                              CAST(:after_created_at AS timestamptz) IS NULL
+                              OR (registration.created_at, registration.id)
+                                 < (CAST(:after_created_at AS timestamptz), CAST(:after_id AS uuid))
+                          )
+                        ORDER BY registration.created_at DESC, registration.id DESC
+                        LIMIT :limit
+                        """  # noqa: S608 -- fixed fields; bound filter values
+                    ),
+                    {
+                        "event_id": event_id,
+                        "state": state,
+                        "search": (
+                            "%"
+                            + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                            + "%"
+                            if search is not None
+                            else None
+                        ),
+                        "after_created_at": after_created_at,
+                        "after_id": after_id,
+                        "limit": limit,
+                    },
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [
+            Attendee(
+                registration=_registration(cast(Mapping[str, object], row)),
+                username=cast(str, row["username"]),
+                display_name=cast(str, row["display_name"]),
+            )
+            for row in rows
+        ]
+
+    async def enqueue_attendee_export(
+        self,
+        event_id: UUID,
+        request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        requested_at: datetime,
+    ) -> None:
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'event', :event_id, 'attendees.export_requested',
+                    jsonb_build_object(
+                        'request_id', CAST(:request_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'state', CAST(:state AS text),
+                        'search', CAST(:search AS text)
+                    ),
+                    :deduplication_key, :requested_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "event_id": event_id,
+                "request_id": request_id,
+                "state": state,
+                "search": search,
+                "deduplication_key": f"attendees.export:{request_id}",
+                "requested_at": requested_at,
+            },
+        )
 
     async def held_seat_count(self, event_id: UUID) -> int:
         count = await self._session.execute(

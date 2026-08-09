@@ -7,16 +7,35 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Header, Request, Response, status
+from fastapi import APIRouter, Body, Header, Query, Request, Response, status
 
 from talaqi.config import Settings
+from talaqi.db.identifiers import generate_uuid7
 from talaqi.events.access_rate_limits import LazyEventAccessRateLimiter
 from talaqi.events.access_tokens import PrivateLinkTokenCodec
 from talaqi.identity.dependencies import CsrfProtection, CurrentPrincipal, DatabaseSession
-from talaqi.platform import IdempotencyCoordinator, IdempotencyRepository
+from talaqi.platform import (
+    CursorCodec,
+    IdempotencyCoordinator,
+    IdempotencyRepository,
+    hash_request_body,
+)
 from talaqi.platform.errors import ApiError, ErrorEnvelope, request_id_for
-from talaqi.registrations.runtime import build_cancellation_service, build_registration_service
-from talaqi.registrations.schemas import RegistrationCreateRequest, RegistrationResponse
+from talaqi.registrations.models import Attendee, RegistrationState
+from talaqi.registrations.runtime import (
+    build_attendee_service,
+    build_cancellation_service,
+    build_cash_confirmation_service,
+    build_registration_service,
+)
+from talaqi.registrations.schemas import (
+    AttendeeExportRequest,
+    AttendeeExportResponse,
+    AttendeePageResponse,
+    AttendeeResponse,
+    RegistrationCreateRequest,
+    RegistrationResponse,
+)
 from talaqi.runtime import LazySessionFactory
 
 router = APIRouter(prefix="/api/v1/events", tags=["registrations"])
@@ -84,6 +103,38 @@ def _cancellation_hash(event_id: UUID) -> bytes:
     return hashlib.sha256(
         b"talaqi:event-registration-cancellation:v1\x00" + event_id.bytes
     ).digest()
+
+
+def _confirmation_hash(event_id: UUID, registration_id: UUID) -> bytes:
+    return hashlib.sha256(
+        b"talaqi:cash-confirmation:v1\x00" + event_id.bytes + registration_id.bytes
+    ).digest()
+
+
+def _codec(request: Request) -> CursorCodec:
+    secret = request.app.state.settings_factory().session_secret.get_secret_value().encode()
+    return CursorCodec(hashlib.sha256(secret).digest())
+
+
+def _attendee(value: Attendee) -> AttendeeResponse:
+    registration = value.registration
+    return AttendeeResponse(
+        registration_id=registration.id,
+        user_id=registration.user_id,
+        username=value.username,
+        display_name=value.display_name,
+        method=registration.method,
+        state=registration.state,
+        waitlist_sequence=registration.waitlist_sequence,
+        cash_expires_at=registration.cash_expires_at,
+        confirmed_at=registration.confirmed_at,
+        created_at=registration.created_at,
+    )
+
+
+def _attendee_fingerprint(state: RegistrationState | None, search: str | None) -> str:
+    normalized = search.strip().casefold() if search is not None else ""
+    return hashlib.sha256(f"{state or ''}\x00{normalized}".encode()).hexdigest()[:16]
 
 
 @router.post(
@@ -228,6 +279,173 @@ async def cancel_my_registration(
         session=session,
     )
     return response_body
+
+
+@router.post(
+    "/{event_id:uuid}/registrations/{registration_id:uuid}/confirm-cash",
+    response_model=RegistrationResponse,
+    operation_id="confirmCashRegistration",
+    responses={401: _AUTH, 403: _FORBIDDEN, 404: _NOT_FOUND, 409: _CONFLICT},
+)
+async def confirm_cash_registration(
+    event_id: UUID,
+    registration_id: UUID,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+    idempotency_key: IdempotencyKey,
+) -> RegistrationResponse:
+    _private(response)
+    current = datetime.now(UTC)
+    runtime: LazySessionFactory = request.app.state.database_runtime
+    idempotency = IdempotencyRepository(runtime.resolve())
+    acquisition = await IdempotencyCoordinator(idempotency).acquire(
+        actor_id=principal.user_id,
+        http_method="POST",
+        route_fingerprint="/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash",
+        key=idempotency_key,
+        request_hash=_confirmation_hash(event_id, registration_id),
+        now=current,
+        lease_duration=timedelta(seconds=30),
+        expires_at=current + timedelta(hours=24),
+        session=session,
+    )
+    if acquisition.outcome == "replay":
+        return RegistrationResponse.model_validate(acquisition.response_body)
+    if acquisition.claim is None:
+        raise RuntimeError("acquired cash confirmation has no claim")
+    confirmed = await build_cash_confirmation_service(request, session).confirm(
+        principal,
+        event_id,
+        registration_id,
+        request_id=UUID(request_id_for(request)),
+        now=current,
+    )
+    result = _response(confirmed)
+    await idempotency.complete(
+        acquisition.claim,
+        response_status=200,
+        response_body=result.model_dump(mode="json"),
+        completed_at=datetime.now(UTC),
+        session=session,
+    )
+    return result
+
+
+@router.get(
+    "/{event_id:uuid}/attendees",
+    response_model=AttendeePageResponse,
+    operation_id="listEventAttendees",
+    responses={401: _AUTH, 403: _FORBIDDEN, 404: _NOT_FOUND},
+)
+async def list_event_attendees(
+    event_id: UUID,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    state: Annotated[RegistrationState | None, Query()] = None,
+    search: Annotated[str | None, Query(min_length=1, max_length=80)] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    cursor: Annotated[str | None, Query(max_length=2_048)] = None,
+) -> AttendeePageResponse:
+    _private(response)
+    after_created_at = None
+    after_id = None
+    fingerprint = _attendee_fingerprint(state, search)
+    if cursor is not None:
+        try:
+            position = _codec(request).decode(cursor)
+            if not isinstance(position.ordering, str):
+                raise ValueError
+            encoded_fingerprint, encoded_time = position.ordering.split("|", 1)
+            if encoded_fingerprint != fingerprint or not encoded_time.endswith("Z"):
+                raise ValueError
+            after_created_at = datetime.fromisoformat(encoded_time[:-1] + "+00:00")
+            after_id = position.tie_breaker
+        except (TypeError, ValueError):
+            raise ApiError(
+                code="invalid_cursor", message_key="errors.invalid_cursor", status_code=400
+            ) from None
+    attendees = await build_attendee_service(request, session).list(
+        principal,
+        event_id,
+        state=state,
+        search=search,
+        limit=limit + 1,
+        after_created_at=after_created_at,
+        after_id=after_id,
+    )
+    visible = attendees[:limit]
+    next_cursor = None
+    if len(attendees) > limit and visible:
+        last = visible[-1].registration
+        instant = last.created_at.astimezone(UTC).isoformat().replace("+00:00", "Z")
+        next_cursor = _codec(request).encode(
+            ordering=f"{fingerprint}|{instant}", tie_breaker=last.id
+        )
+    return AttendeePageResponse(
+        items=[_attendee(item) for item in visible], next_cursor=next_cursor
+    )
+
+
+@router.post(
+    "/{event_id:uuid}/attendees/export",
+    response_model=AttendeeExportResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    operation_id="requestEventAttendeeExport",
+    responses={401: _AUTH, 403: _FORBIDDEN, 404: _NOT_FOUND, 409: _CONFLICT},
+)
+async def request_event_attendee_export(
+    event_id: UUID,
+    body: AttendeeExportRequest,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+    idempotency_key: IdempotencyKey,
+) -> AttendeeExportResponse:
+    _private(response)
+    current = datetime.now(UTC)
+    runtime: LazySessionFactory = request.app.state.database_runtime
+    idempotency = IdempotencyRepository(runtime.resolve())
+    acquisition = await IdempotencyCoordinator(idempotency).acquire(
+        actor_id=principal.user_id,
+        http_method="POST",
+        route_fingerprint="/api/v1/events/{event_id}/attendees/export",
+        key=idempotency_key,
+        request_hash=hash_request_body(await request.body()),
+        now=current,
+        lease_duration=timedelta(seconds=30),
+        expires_at=current + timedelta(hours=24),
+        session=session,
+    )
+    if acquisition.outcome == "replay":
+        return AttendeeExportResponse.model_validate(acquisition.response_body)
+    if acquisition.claim is None:
+        raise RuntimeError("acquired attendee export has no claim")
+    export_request_id = generate_uuid7()
+    await build_attendee_service(request, session).request_export(
+        principal,
+        event_id,
+        export_request_id,
+        state=body.state,
+        search=body.search,
+        request_id=UUID(request_id_for(request)),
+        now=current,
+    )
+    result = AttendeeExportResponse(request_id=export_request_id, status="queued")
+    await idempotency.complete(
+        acquisition.claim,
+        response_status=status.HTTP_202_ACCEPTED,
+        response_body=result.model_dump(mode="json"),
+        completed_at=datetime.now(UTC),
+        session=session,
+    )
+    return result
 
 
 __all__ = ["router"]

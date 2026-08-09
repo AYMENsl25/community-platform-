@@ -1,6 +1,7 @@
 """Registration state and transition services."""
 
 from talaqi.registrations.models import (
+    Attendee,
     Registration,
     RegistrationContext,
     RegistrationCreationResult,
@@ -12,6 +13,8 @@ from talaqi.registrations.models import (
 )
 from talaqi.registrations.repository import RegistrationRepository
 from talaqi.registrations.service import (
+    AttendeeService,
+    CashConfirmationService,
     PromotionService,
     RegistrationCancellationService,
     RegistrationCreationService,
@@ -20,6 +23,9 @@ from talaqi.registrations.service import (
 )
 
 __all__ = [
+    "Attendee",
+    "AttendeeService",
+    "CashConfirmationService",
     "PromotionService",
     "Registration",
     "RegistrationCancellationService",

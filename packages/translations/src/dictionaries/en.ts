@@ -327,6 +327,7 @@ export const englishDictionary = {
     "Your account is not eligible to register for this event.",
   "errors.registration_closed": "Registration for this event is closed.",
   "errors.cancellation_closed": "Cancellation for this event is closed.",
+  "errors.cash_confirmation_expired": "This cash reservation has expired.",
   "errors.admin_mfa_required":
     "Complete multi-factor authentication to continue.",
   "errors.http": "The request failed.",

@@ -44,6 +44,13 @@ class RegistrationCreationResult:
 
 
 @dataclass(frozen=True, slots=True)
+class Attendee:
+    registration: Registration
+    username: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
 class RegistrationMutation:
     state: RegistrationState
     seat_held: bool

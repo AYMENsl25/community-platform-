@@ -299,9 +299,9 @@
 
 **Produces:** confirm-cash endpoint plus manager-only attendee cursor list/filter/export request.
 
-- [ ] Confirm only unexpired cash-pending records for a managed event; make identical retries safe and reject cross-event/cross-club access.
-- [ ] Limit attendee fields to operational necessities; filter by state/search and audit CSV export requests.
-- [ ] Gate: cash expiry race, duplicate confirmation, authorization/privacy, pagination, and export tests; commit `feat: add cash confirmation and attendee operations`.
+- [x] Confirm only unexpired cash-pending records for a managed event; make identical retries safe and reject cross-event/cross-club access.
+- [x] Limit attendee fields to operational necessities; filter by state/search and audit CSV export requests.
+- [x] Gate: cash expiry race, duplicate confirmation, authorization/privacy, pagination, and export tests; commit `feat: add cash confirmation and attendee operations`.
 
 ### Task 4.5: Expiry worker and recovery
 

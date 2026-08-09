@@ -192,6 +192,19 @@ class EventAccessService:
             raise _not_found()
         return projection
 
+    async def require_manager(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Event:
+        event = await self._events.get(event_id, for_update=for_update)
+        if event is None:
+            raise _not_found()
+        await self._authorize_manager(principal, event, for_update=for_update)
+        return event
+
     async def registration_terms(
         self,
         event_id: UUID,
