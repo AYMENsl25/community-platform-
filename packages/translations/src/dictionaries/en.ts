@@ -426,6 +426,28 @@ export const englishDictionary = {
   "events.media.failed": "Image verification failed.",
   "events.media.invalid": "Choose a JPEG, PNG, or WebP image.",
   "events.form.rangeSeparator": "to",
+  "registration.title": "Your registration",
+  "registration.register": "Register",
+  "registration.joinWaitlist": "Join waitlist",
+  "registration.cancel": "Cancel registration",
+  "registration.confirmed": "Registration confirmed",
+  "registration.confirmedBody":
+    "Your place is confirmed. Keep this page as your event ticket.",
+  "registration.cashPending": "Place reserved — cash confirmation pending",
+  "registration.cashInstructions":
+    "Pay the organizer using the instructions they provide before this reservation expires.",
+  "registration.waitlisted": "You are on the waitlist",
+  "registration.waitlistedBody":
+    "We will update your registration if a place becomes available.",
+  "registration.expires": "Reservation expires",
+  "registration.remaining": "Time remaining",
+  "registration.expired": "Reservation expired",
+  "registration.refreshFailed":
+    "Your request was received, but the latest registration state could not be loaded. Refresh this page before trying again.",
+  "registration.authRequired": "Sign in to register for this event.",
+  "registration.tryAgain": "Please try again.",
+  "registration.venue": "Confirmed venue",
+  "registration.processing": "Updating registration…",
 } as const;
 
 export type TranslationKey = keyof typeof englishDictionary;

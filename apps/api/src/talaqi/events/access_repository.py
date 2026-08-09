@@ -54,10 +54,17 @@ def _projection(row: Mapping[str, object]) -> EventAudienceProjection:
         club_name=cast(str | None, row["club_name"]),
         organizer_display_name=cast(str | None, row["organizer_display_name"]),
         is_saved=cast(bool, row["is_saved"]),
+        registration_id=cast(UUID | None, row["registration_id"]),
+        registration_method=cast(
+            Literal["free", "cash_organizer_confirmed"] | None,
+            row["member_registration_method"],
+        ),
         registration_state=cast(
             Literal["confirmed", "cash_pending", "waitlisted", "cancelled", "expired"] | None,
             row["registration_state"],
         ),
+        registration_cash_expires_at=cast(datetime | None, row["registration_cash_expires_at"]),
+        registration_confirmed_at=cast(datetime | None, row["registration_confirmed_at"]),
     )
 
 
@@ -267,7 +274,12 @@ class EventAccessRepository:
                                club.slug AS club_slug, club.name AS club_name,
                                coalesce(owner_profile.display_name, club.name)
                                    AS organizer_display_name,
+                               registration.id AS registration_id,
+                               registration.method::text AS member_registration_method,
                                registration.state::text AS registration_state,
+                               registration.cash_expires_at
+                                   AS registration_cash_expires_at,
+                               registration.confirmed_at AS registration_confirmed_at,
                                EXISTS (
                                    SELECT 1 FROM talaqi.saved_events AS saved
                                    WHERE saved.event_id = event.id AND saved.user_id = :caller_id
@@ -378,8 +390,11 @@ class EventAccessRepository:
                         LEFT JOIN talaqi.media_assets AS cover ON cover.id = event.cover_media_id
                             AND cover.status = 'verified'
                         LEFT JOIN LATERAL (
-                            SELECT member_registration.state,
-                                   member_registration.cash_expires_at
+                            SELECT member_registration.id,
+                                   member_registration.method,
+                                   member_registration.state,
+                                   member_registration.cash_expires_at,
+                                   member_registration.confirmed_at
                             FROM talaqi.registrations AS member_registration
                             WHERE member_registration.event_id = event.id
                               AND member_registration.user_id = :caller_id

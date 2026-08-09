@@ -1838,6 +1838,57 @@
             ],
             "title": "Public Meeting Area"
           },
+          "registration_cash_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Cash Expires At"
+          },
+          "registration_confirmed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Confirmed At"
+          },
+          "registration_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Id"
+          },
+          "registration_method": {
+            "anyOf": [
+              {
+                "enum": [
+                  "free",
+                  "cash_organizer_confirmed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Method"
+          },
           "registration_state": {
             "anyOf": [
               {
@@ -1888,7 +1939,11 @@
           "club_name",
           "organizer_display_name",
           "is_saved",
-          "registration_state"
+          "registration_id",
+          "registration_method",
+          "registration_state",
+          "registration_cash_expires_at",
+          "registration_confirmed_at"
         ],
         "title": "EventAudienceResponse",
         "type": "object"

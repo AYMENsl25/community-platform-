@@ -1587,6 +1587,14 @@ export interface components {
             price_type: "free" | "cash";
             /** Public Meeting Area */
             public_meeting_area: string | null;
+            /** Registration Cash Expires At */
+            registration_cash_expires_at: string | null;
+            /** Registration Confirmed At */
+            registration_confirmed_at: string | null;
+            /** Registration Id */
+            registration_id: string | null;
+            /** Registration Method */
+            registration_method: ("free" | "cash_organizer_confirmed") | null;
             /** Registration State */
             registration_state: string | null;
             /**

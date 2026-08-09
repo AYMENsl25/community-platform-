@@ -447,4 +447,25 @@ export const turkishDictionary = {
     "G\u00f6rsel do\u011frulamas\u0131 ba\u015far\u0131s\u0131z.",
   "events.media.invalid": "JPEG, PNG veya WebP g\u00f6rseli se\u00e7in.",
   "events.form.rangeSeparator": "ile",
+  "registration.title": "Kaydınız",
+  "registration.register": "Kayıt ol",
+  "registration.joinWaitlist": "Bekleme listesine katıl",
+  "registration.cancel": "Kaydı iptal et",
+  "registration.confirmed": "Kayıt onaylandı",
+  "registration.confirmedBody":
+    "Yeriniz onaylandı. Bu sayfayı etkinlik biletiniz olarak saklayın.",
+  "registration.cashPending": "Yer ayrıldı — nakit onayı bekleniyor",
+  "registration.cashInstructions":
+    "Bu rezervasyon sona ermeden önce organizatörün verdiği talimatlarla ödeme yapın.",
+  "registration.waitlisted": "Bekleme listesindesiniz",
+  "registration.waitlistedBody": "Bir yer açılırsa kaydınızı güncelleyeceğiz.",
+  "registration.expires": "Rezervasyonun bitişi",
+  "registration.remaining": "Kalan süre",
+  "registration.expired": "Rezervasyon sona erdi",
+  "registration.refreshFailed":
+    "İsteğiniz alındı ancak güncel kayıt durumu yüklenemedi. Tekrar denemeden önce sayfayı yenileyin.",
+  "registration.authRequired": "Bu etkinliğe kaydolmak için giriş yapın.",
+  "registration.tryAgain": "Lütfen tekrar deneyin.",
+  "registration.venue": "Onaylanmış mekan",
+  "registration.processing": "Kayıt güncelleniyor…",
 } satisfies Dictionary;

@@ -40,7 +40,11 @@ class EventAudienceProjection:
     club_name: str | None
     organizer_display_name: str | None
     is_saved: bool
+    registration_id: UUID | None
+    registration_method: Literal["free", "cash_organizer_confirmed"] | None
     registration_state: RegistrationState | None
+    registration_cash_expires_at: datetime | None
+    registration_confirmed_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)

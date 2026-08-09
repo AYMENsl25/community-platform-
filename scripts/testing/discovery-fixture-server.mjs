@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 
 const port = Number(process.env.DISCOVERY_FIXTURE_PORT ?? 4100);
 const privateCanary = "PRIVATE_EXACT_ADDRESS_CANARY";
+const memberVenue = "Moda Community Hall, Kadikoy";
+const memberRegistrations = new Map();
 
 const events = [
   {
@@ -29,7 +31,11 @@ const events = [
     club_slug: "istanbul-neighbours",
     organizer_display_name: "Talaqi Fixtures",
     is_saved: false,
+    registration_id: null,
+    registration_method: null,
     registration_state: null,
+    registration_cash_expires_at: null,
+    registration_confirmed_at: null,
   },
 ];
 
@@ -243,6 +249,28 @@ function adminKind(request) {
 
 function hasCsrf(request) {
   return request.headers["x-csrf-token"] === "fixture-csrf";
+}
+
+function accessToken(request) {
+  return /(?:^|;\s*)talaqi_access=([^;]+)/.exec(
+    request.headers.cookie ?? "",
+  )?.[1];
+}
+
+function memberEvent(request) {
+  const token = accessToken(request);
+  const registration = token ? memberRegistrations.get(token) : undefined;
+  return {
+    ...events[0],
+    ...(token?.includes("full") ? { available_places: 0 } : {}),
+    ...(token?.includes("cash") ? { price_type: "cash" } : {}),
+    ...(registration ?? {}),
+    exact_address:
+      registration?.registration_state === "confirmed" ||
+      registration?.registration_state === "cash_pending"
+        ? memberVenue
+        : null,
+  };
 }
 
 async function body(request) {
@@ -637,6 +665,67 @@ createServer(async (request, response) => {
   }
   const targetIsPublic = adminTargetStatus === "published";
   const savedPath = `/api/v1/events/${events[0].id}/saved`;
+  const registrationPath = `/api/v1/events/${events[0].id}/registrations`;
+  const cancellationPath = `${registrationPath}/me`;
+  if (url.pathname === registrationPath && request.method === "POST") {
+    const token = accessToken(request);
+    if (!token)
+      return send(
+        response,
+        401,
+        { error: { code: "unauthorized", message_key: "errors.unauthorized" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const state = token.includes("cash")
+      ? "cash_pending"
+      : token.includes("full")
+        ? "waitlisted"
+        : "confirmed";
+    const registration = {
+      registration_id: "33333333-3333-4333-8333-333333333333",
+      registration_method:
+        state === "cash_pending" ? "cash_organizer_confirmed" : "free",
+      registration_state: state,
+      registration_cash_expires_at:
+        state === "cash_pending" ? "2036-09-20T07:30:00Z" : null,
+      registration_confirmed_at:
+        state === "confirmed" ? "2026-08-10T00:00:00Z" : null,
+      available_places: state === "waitlisted" ? 0 : 11,
+    };
+    memberRegistrations.set(token, registration);
+    return send(
+      response,
+      201,
+      { id: registration.registration_id, state },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === cancellationPath && request.method === "DELETE") {
+    const token = accessToken(request);
+    if (!token)
+      return send(
+        response,
+        401,
+        { error: { code: "unauthorized" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    memberRegistrations.delete(token);
+    return send(response, 200, { state: "cancelled" }, "private, no-store");
+  }
   if (
     url.pathname === savedPath &&
     ["PUT", "DELETE"].includes(request.method)
@@ -664,7 +753,7 @@ createServer(async (request, response) => {
     });
   if (url.pathname === `/api/v1/events/${events[0].id}`)
     return targetIsPublic
-      ? send(response, 200, events[0])
+      ? send(response, 200, memberEvent(request), "private, no-store")
       : send(response, 404, { error: { code: "not_found" } });
   if (url.pathname === "/api/v1/clubs")
     return send(response, 200, {

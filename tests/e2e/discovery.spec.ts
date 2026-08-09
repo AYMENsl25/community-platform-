@@ -8,6 +8,24 @@ const locales = [
   ["ar", "rtl"],
 ] as const;
 const privateCanary = "PRIVATE_EXACT_ADDRESS_CANARY";
+const eventPath = "/events/11111111-1111-4111-8111-111111111111";
+
+async function registrationCookies(
+  context: import("@playwright/test").BrowserContext,
+  access: string,
+  locale = "en",
+) {
+  await context.addCookies([
+    { name: "talaqi_locale", value: locale, domain: "127.0.0.1", path: "/" },
+    { name: "talaqi_access", value: access, domain: "127.0.0.1", path: "/" },
+    {
+      name: "talaqi_csrf",
+      value: "fixture-csrf",
+      domain: "127.0.0.1",
+      path: "/",
+    },
+  ]);
+}
 
 for (const [locale, direction] of locales) {
   test(`${locale} discovers only public-safe content`, async ({
@@ -30,6 +48,69 @@ for (const [locale, direction] of locales) {
     await expect(page.locator("body")).not.toContainText("longitude");
   });
 }
+
+test("member free registration is confirmed from refreshed server state and can be cancelled", async ({
+  context,
+  page,
+}) => {
+  await registrationCookies(context, "fixture-member-free");
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto(eventPath);
+  await page.getByRole("button", { name: "Register" }).click();
+  await expect(page.getByText("Registration confirmed")).toBeVisible();
+  await expect(page.getByText("Moda Community Hall, Kadikoy")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel registration" }).click();
+  await expect(page.getByRole("button", { name: "Register" })).toBeVisible();
+  await expect(page.getByText("Moda Community Hall, Kadikoy")).toHaveCount(0);
+});
+
+test("cash reservation shows instructions and countdown in mobile RTL", async ({
+  context,
+  page,
+}) => {
+  await registrationCookies(context, "fixture-member-cash", "ar");
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto(`${eventPath}?locale=ar`);
+  await page
+    .getByRole("button", { name: translate("ar", "registration.register") })
+    .click();
+  await expect(
+    page.getByText(translate("ar", "registration.cashPending")),
+  ).toBeVisible();
+  await expect(
+    page.getByText(translate("ar", "registration.remaining")),
+  ).toBeVisible();
+  await expect(page.getByText("Moda Community Hall, Kadikoy")).toBeVisible();
+  await expect(page.locator(".tq-public-shell")).toHaveAttribute("dir", "rtl");
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
+});
+
+test("full event returns a server-authoritative waitlist state", async ({
+  context,
+  page,
+}) => {
+  await registrationCookies(context, "fixture-member-full");
+  await page.goto(eventPath);
+  await page.getByRole("button", { name: "Join waitlist" }).click();
+  await expect(page.getByText("You are on the waitlist")).toBeVisible();
+  await expect(page.getByText("Moda Community Hall, Kadikoy")).toHaveCount(0);
+});
+
+test("unauthenticated registration gives an actionable sign-in error", async ({
+  page,
+}) => {
+  await page.goto(eventPath);
+  await page.getByRole("button", { name: "Register" }).click();
+  await expect(
+    page.getByText("Sign in to register for this event."),
+  ).toBeVisible();
+});
 
 test("desktop navigation reaches club and event details", async ({ page }) => {
   await page.goto("/explore");

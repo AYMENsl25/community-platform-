@@ -123,6 +123,30 @@
   margin-block: 1rem;
 }
 
+.tq-registration-layout,
+.tq-registration-deadline {
+  display: grid;
+  gap: 1rem;
+}
+
+.tq-registration-layout {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.tq-registration-deadline div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.tq-registration-deadline dt {
+  font-weight: 700;
+}
+
+.tq-registration-status {
+  min-block-size: 1.5rem;
+  color: var(--tq-color-danger, #9f1239);
+}
+
 .tq-discovery-save-status {
   display: block;
   min-block-size: 1.5rem;

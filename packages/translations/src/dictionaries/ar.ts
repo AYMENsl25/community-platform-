@@ -467,4 +467,25 @@ export const arabicDictionary: Dictionary = {
   "events.media.invalid":
     "\u0627\u062e\u062a\u0631 \u0635\u0648\u0631\u0629 JPEG \u0623\u0648 PNG \u0623\u0648 WebP.",
   "events.form.rangeSeparator": "\u0625\u0644\u0649",
+  "registration.title": "تسجيلك",
+  "registration.register": "التسجيل",
+  "registration.joinWaitlist": "الانضمام إلى قائمة الانتظار",
+  "registration.cancel": "إلغاء التسجيل",
+  "registration.confirmed": "تم تأكيد التسجيل",
+  "registration.confirmedBody":
+    "تم تأكيد مكانك. احتفظ بهذه الصفحة كتذكرة للفعالية.",
+  "registration.cashPending": "المكان محجوز — بانتظار تأكيد الدفع النقدي",
+  "registration.cashInstructions":
+    "ادفع للمنظم وفق تعليماته قبل انتهاء صلاحية هذا الحجز.",
+  "registration.waitlisted": "أنت على قائمة الانتظار",
+  "registration.waitlistedBody": "سنحدّث تسجيلك إذا توفر مكان.",
+  "registration.expires": "ينتهي الحجز",
+  "registration.remaining": "الوقت المتبقي",
+  "registration.expired": "انتهت صلاحية الحجز",
+  "registration.refreshFailed":
+    "تم استلام طلبك، لكن تعذر تحميل حالة التسجيل الحالية. حدّث الصفحة قبل المحاولة مجددًا.",
+  "registration.authRequired": "سجّل الدخول للتسجيل في هذه الفعالية.",
+  "registration.tryAgain": "يرجى المحاولة مرة أخرى.",
+  "registration.venue": "المكان المؤكد",
+  "registration.processing": "جارٍ تحديث التسجيل…",
 };

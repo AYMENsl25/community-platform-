@@ -298,6 +298,19 @@ async def test_exact_venue_projection_obeys_complete_audience_matrix(
         assert response.json()["exact_address"] == expected
         assert (response.json()["latitude"] is not None) is (audience in exact_allowed)
         assert (response.json()["longitude"] is not None) is (audience in exact_allowed)
+    assert responses["anonymous"].json()["registration_id"] is None
+    assert responses["ordinary"].json()["registration_state"] is None
+    assert responses["owner"].json()["registration_method"] is None
+    confirmed_body = responses["confirmed"].json()
+    assert confirmed_body["registration_id"] is not None
+    assert confirmed_body["registration_method"] == "free"
+    assert confirmed_body["registration_state"] == "confirmed"
+    assert confirmed_body["registration_confirmed_at"] is not None
+    assert confirmed_body["registration_cash_expires_at"] is None
+    cash_body = responses["cash_valid"].json()
+    assert cash_body["registration_method"] == "cash_organizer_confirmed"
+    assert cash_body["registration_state"] == "cash_pending"
+    assert cash_body["registration_cash_expires_at"] is not None
     assert responses["anonymous"].headers["Cache-Control"].startswith("public")
     assert responses["owner"].headers["Cache-Control"] == "private, no-store"
     assert explicitly_public.json()["exact_address"] == "Private managed address"

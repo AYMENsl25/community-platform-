@@ -452,4 +452,28 @@ export const frenchDictionary: Dictionary = {
   "events.media.failed": "\u00c9chec de la v\u00e9rification de l\u2019image.",
   "events.media.invalid": "Choisissez une image JPEG, PNG ou WebP.",
   "events.form.rangeSeparator": "\u00e0",
+  "registration.title": "Votre inscription",
+  "registration.register": "S’inscrire",
+  "registration.joinWaitlist": "Rejoindre la liste d’attente",
+  "registration.cancel": "Annuler l’inscription",
+  "registration.confirmed": "Inscription confirmée",
+  "registration.confirmedBody":
+    "Votre place est confirmée. Conservez cette page comme billet.",
+  "registration.cashPending":
+    "Place réservée — confirmation du paiement en attente",
+  "registration.cashInstructions":
+    "Payez l’organisateur selon ses instructions avant l’expiration de cette réservation.",
+  "registration.waitlisted": "Vous êtes sur la liste d’attente",
+  "registration.waitlistedBody":
+    "Nous mettrons votre inscription à jour si une place se libère.",
+  "registration.expires": "Expiration de la réservation",
+  "registration.remaining": "Temps restant",
+  "registration.expired": "Réservation expirée",
+  "registration.refreshFailed":
+    "Votre demande a été reçue, mais l’état actuel n’a pas pu être chargé. Actualisez la page avant de réessayer.",
+  "registration.authRequired":
+    "Connectez-vous pour vous inscrire à cet événement.",
+  "registration.tryAgain": "Veuillez réessayer.",
+  "registration.venue": "Lieu confirmé",
+  "registration.processing": "Mise à jour de l’inscription…",
 };

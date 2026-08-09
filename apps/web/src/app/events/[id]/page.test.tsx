@@ -43,7 +43,11 @@ const event = {
   club_name: null,
   organizer_display_name: "Public Organizer",
   is_saved: false,
+  registration_id: null,
+  registration_method: null,
   registration_state: null,
+  registration_cash_expires_at: null,
+  registration_confirmed_at: null,
 } satisfies components["schemas"]["EventAudienceResponse"];
 
 describe("EventPage", () => {
