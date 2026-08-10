@@ -8,6 +8,7 @@ import { Container, SkipLink } from "@talaqi/ui";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LogoutButton } from "@/components/pwa/logout-button";
 
 type ShellProps = {
   children: ReactNode;
@@ -170,6 +171,7 @@ function WorkspaceShell({
         <Container className="tq-workspace-header__inner">
           <Brand compact locale={locale} />
           <strong>{translate(locale, roleLabel)}</strong>
+          <LogoutButton locale={locale} />
         </Container>
       </header>
       <div className="tq-workspace-frame">

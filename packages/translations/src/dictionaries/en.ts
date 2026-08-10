@@ -534,6 +534,15 @@ export const englishDictionary = {
   "dashboard.alert.membership_requests": "Membership requests need review.",
   "dashboard.alert.cash_pending": "Cash confirmations are waiting.",
   "dashboard.alert.draft_events": "Draft events still need completion.",
+  "pwa.install.body": "Install Talaqi for quicker access.",
+  "pwa.install.action": "Install",
+  "pwa.update.body": "A new version of Talaqi is ready.",
+  "pwa.update.action": "Update",
+  "pwa.offline.title": "You are offline",
+  "pwa.offline.body": "Reconnect to load current communities and events.",
+  "pwa.offline.retry": "Try again",
+  "pwa.logout.action": "Sign out",
+  "pwa.logout.error": "We could not sign you out. Try again.",
 } as const;
 
 export type TranslationKey = keyof typeof englishDictionary;

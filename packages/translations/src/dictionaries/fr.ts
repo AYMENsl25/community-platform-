@@ -565,4 +565,13 @@ export const frenchDictionary: Dictionary = {
     "Des confirmations en espèces sont en attente.",
   "dashboard.alert.draft_events":
     "Des brouillons d’événements restent à compléter.",
+  "pwa.install.body": "Installez Talaqi pour y accéder plus rapidement.",
+  "pwa.install.action": "Installer",
+  "pwa.update.body": "Une nouvelle version de Talaqi est disponible.",
+  "pwa.update.action": "Mettre à jour",
+  "pwa.offline.title": "Vous êtes hors ligne",
+  "pwa.offline.body": "Reconnectez-vous pour charger les communautés et événements actuels.",
+  "pwa.offline.retry": "Réessayer",
+  "pwa.logout.action": "Se déconnecter",
+  "pwa.logout.error": "La déconnexion a échoué. Réessayez.",
 };

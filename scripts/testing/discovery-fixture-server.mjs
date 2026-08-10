@@ -341,6 +341,20 @@ function send(
 createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
   if (url.pathname === "/health") return send(response, 200, { status: "ok" });
+  if (url.pathname === "/api/v1/auth/logout" && request.method === "POST") {
+    if (!hasCsrf(request))
+      return send(response, 403, { error: { code: "csrf_failed" } }, "private, no-store");
+    response.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Set-Cookie": [
+        "talaqi_access=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax",
+        "talaqi_csrf=; Path=/; Max-Age=0; SameSite=Lax",
+      ],
+    });
+    response.end(JSON.stringify({ logged_out: true }));
+    return;
+  }
   if (url.searchParams.get("search") === "fixture-error") {
     return send(response, 500, {
       error: { code: "fixture_failure", message_key: privateCanary },

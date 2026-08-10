@@ -362,9 +362,9 @@
 
 ### Task 5.6: Safe PWA installation and offline behavior
 
-- [ ] Add manifest, Talaqi icons, theme colors, installability, update prompt, offline shell, and cache rules limited to versioned static assets and safe public GET responses.
-- [ ] Explicitly bypass auth, `/me`, invitations, registrations, notifications, attendee, admin, and mutation requests; clear user-scoped browser state on logout.
-- [ ] Gate: Lighthouse installability, cache allow/deny tests, offline public-shell journey, and logout privacy test; commit `feat: make Talaqi a privacy-safe PWA`.
+- [x] Add manifest, Talaqi icons, theme colors, installability, update prompt, offline shell, and cache rules limited to versioned static assets and safe public GET responses.
+- [x] Explicitly bypass auth, `/me`, invitations, registrations, notifications, attendee, admin, and mutation requests; clear user-scoped browser state on logout.
+- [x] Gate: Lighthouse installability, cache allow/deny tests, offline public-shell journey, and logout privacy test; commit `feat: make Talaqi a privacy-safe PWA`.
 
 ### Task 5.7: Four-locale accessibility and responsive completion
 

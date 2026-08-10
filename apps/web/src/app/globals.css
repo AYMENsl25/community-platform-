@@ -5,6 +5,25 @@ html {
   scroll-behavior: smooth;
 }
 
+.tq-pwa-prompt {
+  align-items: center;
+  background: var(--tq-color-surface, #fffaf4);
+  border: 1px solid var(--tq-color-border, #d7d0c6);
+  border-radius: 0.75rem;
+  bottom: 1rem;
+  box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 16%);
+  display: flex;
+  gap: 1rem;
+  inset-inline-end: 1rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 1rem;
+  position: fixed;
+  z-index: 20;
+}
+
+.tq-pwa-prompt p { margin: 0; }
+.tq-offline-shell { min-height: 50vh; padding-block: 4rem; }
+
 .tq-dashboard {
   padding-block: var(--tq-space-6);
 }

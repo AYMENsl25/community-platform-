@@ -555,4 +555,13 @@ export const turkishDictionary = {
   "dashboard.alert.cash_pending": "Nakit onayları bekliyor.",
   "dashboard.alert.draft_events":
     "Taslak etkinliklerin tamamlanması gerekiyor.",
+  "pwa.install.body": "Daha hızlı erişim için Talaqi'yi yükleyin.",
+  "pwa.install.action": "Yükle",
+  "pwa.update.body": "Talaqi'nin yeni bir sürümü hazır.",
+  "pwa.update.action": "Güncelle",
+  "pwa.offline.title": "Çevrimdışısınız",
+  "pwa.offline.body": "Güncel toplulukları ve etkinlikleri yüklemek için yeniden bağlanın.",
+  "pwa.offline.retry": "Tekrar dene",
+  "pwa.logout.action": "Çıkış yap",
+  "pwa.logout.error": "Çıkış yapılamadı. Tekrar deneyin.",
 } satisfies Dictionary;

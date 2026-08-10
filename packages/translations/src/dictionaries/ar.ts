@@ -571,4 +571,13 @@ export const arabicDictionary: Dictionary = {
   "dashboard.alert.membership_requests": "توجد طلبات عضوية تحتاج إلى مراجعة.",
   "dashboard.alert.cash_pending": "توجد تأكيدات دفع نقدي قيد الانتظار.",
   "dashboard.alert.draft_events": "توجد مسودات فعاليات تحتاج إلى إكمال.",
+  "pwa.install.body": "ثبّت تلاقي للوصول بشكل أسرع.",
+  "pwa.install.action": "تثبيت",
+  "pwa.update.body": "يتوفر إصدار جديد من تلاقي.",
+  "pwa.update.action": "تحديث",
+  "pwa.offline.title": "أنت غير متصل",
+  "pwa.offline.body": "أعِد الاتصال لتحميل المجتمعات والفعاليات الحالية.",
+  "pwa.offline.retry": "إعادة المحاولة",
+  "pwa.logout.action": "تسجيل الخروج",
+  "pwa.logout.error": "تعذر تسجيل خروجك. حاول مرة أخرى.",
 };
