@@ -475,6 +475,22 @@ export const englishDictionary = {
   "registration.tryAgain": "Please try again.",
   "registration.venue": "Confirmed venue",
   "registration.processing": "Updating registration…",
+  "communications.club.title": "Club announcements",
+  "communications.event.title": "Event updates",
+  "communications.help":
+    "Publish a one-way update to the selected audience. Replies and comments are not available.",
+  "communications.subject": "Subject",
+  "communications.body": "Message",
+  "communications.audience": "Audience",
+  "communications.audience.allMembers": "All club members",
+  "communications.audience.admins": "Owners and admins",
+  "communications.audience.allActive": "All active attendees",
+  "communications.audience.confirmed": "Confirmed attendees",
+  "communications.audience.cashPending": "Cash pending attendees",
+  "communications.audience.waitlisted": "Waitlisted attendees",
+  "communications.publish": "Publish update",
+  "communications.history": "Published history",
+  "communications.empty": "No updates have been published yet.",
 } as const;
 
 export type TranslationKey = keyof typeof englishDictionary;

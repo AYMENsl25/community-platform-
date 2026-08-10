@@ -13,6 +13,7 @@ import { CanonicalCover } from "@/components/discovery/canonical-cover";
 import { EventCard } from "@/components/discovery/event-card";
 import { MemberRegistrationPanel } from "@/components/discovery/member-registration-panel";
 import { SaveEventButton } from "@/components/discovery/save-event-button";
+import { MemberCommunications } from "@/components/communications/member-communications";
 import { DiscoveryError } from "@/components/discovery/result-states";
 import { PublicShell } from "@/components/shell/shells";
 import { createServerPublicClient } from "@/lib/api/server-public-client";
@@ -159,6 +160,11 @@ export default async function EventPage({ params, searchParams }: Props) {
             locale={locale}
           />
           <MemberRegistrationPanel initialEvent={event} locale={locale} />
+          <MemberCommunications
+            kind="event"
+            resourceId={event.id}
+            locale={locale}
+          />
 
           <dl className="tq-discovery-facts tq-public-detail__facts">
             <div>

@@ -28,9 +28,15 @@ COMMUNITY_EVENTS = frozenset(
     }
 )
 EVENT_EVENTS = frozenset({"event.updated", "event.cancelled"})
+CONTENT_EVENTS = frozenset({"club.announcement_published", "event.update_published"})
 MODERATION_EVENTS = frozenset({"moderation.case_updated", "moderation.action_taken"})
 SUPPORTED_NOTIFICATION_EVENTS = (
-    SECURITY_EVENTS | REGISTRATION_EVENTS | COMMUNITY_EVENTS | EVENT_EVENTS | MODERATION_EVENTS
+    SECURITY_EVENTS
+    | REGISTRATION_EVENTS
+    | COMMUNITY_EVENTS
+    | EVENT_EVENTS
+    | CONTENT_EVENTS
+    | MODERATION_EVENTS
 )
 _SAFE_PARAMETER_KEYS = frozenset(
     {
@@ -42,6 +48,8 @@ _SAFE_PARAMETER_KEYS = frozenset(
         "club_id",
         "membership_id",
         "case_id",
+        "announcement_id",
+        "event_update_id",
     }
 )
 
@@ -84,8 +92,10 @@ def _category(event_type: str) -> str:
         return "security"
     if event_type in REGISTRATION_EVENTS or event_type in EVENT_EVENTS:
         return "event"
-    if event_type in COMMUNITY_EVENTS:
+    if event_type in COMMUNITY_EVENTS or event_type == "club.announcement_published":
         return "community"
+    if event_type == "event.update_published":
+        return "event"
     raise ValueError("unsupported_notification_event")
 
 

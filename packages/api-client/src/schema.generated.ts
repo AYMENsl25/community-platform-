@@ -325,6 +325,24 @@ export interface paths {
         patch: operations["updateClub"];
         trace?: never;
     };
+    "/api/v1/clubs/{club_id}/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Club Announcements */
+        get: operations["list_club_announcements_api_v1_clubs__club_id__announcements_get"];
+        put?: never;
+        /** Create Club Announcement */
+        post: operations["create_club_announcement_api_v1_clubs__club_id__announcements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{club_id}/close": {
         parameters: {
             query?: never;
@@ -801,6 +819,24 @@ export interface paths {
         post?: never;
         /** Unsave Event */
         delete: operations["unsaveEvent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Updates */
+        get: operations["list_event_updates_api_v1_events__event_id__updates_get"];
+        put?: never;
+        /** Create Event Update */
+        post: operations["create_event_update_api_v1_events__event_id__updates_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1399,6 +1435,19 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** ClubAnnouncementRequest */
+        ClubAnnouncementRequest: {
+            /**
+             * Audience
+             * @default all_members
+             * @enum {string}
+             */
+            audience: "all_members" | "admins";
+            /** Body */
+            body: string;
+            /** Title */
+            title: string;
+        };
         /** ClubCardResponse */
         ClubCardResponse: {
             /** Category Slug */
@@ -1910,6 +1959,21 @@ export interface components {
         EventRevisionRequest: {
             /** Revision */
             revision: number;
+        };
+        /** EventUpdateRequest */
+        EventUpdateRequest: {
+            /**
+             * Audience
+             * @default all_active
+             * @enum {string}
+             */
+            audience: "all_active" | "confirmed" | "cash_pending" | "waitlisted";
+            /** Body */
+            body: string;
+            /** Revision */
+            revision: number;
+            /** Title */
+            title: string;
         };
         /** FieldError */
         FieldError: {
@@ -2440,6 +2504,30 @@ export interface components {
             time_zone: string | null;
             /** Username */
             username: string | null;
+        };
+        /** PublishedContentPageResponse */
+        PublishedContentPageResponse: {
+            /** Items */
+            items: components["schemas"]["PublishedContentResponse"][];
+        };
+        /** PublishedContentResponse */
+        PublishedContentResponse: {
+            /** Audience */
+            audience: string;
+            /** Body */
+            body: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Title */
+            title: string;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -3739,6 +3827,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    list_club_announcements_api_v1_clubs__club_id__announcements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    create_club_announcement_api_v1_clubs__club_id__announcements_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubAnnouncementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];
@@ -5675,6 +5817,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    list_event_updates_api_v1_events__event_id__updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    create_event_update_api_v1_events__event_id__updates_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];

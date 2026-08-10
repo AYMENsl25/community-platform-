@@ -8,6 +8,7 @@ import {
 } from "@talaqi/translations";
 import { Card, Container } from "@talaqi/ui";
 import { ClubCard } from "@/components/discovery/club-card";
+import { MemberCommunications } from "@/components/communications/member-communications";
 import { EventCard } from "@/components/discovery/event-card";
 import { DiscoveryError } from "@/components/discovery/result-states";
 import { PublicShell } from "@/components/shell/shells";
@@ -95,6 +96,11 @@ export default async function ClubPage({ params, searchParams }: Props) {
             <ClubCard
               club={result.data}
               labels={{ location: translate(locale, "discovery.meetingArea") }}
+              locale={locale}
+            />
+            <MemberCommunications
+              kind="club"
+              resourceId={result.data.id}
               locale={locale}
             />
             <Card className="tq-public-detail__trust">

@@ -350,9 +350,9 @@
 
 ### Task 5.4: Club announcements and event updates
 
-- [ ] Add manager-authorized create/list endpoints, audience selection, revision-safe event updates, and delivery through outbox; notify only eligible recipients.
-- [ ] Build organizer composer/history and member notification views; do not add chat, comments, or replies.
-- [ ] Gate: authorization, audience privacy, dedupe, localized UI, and E2E tests; commit `feat: add announcements and event updates`.
+- [x] Add manager-authorized create/list endpoints, audience selection, revision-safe event updates, and delivery through outbox; notify only eligible recipients.
+- [x] Build organizer composer/history and member notification views; do not add chat, comments, or replies.
+- [x] Gate: authorization, audience privacy, dedupe, localized UI, and E2E tests; commit `feat: add announcements and event updates`.
 
 ### Task 5.5: Member and organizer dashboards
 

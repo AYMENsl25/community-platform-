@@ -4,6 +4,8 @@ const port = Number(process.env.DISCOVERY_FIXTURE_PORT ?? 4100);
 const privateCanary = "PRIVATE_EXACT_ADDRESS_CANARY";
 const memberVenue = "Moda Community Hall, Kadikoy";
 const memberRegistrations = new Map();
+const eventUpdateRecipients = new Set();
+let publishedEventUpdates = [];
 
 const events = [
   {
@@ -794,6 +796,38 @@ createServer(async (request, response) => {
   const savedPath = `/api/v1/events/${events[0].id}/saved`;
   const registrationPath = `/api/v1/events/${events[0].id}/registrations`;
   const cancellationPath = `${registrationPath}/me`;
+  const eventUpdatesPath = `/api/v1/events/${events[0].id}/updates`;
+  if (url.pathname === eventUpdatesPath && request.method === "POST") {
+    if (accessToken(request) !== "fixture-owner")
+      return send(response, 403, { error: { code: "forbidden" } });
+    if (!hasCsrf(request))
+      return send(response, 403, { error: { code: "csrf_failed" } });
+    const payload = await body(request);
+    const update = {
+      id: "88888888-8888-4888-8888-888888888888",
+      title: payload.title,
+      body: payload.body,
+      audience: payload.audience,
+      published_at: "2026-08-10T12:00:00Z",
+    };
+    publishedEventUpdates = [update];
+    eventUpdateRecipients.clear();
+    for (const token of memberRegistrations.keys())
+      eventUpdateRecipients.add(token);
+    return send(response, 201, update, "private, no-store");
+  }
+  if (url.pathname === eventUpdatesPath && request.method === "GET") {
+    const token = accessToken(request);
+    const eligible = token && eventUpdateRecipients.has(token);
+    return send(
+      response,
+      eligible ? 200 : 404,
+      eligible
+        ? { items: publishedEventUpdates }
+        : { error: { code: "not_found" } },
+      "private, no-store",
+    );
+  }
   if (url.pathname === registrationPath && request.method === "POST") {
     const token = accessToken(request);
     if (!token)

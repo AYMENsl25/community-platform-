@@ -12,6 +12,10 @@ vi.mock("@/lib/locale/request-locale", () => ({
 
 import ClubPage, { generateMetadata } from "./page";
 
+vi.mock("@/components/communications/member-communications", () => ({
+  MemberCommunications: () => null,
+}));
+
 const club = {
   id: "018f0000-0000-7000-8000-000000000101",
   slug: "istanbul-community",

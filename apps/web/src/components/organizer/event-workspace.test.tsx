@@ -16,6 +16,10 @@ vi.mock("./attendee-workspace", () => ({
   ),
 }));
 
+vi.mock("./communications-panel", () => ({
+  CommunicationsPanel: () => <section>Event updates</section>,
+}));
+
 const managedEvent: ManagedEvent = {
   id: "019f9e7d-d7a0-7d86-9166-2053f7de2401",
   ownership_type: "independent",

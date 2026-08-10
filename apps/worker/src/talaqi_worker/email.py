@@ -551,7 +551,7 @@ def template_for(event_type: str, parameters: dict[str, object]) -> str:
         return "password_reset"
     if event_type.startswith(("identity.", "moderation.")):
         return "security"
-    if event_type.startswith("membership."):
+    if event_type.startswith(("membership.", "club.")):
         return "membership"
     if event_type == "registration.expired":
         return "cash_expiry"
