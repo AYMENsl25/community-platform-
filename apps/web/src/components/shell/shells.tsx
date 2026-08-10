@@ -34,7 +34,7 @@ const workspaceNavigation = {
     { href: "/clubs", label: "shell.navigation.clubs" },
   ],
   organizer: [
-    { href: "/overview", label: "shell.navigation.overview" },
+    { href: "/organizer/overview", label: "shell.navigation.overview" },
     { href: "/organizer/clubs", label: "shell.navigation.clubs" },
     { href: "/organizer/events", label: "shell.navigation.events" },
     { href: "/calendar", label: "shell.navigation.calendar" },

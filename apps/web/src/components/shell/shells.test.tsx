@@ -73,12 +73,12 @@ describe("public shell", () => {
 
 describe("workspace shells", () => {
   it.each([
-    [MemberShell, "Member workspace"],
-    [OrganizerShell, "Organizer workspace"],
-    [AdminShell, "Platform administration"],
-  ])("renders an accessible %s structure", (Shell, label) => {
+    [MemberShell, "Member workspace", "/overview"],
+    [OrganizerShell, "Organizer workspace", "/organizer/overview"],
+    [AdminShell, "Platform administration", "/overview"],
+  ])("renders an accessible %s structure", (Shell, label, currentHref) => {
     const { container } = render(
-      <Shell locale="en" currentHref="/overview">
+      <Shell locale="en" currentHref={currentHref}>
         Workspace content
       </Shell>,
     );

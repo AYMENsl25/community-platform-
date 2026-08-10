@@ -1612,6 +1612,214 @@
         "title": "CursorPage",
         "type": "object"
       },
+      "DashboardAlert": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "action_path"
+        ],
+        "title": "DashboardAlert",
+        "type": "object"
+      },
+      "DashboardClub": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pending_requests": {
+            "default": 0,
+            "title": "Pending Requests",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "role",
+          "status",
+          "action_path"
+        ],
+        "title": "DashboardClub",
+        "type": "object"
+      },
+      "DashboardEvent": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "cash_pending": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Pending"
+          },
+          "held": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "registration_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration State"
+          },
+          "start_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_at",
+          "status",
+          "action_path"
+        ],
+        "title": "DashboardEvent",
+        "type": "object"
+      },
+      "DashboardNotification": {
+        "properties": {
+          "action_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Path"
+          },
+          "body_key": {
+            "title": "Body Key",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "title_key": {
+            "title": "Title Key",
+            "type": "string"
+          },
+          "type_key": {
+            "title": "Type Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type_key",
+          "title_key",
+          "body_key",
+          "action_path",
+          "read_at",
+          "created_at"
+        ],
+        "title": "DashboardNotification",
+        "type": "object"
+      },
       "DecisionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3953,6 +4161,54 @@
         "title": "MediaUploadResponse",
         "type": "object"
       },
+      "MemberDashboardResponse": {
+        "properties": {
+          "joined_clubs": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardClub"
+            },
+            "title": "Joined Clubs",
+            "type": "array"
+          },
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardNotification"
+            },
+            "title": "Notifications",
+            "type": "array"
+          },
+          "profile_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Profile Blockers",
+            "type": "array"
+          },
+          "saved_events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Saved Events",
+            "type": "array"
+          },
+          "upcoming_events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Upcoming Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "upcoming_events",
+          "saved_events",
+          "joined_clubs",
+          "notifications",
+          "profile_blockers"
+        ],
+        "title": "MemberDashboardResponse",
+        "type": "object"
+      },
       "MemberPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4210,6 +4466,38 @@
           "status"
         ],
         "title": "OperationResponse",
+        "type": "object"
+      },
+      "OrganizerDashboardResponse": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "clubs": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardClub"
+            },
+            "title": "Clubs",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "clubs",
+          "events",
+          "alerts"
+        ],
+        "title": "OrganizerDashboardResponse",
         "type": "object"
       },
       "OwnershipTransferRequest": {
@@ -10956,6 +11244,32 @@
         ]
       }
     },
+    "/api/v1/me/dashboard": {
+      "get": {
+        "operationId": "member_dashboard_api_v1_me_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDashboardResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Member Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/api/v1/me/notifications": {
       "get": {
         "operationId": "listMyNotifications",
@@ -11657,6 +11971,32 @@
         "summary": "Get Metadata",
         "tags": [
           "discovery"
+        ]
+      }
+    },
+    "/api/v1/organizer/dashboard": {
+      "get": {
+        "operationId": "organizer_dashboard_api_v1_organizer_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerDashboardResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Organizer Dashboard",
+        "tags": [
+          "dashboard"
         ]
       }
     },

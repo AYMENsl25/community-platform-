@@ -356,9 +356,9 @@
 
 ### Task 5.5: Member and organizer dashboards
 
-- [ ] Member: upcoming events, confirmed/cash-pending/waitlisted actions, saved events, joined clubs, notifications, and profile blockers.
-- [ ] Organizer: owned/managed clubs, independent events, status/capacity/cash queues, membership requests, alerts, and quick actions using the approved three-column desktop/stacked-mobile pattern.
-- [ ] Gate: permission-specific component/E2E tests, empty/error/loading, RTL, accessibility, and build; commit `feat: complete member and organizer dashboards`.
+- [x] Member: upcoming events, confirmed/cash-pending/waitlisted actions, saved events, joined clubs, notifications, and profile blockers.
+- [x] Organizer: owned/managed clubs, independent events, status/capacity/cash queues, membership requests, alerts, and quick actions using the approved three-column desktop/stacked-mobile pattern.
+- [x] Gate: permission-specific component/E2E tests, empty/error/loading, RTL, accessibility, and build; commit `feat: complete member and organizer dashboards`.
 
 ### Task 5.6: Safe PWA installation and offline behavior
 

@@ -5,6 +5,40 @@ html {
   scroll-behavior: smooth;
 }
 
+.tq-dashboard {
+  padding-block: var(--tq-space-6);
+}
+.tq-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tq-space-4);
+  align-items: start;
+}
+.tq-dashboard-card {
+  min-width: 0;
+}
+.tq-dashboard-list {
+  display: grid;
+  gap: var(--tq-space-3);
+  padding: 0;
+  list-style: none;
+}
+.tq-dashboard-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tq-space-3);
+  border-block-end: 1px solid var(--tq-color-border);
+  padding-block-end: var(--tq-space-2);
+}
+.tq-dashboard-list span {
+  display: block;
+}
+@media (max-width: 52rem) {
+  .tq-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 body {
   margin: 0;
 }

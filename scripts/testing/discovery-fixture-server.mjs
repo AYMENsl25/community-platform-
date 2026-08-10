@@ -349,6 +349,75 @@ createServer(async (request, response) => {
   const empty = url.searchParams.get("search") === "fixture-empty";
   const role = fixtureRole(request);
   const platformAdmin = adminKind(request);
+  if (url.pathname === "/api/v1/me/dashboard") {
+    if (!accessToken(request))
+      return send(response, 401, { error: { code: "unauthorized" } });
+    const dashboardEvent = {
+      id: events[0].id,
+      title: events[0].title,
+      start_at: events[0].start_at,
+      status: "published",
+      registration_state: "confirmed",
+      capacity: null,
+      held: null,
+      cash_pending: null,
+      action_path: `/events/${events[0].id}`,
+    };
+    return send(response, 200, {
+      upcoming_events: [dashboardEvent],
+      saved_events: [dashboardEvent],
+      joined_clubs: [
+        {
+          id: clubs[0].id,
+          name: clubs[0].name,
+          slug: clubs[0].slug,
+          role: "member",
+          status: "published",
+          pending_requests: 0,
+          action_path: `/clubs/${clubs[0].slug}`,
+        },
+      ],
+      notifications: [],
+      profile_blockers: [],
+    });
+  }
+  if (url.pathname === "/api/v1/organizer/dashboard") {
+    if (role === "member")
+      return send(response, 403, { error: { code: "forbidden" } });
+    return send(response, 200, {
+      clubs: [
+        {
+          id: organizerClub.id,
+          name: organizerClub.name,
+          slug: organizerClub.slug,
+          role,
+          status: organizerClub.status,
+          pending_requests: 1,
+          action_path: "/organizer/clubs",
+        },
+      ],
+      events: [
+        {
+          id: organizerEvent.id,
+          title: organizerEvent.title,
+          start_at: organizerEvent.start_at,
+          status: organizerEvent.status,
+          registration_state: null,
+          capacity: organizerEvent.capacity,
+          held: 1,
+          cash_pending: 1,
+          action_path: "/organizer/events",
+        },
+      ],
+      alerts: [
+        { key: "membership_requests", action_path: "/organizer/clubs" },
+        {
+          key: "cash_pending",
+          action_path: "/organizer/events?state=cash_pending",
+        },
+      ],
+    });
+  }
   if (url.pathname === "/api/v1/admin/moderation/cases") {
     if (!platformAdmin)
       return send(

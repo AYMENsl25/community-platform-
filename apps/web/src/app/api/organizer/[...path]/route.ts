@@ -9,6 +9,13 @@ function allowed(method: string, path: string[]): boolean {
   if (path[0] !== "api" || path[1] !== "v1") return false;
   const resource = path[2];
   if (
+    method === "GET" &&
+    path.length === 4 &&
+    ((resource === "me" && path[3] === "dashboard") ||
+      (resource === "organizer" && path[3] === "dashboard"))
+  )
+    return true;
+  if (
     resource === "profiles" &&
     method === "GET" &&
     path.length === 4 &&

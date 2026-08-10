@@ -894,6 +894,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Member Dashboard */
+        get: operations["member_dashboard_api_v1_me_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/notifications": {
         parameters: {
             query?: never;
@@ -1057,6 +1074,23 @@ export interface paths {
         };
         /** Get Metadata */
         get: operations["getDiscoveryMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizer/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organizer Dashboard */
+        get: operations["organizer_dashboard_api_v1_organizer_dashboard_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1648,6 +1682,83 @@ export interface components {
         CursorPage: {
             items: unknown[];
             next_cursor: string | null;
+        };
+        /** DashboardAlert */
+        DashboardAlert: {
+            /** Action Path */
+            action_path: string;
+            /** Key */
+            key: string;
+        };
+        /** DashboardClub */
+        DashboardClub: {
+            /** Action Path */
+            action_path: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Pending Requests
+             * @default 0
+             */
+            pending_requests: number;
+            /** Role */
+            role: string;
+            /** Slug */
+            slug: string;
+            /** Status */
+            status: string;
+        };
+        /** DashboardEvent */
+        DashboardEvent: {
+            /** Action Path */
+            action_path: string;
+            /** Capacity */
+            capacity?: number | null;
+            /** Cash Pending */
+            cash_pending?: number | null;
+            /** Held */
+            held?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Registration State */
+            registration_state?: string | null;
+            /** Start At */
+            start_at: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /** DashboardNotification */
+        DashboardNotification: {
+            /** Action Path */
+            action_path: string | null;
+            /** Body Key */
+            body_key: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Read At */
+            read_at: string | null;
+            /** Title Key */
+            title_key: string;
+            /** Type Key */
+            type_key: string;
         };
         /** DecisionRequest */
         DecisionRequest: {
@@ -2303,6 +2414,19 @@ export interface components {
             /** Width */
             width: number | null;
         };
+        /** MemberDashboardResponse */
+        MemberDashboardResponse: {
+            /** Joined Clubs */
+            joined_clubs: components["schemas"]["DashboardClub"][];
+            /** Notifications */
+            notifications: components["schemas"]["DashboardNotification"][];
+            /** Profile Blockers */
+            profile_blockers: string[];
+            /** Saved Events */
+            saved_events: components["schemas"]["DashboardEvent"][];
+            /** Upcoming Events */
+            upcoming_events: components["schemas"]["DashboardEvent"][];
+        };
         /** MemberPageResponse */
         MemberPageResponse: {
             /** Items */
@@ -2394,6 +2518,15 @@ export interface components {
              * @enum {string}
              */
             status: "left" | "approved" | "rejected" | "role_changed" | "transferred" | "closed";
+        };
+        /** OrganizerDashboardResponse */
+        OrganizerDashboardResponse: {
+            /** Alerts */
+            alerts: components["schemas"]["DashboardAlert"][];
+            /** Clubs */
+            clubs: components["schemas"]["DashboardClub"][];
+            /** Events */
+            events: components["schemas"]["DashboardEvent"][];
         };
         /** OwnershipTransferRequest */
         OwnershipTransferRequest: {
@@ -6025,6 +6158,27 @@ export interface operations {
             };
         };
     };
+    member_dashboard_api_v1_me_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDashboardResponse"];
+                };
+            };
+        };
+    };
     listMyNotifications: {
         parameters: {
             query?: {
@@ -6455,6 +6609,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiscoveryMetadataResponse"];
+                };
+            };
+        };
+    };
+    organizer_dashboard_api_v1_organizer_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerDashboardResponse"];
                 };
             };
         };

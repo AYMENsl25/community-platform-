@@ -27,6 +27,7 @@
     "e2e": "playwright test"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@playwright/test": "1.61.1",
     "prettier": "3.9.5",
     "prettier-plugin-tailwindcss": "0.8.1",
