@@ -114,6 +114,7 @@ export const englishDictionary = {
   "regions.chooseCountry": "Choose a country",
   "regions.chooseCity": "Choose a city",
   "categories.sports": "Sports",
+  "categories.community": "Community",
   "categories.arts-culture": "Arts and culture",
   "categories.technology": "Technology",
   "categories.language-exchange": "Language exchange",

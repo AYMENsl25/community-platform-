@@ -114,6 +114,7 @@ export const arabicDictionary: Dictionary = {
   "regions.chooseCountry": "اختر بلدًا",
   "regions.chooseCity": "اختر مدينة",
   "categories.sports": "الرياضة",
+  "categories.community": "المجتمع",
   "categories.arts-culture": "الفنون والثقافة",
   "categories.technology": "التقنية",
   "categories.language-exchange": "تبادل اللغات",

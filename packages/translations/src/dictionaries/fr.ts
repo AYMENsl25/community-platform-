@@ -119,6 +119,7 @@ export const frenchDictionary: Dictionary = {
   "regions.chooseCountry": "Choisissez un pays",
   "regions.chooseCity": "Choisissez une ville",
   "categories.sports": "Activités sportives",
+  "categories.community": "Communauté",
   "categories.arts-culture": "Arts et culture",
   "categories.technology": "Technologies",
   "categories.language-exchange": "Échange linguistique",

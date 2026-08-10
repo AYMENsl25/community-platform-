@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}{ext}",
   // The fixture API intentionally models cross-request moderation and organizer
   // state. Keep the repository-wide gate serial so suites cannot mutate the
   // same target while another suite is asserting its public state.

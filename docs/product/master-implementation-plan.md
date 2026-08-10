@@ -368,9 +368,9 @@
 
 ### Task 5.7: Four-locale accessibility and responsive completion
 
-- [ ] Reach dictionary parity for every screen/email/error; perform Arabic RTL, long French/Turkish copy, keyboard, focus, screen-reader, contrast, reduced-motion, and 320 px layout QA.
-- [ ] Gate: automated axe has zero serious/critical issues, visual baselines approved for critical routes, and all four-locale Playwright journeys pass.
-- [ ] Commit `fix: complete localization accessibility and responsive QA`.
+- [x] Reach dictionary parity for every screen/email/error; perform Arabic RTL, long French/Turkish copy, keyboard, focus, screen-reader, contrast, reduced-motion, and 320 px layout QA.
+- [x] Gate: automated axe has zero serious/critical issues, visual baselines approved for critical routes, and all four-locale Playwright journeys pass.
+- [x] Commit `fix: complete localization accessibility and responsive QA`.
 
 **Phase 5 exit:** All critical journeys are installable, usable at mobile widths, accessible, and fully localized; communications are reliable and privacy-safe.
 

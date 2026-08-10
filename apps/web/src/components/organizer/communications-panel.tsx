@@ -13,6 +13,7 @@ import { useLocale } from "@/lib/locale/locale-context";
 type Kind = "club" | "event";
 
 function csrfToken(): string | undefined {
+  if (typeof document === "undefined") return undefined;
   const entry = document.cookie
     .split(";")
     .map((value) => value.trim())

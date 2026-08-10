@@ -118,6 +118,7 @@ export const turkishDictionary = {
   "regions.chooseCountry": "Ülke seçin",
   "regions.chooseCity": "Şehir seçin",
   "categories.sports": "Spor",
+  "categories.community": "Topluluk",
   "categories.arts-culture": "Sanat ve kültür",
   "categories.technology": "Teknoloji",
   "categories.language-exchange": "Dil değişimi",
