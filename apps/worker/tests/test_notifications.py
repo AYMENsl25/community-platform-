@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from talaqi.communications.service import NotificationProjectionHandler
 from talaqi.db.engine import build_session_factory
+from talaqi.db.identifiers import generate_uuid7
 from talaqi.outbox import OutboxEvent, OutboxRepository
 from talaqi_worker.notifications import build_notification_worker
 from talaqi_worker.outbox import TransactionalOutboxWorker
@@ -30,7 +31,11 @@ async def enqueue_event(
             aggregate_type="user",
             aggregate_id=user_id,
             event_type=event_type,
-            payload={"user_id": str(user_id), "event_id": str(user_id), "auth_token_id": "secret"},
+            payload={
+                "user_id": str(user_id),
+                "event_id": str(user_id),
+                "auth_token_id": str(generate_uuid7()),
+            },
             deduplication_key=key,
             available_at=now,
         )

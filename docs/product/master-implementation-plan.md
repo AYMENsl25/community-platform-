@@ -344,9 +344,9 @@
 
 ### Task 5.3: Transactional email adapters and templates
 
-- [ ] Provide console/test and production-provider interfaces; implement four-locale verification, reset, security, membership, registration, cash-expiry, promotion, cancellation, and event-change templates.
-- [ ] Keep exact private venue out of pre-confirmation emails; add daily quotas, provider IDs, retry classifications, and delivery logging without tokens/private bodies.
-- [ ] Gate: template parity/render snapshots, adapter contracts, privacy, retry, and quota tests; commit `feat: add localized transactional email`.
+- [x] Provide console/test and production-provider interfaces; implement four-locale verification, reset, security, membership, registration, cash-expiry, promotion, cancellation, and event-change templates.
+- [x] Keep exact private venue out of pre-confirmation emails; add daily quotas, provider IDs, retry classifications, and delivery logging without tokens/private bodies.
+- [x] Gate: template parity/render snapshots, adapter contracts, privacy, retry, and quota tests; commit `feat: add localized transactional email`.
 
 ### Task 5.4: Club announcements and event updates
 

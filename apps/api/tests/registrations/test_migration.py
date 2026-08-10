@@ -201,7 +201,7 @@ async def test_registration_migration_round_trip(registration_engine: AsyncEngin
             .mappings()
             .one()
         )
-    assert row["version_num"] == "0010_notifications"
+    assert row["version_num"] == "0011_email_intents"
     assert row["id"] == transition_id
     assert row["command_id"] is not None
     assert row["command_hash"] == bytes(32)

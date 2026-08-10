@@ -82,14 +82,39 @@ class NotificationRepository:
             else preferences.community_email
         )
         if email_allowed:
-            await self._session.execute(
+            delivery_id = await self._session.scalar(
                 text(
                     """
                     INSERT INTO talaqi.notification_deliveries (notification_id, channel)
                     VALUES (:notification_id, 'email')
+                    RETURNING id
                     """
                 ),
                 {"notification_id": notification_id},
+            )
+            if delivery_id is None:
+                raise RuntimeError("email delivery insertion did not persist")
+            raw_token_id = event.payload.get("auth_token_id")
+            locale_hint = event.payload.get("locale_hint", "en")
+            await self._session.execute(
+                text(
+                    """
+                    INSERT INTO talaqi.email_delivery_intents (
+                        delivery_id, auth_token_id, locale_hint
+                    ) VALUES (
+                        :delivery_id, CAST(:auth_token_id AS uuid), :locale_hint
+                    )
+                    """
+                ),
+                {
+                    "delivery_id": delivery_id,
+                    "auth_token_id": raw_token_id if isinstance(raw_token_id, str) else None,
+                    "locale_hint": (
+                        locale_hint
+                        if isinstance(locale_hint, str) and locale_hint in {"ar", "en", "fr", "tr"}
+                        else "en"
+                    ),
+                },
             )
         return True
 
