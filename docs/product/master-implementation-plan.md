@@ -330,9 +330,9 @@
 
 ### Task 5.1: Transactional outbox runtime
 
-- [ ] Implement atomic event writes, lease/claim, deduplication, bounded exponential retry with jitter, delivery status, dead-letter review, and retention cleanup.
-- [ ] Gate: competing workers, crash/restart, poison event, ordering-by-aggregate, and duplicate delivery contract tests.
-- [ ] Commit `feat: add reliable transactional outbox worker`.
+- [x] Implement atomic event writes, lease/claim, deduplication, bounded exponential retry with jitter, delivery status, dead-letter review, and retention cleanup.
+- [x] Gate: competing workers, crash/restart, poison event, ordering-by-aggregate, and duplicate delivery contract tests.
+- [x] Commit `feat: add reliable transactional outbox worker`.
 
 ### Task 5.2: In-app notifications and preferences
 
