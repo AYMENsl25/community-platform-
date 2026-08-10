@@ -22,6 +22,7 @@ from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
 from talaqi.profiles.routes import router as profiles_router
 from talaqi.regions.routes import router as regions_router
+from talaqi.registrations.routes import router as registrations_router
 from talaqi.runtime import SessionFactory, install_runtime
 from talaqi.security import RateLimiter, install_http_security, install_request_logging
 
@@ -88,6 +89,7 @@ def create_app(
     application.include_router(club_memberships_router)
     application.include_router(events_router)
     application.include_router(event_access_router)
+    application.include_router(registrations_router)
     application.include_router(discovery_router)
     application.include_router(media_router)
     application.include_router(moderation_router)

@@ -6,15 +6,23 @@ const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function allowed(method: string, path: string[]): boolean {
-  return Boolean(
-    (method === "PUT" || method === "DELETE") &&
-    path.length === 5 &&
-    path[0] === "api" &&
-    path[1] === "v1" &&
-    path[2] === "events" &&
-    UUID.test(path[3] ?? "") &&
-    path[4] === "saved",
-  );
+  if (
+    path[0] !== "api" ||
+    path[1] !== "v1" ||
+    path[2] !== "events" ||
+    !UUID.test(path[3] ?? "")
+  )
+    return false;
+  if (method === "GET") return path.length === 4;
+  if (method === "POST")
+    return path.length === 5 && path[4] === "registrations";
+  if (method === "PUT") return path.length === 5 && path[4] === "saved";
+  if (method === "DELETE")
+    return (
+      (path.length === 5 && path[4] === "saved") ||
+      (path.length === 6 && path[4] === "registrations" && path[5] === "me")
+    );
+  return false;
 }
 
 async function forward(
@@ -30,6 +38,7 @@ async function forward(
   const access = request.cookies.get("talaqi_access")?.value;
   const csrfCookie = request.cookies.get("talaqi_csrf")?.value;
   const csrf = request.headers.get("x-csrf-token");
+  const idempotencyKey = request.headers.get("idempotency-key");
   const cookie = [
     access ? `talaqi_access=${access}` : undefined,
     csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
@@ -39,6 +48,7 @@ async function forward(
   const headers: Record<string, string> = {};
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-CSRF-Token"] = csrf;
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   try {
     const response = await fetch(`${baseUrl}/${path.join("/")}`, {
       method: request.method,
@@ -63,3 +73,5 @@ async function forward(
 
 export const PUT = forward;
 export const DELETE = forward;
+export const GET = forward;
+export const POST = forward;

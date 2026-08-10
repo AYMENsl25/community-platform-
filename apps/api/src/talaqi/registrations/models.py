@@ -38,6 +38,29 @@ class RegistrationContext:
 
 
 @dataclass(frozen=True, slots=True)
+class RegistrationCreationResult:
+    registration: Registration
+    created: bool
+
+
+@dataclass(frozen=True, slots=True)
+class Attendee:
+    registration: Registration
+    username: str
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class AttendeeSummary:
+    held: int
+    confirmed: int
+    cash_pending: int
+    waitlisted: int
+    cancelled: int
+    expired: int
+
+
+@dataclass(frozen=True, slots=True)
 class RegistrationMutation:
     state: RegistrationState
     seat_held: bool

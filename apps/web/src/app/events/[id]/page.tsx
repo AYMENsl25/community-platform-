@@ -11,6 +11,7 @@ import {
 import { Card, Container } from "@talaqi/ui";
 import { CanonicalCover } from "@/components/discovery/canonical-cover";
 import { EventCard } from "@/components/discovery/event-card";
+import { MemberRegistrationPanel } from "@/components/discovery/member-registration-panel";
 import { SaveEventButton } from "@/components/discovery/save-event-button";
 import { DiscoveryError } from "@/components/discovery/result-states";
 import { PublicShell } from "@/components/shell/shells";
@@ -137,12 +138,6 @@ export default async function EventPage({ params, searchParams }: Props) {
   const venue = [event.district, event.public_meeting_area]
     .filter(Boolean)
     .join(" \u00b7 ");
-  const mapQuery = event.exact_address
-    ? [event.exact_address, event.city_slug, event.country_code]
-    : [event.district, event.city_slug, event.country_code];
-  const mapHref = `https://www.openstreetmap.org/search?query=${encodeURIComponent(
-    mapQuery.filter(Boolean).join(", "),
-  )}`;
 
   return (
     <PublicShell currentHref={`/events/${id}`} locale={locale}>
@@ -163,6 +158,7 @@ export default async function EventPage({ params, searchParams }: Props) {
             initialSaved={event.is_saved}
             locale={locale}
           />
+          <MemberRegistrationPanel initialEvent={event} locale={locale} />
 
           <dl className="tq-discovery-facts tq-public-detail__facts">
             <div>
@@ -198,17 +194,6 @@ export default async function EventPage({ params, searchParams }: Props) {
           </dl>
 
           <div className="tq-public-detail__grid">
-            <Card aria-label={translate(locale, "discovery.meetingArea")}>
-              <h2>{translate(locale, "discovery.meetingArea")}</h2>
-              {event.exact_address ? (
-                <p>{event.exact_address}</p>
-              ) : (
-                <p>{translate(locale, "discovery.privateVenue")}</p>
-              )}
-              <a href={mapHref} rel="noreferrer" target="_blank">
-                {translate(locale, "discovery.openMap")}
-              </a>
-            </Card>
             <Card aria-label={translate(locale, "discovery.rules")}>
               <h2>{translate(locale, "discovery.rules")}</h2>
               <p>

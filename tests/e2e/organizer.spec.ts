@@ -388,6 +388,12 @@ test("event owner sees server-owned club and independent workflows", async ({
   await expect(
     page.getByRole("heading", { name: "Event organizer workspace" }),
   ).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("link", { name: "Skip to main content" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
   await expect(
     page.getByRole("option", { name: "Independent event" }),
   ).toHaveCount(1);
@@ -400,15 +406,48 @@ test("event owner sees server-owned club and independent workflows", async ({
   await expect(
     page.getByRole("button", { name: "Delete draft" }),
   ).toBeVisible();
+  await expect(page.getByText("Cash Fixture Member")).toBeVisible();
+  await expect(page.getByText("Waiting Fixture Member")).toBeVisible();
+  await expect(page.getByText("1").first()).toBeVisible();
+  await page.getByRole("button", { name: "Confirm cash" }).click();
   await expect(
-    page.getByText("Attendee management arrives in Phase 4."),
+    page.getByText("Cash registration confirmed from the latest server state."),
   ).toBeVisible();
-  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Confirm cash" })).toHaveCount(
+    0,
+  );
+  await page.getByRole("button", { name: "Prepare private CSV" }).click();
   await expect(
-    page.getByRole("link", { name: "Skip to main content" }),
-  ).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(page.locator("#main-content")).toBeFocused();
+    page.getByText(/Private CSV preparation is queued/),
+  ).toBeVisible();
+});
+
+test("club admin uses attendee filters in Arabic on a narrow keyboard-safe layout", async ({
+  page,
+}) => {
+  await signInAs(page, "admin", "ar");
+  await page.setViewportSize({ width: 360, height: 760 });
+  await page.goto("/organizer/events");
+  await expect(page.getByText("Waiting Fixture Member")).toBeVisible();
+  await expect(page.locator(".tq-workspace-shell")).toHaveAttribute(
+    "dir",
+    "rtl",
+  );
+  const search = page.getByLabel("البحث عن الحضور");
+  await search.focus();
+  await expect(search).toBeFocused();
+  await search.fill("waiting");
+  await page.getByLabel("حالة التسجيل").selectOption("waitlisted");
+  await page.getByRole("button", { name: "تطبيق المرشحات" }).click();
+  await expect(page.getByText("Waiting Fixture Member")).toBeVisible();
+  await expect(page.getByText("Cash Fixture Member")).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(false);
 });
 
 test("ordinary member is denied event ownership and Arabic stays RTL on mobile", async ({

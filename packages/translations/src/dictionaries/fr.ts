@@ -335,6 +335,14 @@ export const frenchDictionary: Dictionary = {
   "errors.csrf_failed":
     "Votre formulaire sécurisé a expiré. Veuillez réessayer.",
   "errors.forbidden": "Vous n’avez pas le droit d’effectuer cette action.",
+  "errors.registration_not_allowed":
+    "Votre compte n\u2019est pas admissible \u00e0 l\u2019inscription \u00e0 cet \u00e9v\u00e9nement.",
+  "errors.registration_closed":
+    "Les inscriptions \u00e0 cet \u00e9v\u00e9nement sont closes.",
+  "errors.cancellation_closed":
+    "Le d\u00e9lai d\u2019annulation pour cet \u00e9v\u00e9nement est d\u00e9pass\u00e9.",
+  "errors.cash_confirmation_expired":
+    "Cette r\u00e9servation en esp\u00e8ces a expir\u00e9.",
   "errors.admin_mfa_required":
     "Terminez l’authentification multifacteur pour continuer.",
   "errors.http": "La demande a échoué.",
@@ -436,6 +444,30 @@ export const frenchDictionary: Dictionary = {
   "events.action.deleteDraft": "Supprimer le brouillon",
   "events.attendees.title": "Participants",
   "events.attendees.phase4": "La gestion des participants arrive en phase 4.",
+  "events.attendees.capacity": "Places réservées",
+  "events.attendees.confirmed": "Confirmées",
+  "events.attendees.cashPending": "Paiement en attente",
+  "events.attendees.waitlisted": "Liste d’attente",
+  "events.attendees.search": "Rechercher des participants",
+  "events.attendees.state": "État de l’inscription",
+  "events.attendees.allStates": "Tous les états",
+  "events.attendees.apply": "Appliquer les filtres",
+  "events.attendees.export": "Préparer le CSV privé",
+  "events.attendees.exportQueued":
+    "La préparation du CSV privé est en attente. Il sera livré par le flux organisateur sécurisé.",
+  "events.attendees.confirmedNotice":
+    "L’inscription en espèces a été confirmée depuis l’état actuel du serveur.",
+  "events.attendees.empty": "Aucun participant ne correspond à ces filtres.",
+  "events.attendees.member": "Membre",
+  "events.attendees.method": "Méthode",
+  "events.attendees.action": "Opération",
+  "events.attendees.confirmCash": "Confirmer le paiement",
+  "events.attendees.loadMore": "Charger plus de participants",
+  "events.attendees.state.confirmed": "Confirmée",
+  "events.attendees.state.cash_pending": "Paiement en attente",
+  "events.attendees.state.waitlisted": "Liste d’attente",
+  "events.attendees.state.cancelled": "Annulée",
+  "events.attendees.state.expired": "Expirée",
   "events.form.regionPolicy": "Politique r\u00e9gionale du serveur",
   "events.media.pending": "Aucune image s\u00e9lectionn\u00e9e.",
   "events.media.uploading":
@@ -444,4 +476,28 @@ export const frenchDictionary: Dictionary = {
   "events.media.failed": "\u00c9chec de la v\u00e9rification de l\u2019image.",
   "events.media.invalid": "Choisissez une image JPEG, PNG ou WebP.",
   "events.form.rangeSeparator": "\u00e0",
+  "registration.title": "Votre inscription",
+  "registration.register": "S’inscrire",
+  "registration.joinWaitlist": "Rejoindre la liste d’attente",
+  "registration.cancel": "Annuler l’inscription",
+  "registration.confirmed": "Inscription confirmée",
+  "registration.confirmedBody":
+    "Votre place est confirmée. Conservez cette page comme billet.",
+  "registration.cashPending":
+    "Place réservée — confirmation du paiement en attente",
+  "registration.cashInstructions":
+    "Payez l’organisateur selon ses instructions avant l’expiration de cette réservation.",
+  "registration.waitlisted": "Vous êtes sur la liste d’attente",
+  "registration.waitlistedBody":
+    "Nous mettrons votre inscription à jour si une place se libère.",
+  "registration.expires": "Expiration de la réservation",
+  "registration.remaining": "Temps restant",
+  "registration.expired": "Réservation expirée",
+  "registration.refreshFailed":
+    "Votre demande a été reçue, mais l’état actuel n’a pas pu être chargé. Actualisez la page avant de réessayer.",
+  "registration.authRequired":
+    "Connectez-vous pour vous inscrire à cet événement.",
+  "registration.tryAgain": "Veuillez réessayer.",
+  "registration.venue": "Lieu confirmé",
+  "registration.processing": "Mise à jour de l’inscription…",
 };

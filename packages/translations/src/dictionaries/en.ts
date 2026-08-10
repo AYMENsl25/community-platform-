@@ -323,6 +323,11 @@ export const englishDictionary = {
   "errors.unavailable": "The service is temporarily unavailable. Try again.",
   "errors.csrf_failed": "Your secure form session expired. Try again.",
   "errors.forbidden": "You do not have permission to do that.",
+  "errors.registration_not_allowed":
+    "Your account is not eligible to register for this event.",
+  "errors.registration_closed": "Registration for this event is closed.",
+  "errors.cancellation_closed": "Cancellation for this event is closed.",
+  "errors.cash_confirmation_expired": "This cash reservation has expired.",
   "errors.admin_mfa_required":
     "Complete multi-factor authentication to continue.",
   "errors.http": "The request failed.",
@@ -414,6 +419,30 @@ export const englishDictionary = {
   "events.action.deleteDraft": "Delete draft",
   "events.attendees.title": "Attendees",
   "events.attendees.phase4": "Attendee management arrives in Phase 4.",
+  "events.attendees.capacity": "Places held",
+  "events.attendees.confirmed": "Confirmed",
+  "events.attendees.cashPending": "Cash pending",
+  "events.attendees.waitlisted": "Waitlisted",
+  "events.attendees.search": "Search attendees",
+  "events.attendees.state": "Registration state",
+  "events.attendees.allStates": "All states",
+  "events.attendees.apply": "Apply filters",
+  "events.attendees.export": "Prepare private CSV",
+  "events.attendees.exportQueued":
+    "Private CSV preparation is queued. It will be delivered through the secure organizer workflow.",
+  "events.attendees.confirmedNotice":
+    "Cash registration confirmed from the latest server state.",
+  "events.attendees.empty": "No attendees match these filters.",
+  "events.attendees.member": "Member",
+  "events.attendees.method": "Method",
+  "events.attendees.action": "Action",
+  "events.attendees.confirmCash": "Confirm cash",
+  "events.attendees.loadMore": "Load more attendees",
+  "events.attendees.state.confirmed": "Confirmed",
+  "events.attendees.state.cash_pending": "Cash pending",
+  "events.attendees.state.waitlisted": "Waitlisted",
+  "events.attendees.state.cancelled": "Cancelled",
+  "events.attendees.state.expired": "Expired",
   "events.form.regionPolicy": "Server regional policy",
   "events.media.pending": "No image selected.",
   "events.media.uploading": "Uploading and verifying image.",
@@ -421,6 +450,28 @@ export const englishDictionary = {
   "events.media.failed": "Image verification failed.",
   "events.media.invalid": "Choose a JPEG, PNG, or WebP image.",
   "events.form.rangeSeparator": "to",
+  "registration.title": "Your registration",
+  "registration.register": "Register",
+  "registration.joinWaitlist": "Join waitlist",
+  "registration.cancel": "Cancel registration",
+  "registration.confirmed": "Registration confirmed",
+  "registration.confirmedBody":
+    "Your place is confirmed. Keep this page as your event ticket.",
+  "registration.cashPending": "Place reserved — cash confirmation pending",
+  "registration.cashInstructions":
+    "Pay the organizer using the instructions they provide before this reservation expires.",
+  "registration.waitlisted": "You are on the waitlist",
+  "registration.waitlistedBody":
+    "We will update your registration if a place becomes available.",
+  "registration.expires": "Reservation expires",
+  "registration.remaining": "Time remaining",
+  "registration.expired": "Reservation expired",
+  "registration.refreshFailed":
+    "Your request was received, but the latest registration state could not be loaded. Refresh this page before trying again.",
+  "registration.authRequired": "Sign in to register for this event.",
+  "registration.tryAgain": "Please try again.",
+  "registration.venue": "Confirmed venue",
+  "registration.processing": "Updating registration…",
 } as const;
 
 export type TranslationKey = keyof typeof englishDictionary;

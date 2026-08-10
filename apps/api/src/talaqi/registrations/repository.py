@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.registrations.models import (
+    Attendee,
+    AttendeeSummary,
     Registration,
     RegistrationContext,
     RegistrationEventStatus,
@@ -79,6 +81,407 @@ def _transition(row: Mapping[str, object]) -> RegistrationTransition:
 class RegistrationRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def get_active(
+        self, event_id: UUID, user_id: UUID, *, for_update: bool = False
+    ) -> Registration | None:
+        lock = "FOR UPDATE" if for_update else ""
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.user_id = :user_id
+                          AND registration.state IN ('confirmed', 'cash_pending', 'waitlisted')
+                        {lock}
+                        """  # noqa: S608 -- fixed fields; bound identifiers
+                    ),
+                    {"event_id": event_id, "user_id": user_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def oldest_waitlisted(self, event_id: UUID) -> Registration | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.state = 'waitlisted'
+                        ORDER BY registration.waitlist_sequence, registration.id
+                        FOR UPDATE
+                        LIMIT 1
+                        """  # noqa: S608 -- fixed fields; bound identifier
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def get_for_event(
+        self,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Registration | None:
+        lock = "FOR UPDATE" if for_update else ""
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}
+                        FROM talaqi.registrations AS registration
+                        WHERE registration.event_id = :event_id
+                          AND registration.id = :registration_id
+                        {lock}
+                        """  # noqa: S608 -- fixed fields; bound identifiers
+                    ),
+                    {"event_id": event_id, "registration_id": registration_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return _registration(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def list_attendees(
+        self,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]:
+        rows = (
+            (
+                await self._session.execute(
+                    text(
+                        f"""
+                        SELECT {_REGISTRATION_FIELDS}, profile.username, profile.display_name
+                        FROM talaqi.registrations AS registration
+                        JOIN talaqi.profiles AS profile ON profile.user_id = registration.user_id
+                        WHERE registration.event_id = :event_id
+                          AND (
+                              CAST(:state AS text) IS NULL
+                              OR registration.state = CAST(:state AS talaqi.registration_state)
+                          )
+                          AND (
+                              CAST(:search AS text) IS NULL
+                              OR lower(profile.username) LIKE :search ESCAPE '\\'
+                              OR lower(profile.display_name) LIKE :search ESCAPE '\\'
+                          )
+                          AND (
+                              CAST(:after_created_at AS timestamptz) IS NULL
+                              OR (registration.created_at, registration.id)
+                                 < (CAST(:after_created_at AS timestamptz), CAST(:after_id AS uuid))
+                          )
+                        ORDER BY registration.created_at DESC, registration.id DESC
+                        LIMIT :limit
+                        """  # noqa: S608 -- fixed fields; bound filter values
+                    ),
+                    {
+                        "event_id": event_id,
+                        "state": state,
+                        "search": (
+                            "%"
+                            + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                            + "%"
+                            if search is not None
+                            else None
+                        ),
+                        "after_created_at": after_created_at,
+                        "after_id": after_id,
+                        "limit": limit,
+                    },
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return [
+            Attendee(
+                registration=_registration(cast(Mapping[str, object], row)),
+                username=cast(str, row["username"]),
+                display_name=cast(str, row["display_name"]),
+            )
+            for row in rows
+        ]
+
+    async def enqueue_attendee_export(
+        self,
+        event_id: UUID,
+        request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        requested_at: datetime,
+    ) -> None:
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'event', :event_id, 'attendees.export_requested',
+                    jsonb_build_object(
+                        'request_id', CAST(:request_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'state', CAST(:state AS text),
+                        'search', CAST(:search AS text)
+                    ),
+                    :deduplication_key, :requested_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "event_id": event_id,
+                "request_id": request_id,
+                "state": state,
+                "search": search,
+                "deduplication_key": f"attendees.export:{request_id}",
+                "requested_at": requested_at,
+            },
+        )
+
+    async def attendee_summary(self, event_id: UUID) -> AttendeeSummary:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                    SELECT count(*) FILTER (WHERE seat_held)::integer AS held,
+                           count(*) FILTER (WHERE state = 'confirmed')::integer AS confirmed,
+                           count(*) FILTER (WHERE state = 'cash_pending')::integer AS cash_pending,
+                           count(*) FILTER (WHERE state = 'waitlisted')::integer AS waitlisted,
+                           count(*) FILTER (WHERE state = 'cancelled')::integer AS cancelled,
+                           count(*) FILTER (WHERE state = 'expired')::integer AS expired
+                    FROM talaqi.registrations
+                    WHERE event_id = :event_id
+                    """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+        return AttendeeSummary(
+            held=cast(int, row["held"]),
+            confirmed=cast(int, row["confirmed"]),
+            cash_pending=cast(int, row["cash_pending"]),
+            waitlisted=cast(int, row["waitlisted"]),
+            cancelled=cast(int, row["cancelled"]),
+            expired=cast(int, row["expired"]),
+        )
+
+    async def held_seat_count(self, event_id: UUID) -> int:
+        count = await self._session.execute(
+            text(
+                """
+                SELECT count(*) FROM talaqi.registrations
+                WHERE event_id = :event_id AND seat_held
+                """
+            ),
+            {"event_id": event_id},
+        )
+        return cast(int, count.scalar_one())
+
+    async def next_waitlist_sequence(self, event_id: UUID) -> int:
+        sequence = await self._session.execute(
+            text(
+                """
+                SELECT coalesce(max(waitlist_sequence), 0) + 1
+                FROM talaqi.registrations
+                WHERE event_id = :event_id AND state = 'waitlisted'
+                """
+            ),
+            {"event_id": event_id},
+        )
+        return cast(int, sequence.scalar_one())
+
+    async def create_registration(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        method: RegistrationMethod,
+        state: RegistrationState,
+        seat_held: bool,
+        waitlist_sequence: int | None,
+        cash_expires_at: datetime | None,
+        confirmed_at: datetime | None,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> Registration:
+        result = await self._session.execute(
+            text(
+                f"""
+                INSERT INTO talaqi.registrations AS registration (
+                    id, event_id, user_id, method, state, seat_held,
+                    waitlist_sequence, cash_expires_at, confirmed_at
+                ) VALUES (
+                    :id, :event_id, :user_id,
+                    CAST(:method AS talaqi.registration_method),
+                    CAST(:state AS talaqi.registration_state), :seat_held,
+                    :waitlist_sequence, :cash_expires_at, :confirmed_at
+                )
+                RETURNING {_REGISTRATION_FIELDS}
+                """  # noqa: S608 -- fixed fields; bound values
+            ),
+            {
+                "id": registration_id,
+                "event_id": event_id,
+                "user_id": user_id,
+                "method": method,
+                "state": state,
+                "seat_held": seat_held,
+                "waitlist_sequence": waitlist_sequence,
+                "cash_expires_at": cash_expires_at,
+                "confirmed_at": confirmed_at,
+            },
+        )
+        row = result.mappings().one()
+        await self._append_creation_records(
+            registration_id=registration_id,
+            command_id=command_id,
+            command_hash=command_hash,
+            event_id=event_id,
+            user_id=user_id,
+            state=state,
+            request_id=request_id,
+            occurred_at=occurred_at,
+        )
+        if state == "cash_pending" and cash_expires_at is not None:
+            await self._enqueue_cash_expiry(
+                registration_id=registration_id,
+                event_id=event_id,
+                available_at=cash_expires_at,
+            )
+        return _registration(cast(Mapping[str, object], row))
+
+    async def _enqueue_cash_expiry(
+        self,
+        *,
+        registration_id: UUID,
+        event_id: UUID,
+        available_at: datetime,
+    ) -> None:
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', :registration_id, 'registration.cash_expiry_due',
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid)
+                    ),
+                    :deduplication_key, :available_at
+                )
+                ON CONFLICT (deduplication_key) DO NOTHING
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": registration_id,
+                "event_id": event_id,
+                "deduplication_key": f"registration.cash_expiry:{registration_id}",
+                "available_at": available_at,
+            },
+        )
+
+    async def _append_creation_records(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        state: RegistrationState,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> None:
+        reason_code = "member_waitlisted" if state == "waitlisted" else "member_registered"
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.registration_transitions (
+                    id, command_id, command_hash, registration_id,
+                    actor_user_id, actor_kind, previous_state, new_state,
+                    reason_code, request_id, occurred_at
+                ) VALUES (
+                    :id, :command_id, :command_hash, :registration_id,
+                    :user_id, 'member', NULL,
+                    CAST(:state AS talaqi.registration_state),
+                    :reason_code, :request_id, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "command_id": command_id,
+                "command_hash": command_hash,
+                "registration_id": registration_id,
+                "user_id": user_id,
+                "state": state,
+                "reason_code": reason_code,
+                "request_id": request_id,
+                "occurred_at": occurred_at,
+            },
+        )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', CAST(:registration_id AS uuid), :event_type,
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'user_id', CAST(:user_id AS uuid),
+                        'state', CAST(:state AS text)
+                    ),
+                    :deduplication_key, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": registration_id,
+                "event_id": event_id,
+                "user_id": user_id,
+                "state": state,
+                "event_type": f"registration.{state}",
+                "deduplication_key": f"registration.created:{registration_id}",
+                "occurred_at": occurred_at,
+            },
+        )
 
     async def get_context(
         self, registration_id: UUID, *, for_update: bool
@@ -216,6 +619,45 @@ class RegistrationRepository:
             .mappings()
             .one()
         )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type,
+                    payload, deduplication_key, available_at
+                ) VALUES (
+                    :id, 'registration', CAST(:registration_id AS uuid), :event_type,
+                    jsonb_build_object(
+                        'registration_id', CAST(:registration_id AS uuid),
+                        'event_id', CAST(:event_id AS uuid),
+                        'user_id', CAST(:user_id AS uuid),
+                        'previous_state', CAST(:previous_state AS text),
+                        'state', CAST(:state AS text),
+                        'reason_code', CAST(:reason_code AS text)
+                    ),
+                    :deduplication_key, :occurred_at
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "registration_id": current.id,
+                "event_id": current.event_id,
+                "user_id": current.user_id,
+                "previous_state": current.state,
+                "state": mutation.state,
+                "reason_code": command.reason_code,
+                "event_type": f"registration.{mutation.state}",
+                "deduplication_key": f"registration.transition:{command.command_id}",
+                "occurred_at": command.occurred_at,
+            },
+        )
+        if mutation.state == "cash_pending" and mutation.cash_expires_at is not None:
+            await self._enqueue_cash_expiry(
+                registration_id=current.id,
+                event_id=current.event_id,
+                available_at=mutation.cash_expires_at,
+            )
         return TransitionResult(
             registration=_registration(cast(Mapping[str, object], row)),
             transition=_transition(cast(Mapping[str, object], transition_row)),

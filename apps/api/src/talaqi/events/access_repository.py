@@ -54,10 +54,17 @@ def _projection(row: Mapping[str, object]) -> EventAudienceProjection:
         club_name=cast(str | None, row["club_name"]),
         organizer_display_name=cast(str | None, row["organizer_display_name"]),
         is_saved=cast(bool, row["is_saved"]),
+        registration_id=cast(UUID | None, row["registration_id"]),
+        registration_method=cast(
+            Literal["free", "cash_organizer_confirmed"] | None,
+            row["member_registration_method"],
+        ),
         registration_state=cast(
             Literal["confirmed", "cash_pending", "waitlisted", "cancelled", "expired"] | None,
             row["registration_state"],
         ),
+        registration_cash_expires_at=cast(datetime | None, row["registration_cash_expires_at"]),
+        registration_confirmed_at=cast(datetime | None, row["registration_confirmed_at"]),
     )
 
 
@@ -191,6 +198,33 @@ class EventAccessRepository:
         )
         return cast(UUID, event_id)
 
+    async def authorize_registration_link(
+        self, event_id: UUID, token_hash: bytes, *, now: datetime
+    ) -> bool:
+        invite_id = (
+            await self._session.execute(
+                text(
+                    """
+                    SELECT invite.id
+                    FROM talaqi.event_invite_tokens AS invite
+                    WHERE invite.event_id = :event_id
+                      AND invite.token_hash = CAST(:token_hash AS bytea)
+                      AND invite.revoked_at IS NULL
+                      AND (invite.expires_at IS NULL OR invite.expires_at > :now)
+                    FOR UPDATE OF invite
+                    """
+                ),
+                {"event_id": event_id, "token_hash": token_hash, "now": now},
+            )
+        ).scalar_one_or_none()
+        if invite_id is None:
+            return False
+        await self._session.execute(
+            text("UPDATE talaqi.event_invite_tokens SET last_used_at = :now WHERE id = :invite_id"),
+            {"invite_id": invite_id, "now": now},
+        )
+        return True
+
     async def project_manager_venue(self, event_id: UUID) -> ManagerVenueProjection | None:
         row = (
             (
@@ -240,7 +274,12 @@ class EventAccessRepository:
                                club.slug AS club_slug, club.name AS club_name,
                                coalesce(owner_profile.display_name, club.name)
                                    AS organizer_display_name,
+                               registration.id AS registration_id,
+                               registration.method::text AS member_registration_method,
                                registration.state::text AS registration_state,
+                               registration.cash_expires_at
+                                   AS registration_cash_expires_at,
+                               registration.confirmed_at AS registration_confirmed_at,
                                EXISTS (
                                    SELECT 1 FROM talaqi.saved_events AS saved
                                    WHERE saved.event_id = event.id AND saved.user_id = :caller_id
@@ -351,8 +390,11 @@ class EventAccessRepository:
                         LEFT JOIN talaqi.media_assets AS cover ON cover.id = event.cover_media_id
                             AND cover.status = 'verified'
                         LEFT JOIN LATERAL (
-                            SELECT member_registration.state,
-                                   member_registration.cash_expires_at
+                            SELECT member_registration.id,
+                                   member_registration.method,
+                                   member_registration.state,
+                                   member_registration.cash_expires_at,
+                                   member_registration.confirmed_at
                             FROM talaqi.registrations AS member_registration
                             WHERE member_registration.event_id = event.id
                               AND member_registration.user_id = :caller_id

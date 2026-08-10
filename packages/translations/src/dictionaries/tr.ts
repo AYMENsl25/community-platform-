@@ -331,6 +331,14 @@ export const turkishDictionary = {
   "errors.unavailable": "Hizmet geçici olarak kullanılamıyor. Yeniden deneyin.",
   "errors.csrf_failed": "Güvenli form oturumunuz sona erdi. Yeniden deneyin.",
   "errors.forbidden": "Bu işlemi yapma izniniz yok.",
+  "errors.registration_not_allowed":
+    "Hesab\u0131n\u0131z bu etkinli\u011fe kaydolmaya uygun de\u011fil.",
+  "errors.registration_closed":
+    "Bu etkinlik i\u00e7in kay\u0131t kapanm\u0131\u015ft\u0131r.",
+  "errors.cancellation_closed":
+    "Bu etkinlik i\u00e7in iptal s\u00fcresi doldu.",
+  "errors.cash_confirmation_expired":
+    "Bu nakit rezervasyonunun s\u00fcresi doldu.",
   "errors.admin_mfa_required":
     "Devam etmek için çok faktörlü kimlik doğrulamayı tamamlayın.",
   "errors.http": "İstek başarısız oldu.",
@@ -430,6 +438,30 @@ export const turkishDictionary = {
   "events.attendees.title": "Kat\u0131l\u0131mc\u0131lar",
   "events.attendees.phase4":
     "Kat\u0131l\u0131mc\u0131 y\u00f6netimi 4. A\u015famada gelecek.",
+  "events.attendees.capacity": "Ayrılmış yerler",
+  "events.attendees.confirmed": "Onaylı",
+  "events.attendees.cashPending": "Nakit bekliyor",
+  "events.attendees.waitlisted": "Bekleme listesinde",
+  "events.attendees.search": "Katılımcı ara",
+  "events.attendees.state": "Kayıt durumu",
+  "events.attendees.allStates": "Tüm durumlar",
+  "events.attendees.apply": "Filtreleri uygula",
+  "events.attendees.export": "Özel CSV hazırla",
+  "events.attendees.exportQueued":
+    "Özel CSV hazırlığı sıraya alındı. Güvenli organizatör iş akışıyla teslim edilecektir.",
+  "events.attendees.confirmedNotice":
+    "Nakit kaydı en güncel sunucu durumundan onaylandı.",
+  "events.attendees.empty": "Bu filtrelere uyan katılımcı yok.",
+  "events.attendees.member": "Üye",
+  "events.attendees.method": "Yöntem",
+  "events.attendees.action": "İşlem",
+  "events.attendees.confirmCash": "Nakit ödemeyi onayla",
+  "events.attendees.loadMore": "Daha fazla katılımcı yükle",
+  "events.attendees.state.confirmed": "Onaylı",
+  "events.attendees.state.cash_pending": "Nakit bekliyor",
+  "events.attendees.state.waitlisted": "Bekleme listesinde",
+  "events.attendees.state.cancelled": "İptal edildi",
+  "events.attendees.state.expired": "Süresi doldu",
   "events.form.regionPolicy": "Sunucu b\u00f6lge politikas\u0131",
   "events.media.pending": "G\u00f6rsel se\u00e7ilmedi.",
   "events.media.uploading":
@@ -439,4 +471,25 @@ export const turkishDictionary = {
     "G\u00f6rsel do\u011frulamas\u0131 ba\u015far\u0131s\u0131z.",
   "events.media.invalid": "JPEG, PNG veya WebP g\u00f6rseli se\u00e7in.",
   "events.form.rangeSeparator": "ile",
+  "registration.title": "Kaydınız",
+  "registration.register": "Kayıt ol",
+  "registration.joinWaitlist": "Bekleme listesine katıl",
+  "registration.cancel": "Kaydı iptal et",
+  "registration.confirmed": "Kayıt onaylandı",
+  "registration.confirmedBody":
+    "Yeriniz onaylandı. Bu sayfayı etkinlik biletiniz olarak saklayın.",
+  "registration.cashPending": "Yer ayrıldı — nakit onayı bekleniyor",
+  "registration.cashInstructions":
+    "Bu rezervasyon sona ermeden önce organizatörün verdiği talimatlarla ödeme yapın.",
+  "registration.waitlisted": "Bekleme listesindesiniz",
+  "registration.waitlistedBody": "Bir yer açılırsa kaydınızı güncelleyeceğiz.",
+  "registration.expires": "Rezervasyonun bitişi",
+  "registration.remaining": "Kalan süre",
+  "registration.expired": "Rezervasyon sona erdi",
+  "registration.refreshFailed":
+    "İsteğiniz alındı ancak güncel kayıt durumu yüklenemedi. Tekrar denemeden önce sayfayı yenileyin.",
+  "registration.authRequired": "Bu etkinliğe kaydolmak için giriş yapın.",
+  "registration.tryAgain": "Lütfen tekrar deneyin.",
+  "registration.venue": "Onaylanmış mekan",
+  "registration.processing": "Kayıt güncelleniyor…",
 } satisfies Dictionary;

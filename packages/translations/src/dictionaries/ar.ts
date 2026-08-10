@@ -328,6 +328,14 @@ export const arabicDictionary: Dictionary = {
   "errors.unavailable": "الخدمة غير متاحة مؤقتًا. حاول مرة أخرى.",
   "errors.csrf_failed": "انتهت صلاحية جلسة النموذج الآمنة. حاول مرة أخرى.",
   "errors.forbidden": "ليست لديك صلاحية لتنفيذ ذلك.",
+  "errors.registration_not_allowed":
+    "\u062d\u0633\u0627\u0628\u0643 \u063a\u064a\u0631 \u0645\u0624\u0647\u0644 \u0644\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
+  "errors.registration_closed":
+    "\u0623\u064f\u063a\u0644\u0642 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
+  "errors.cancellation_closed":
+    "\u0627\u0646\u062a\u0647\u062a \u0645\u0647\u0644\u0629 \u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0641\u0639\u0627\u0644\u064a\u0629.",
+  "errors.cash_confirmation_expired":
+    "\u0627\u0646\u062a\u0647\u062a \u0635\u0644\u0627\u062d\u064a\u0629 \u0647\u0630\u0627 \u0627\u0644\u062d\u062c\u0632 \u0627\u0644\u0646\u0642\u062f\u064a.",
   "errors.admin_mfa_required": "أكمل المصادقة متعددة العوامل للمتابعة.",
   "errors.http": "فشل الطلب.",
   "errors.idempotency_conflict": "سبق استخدام مفتاح الطلب هذا لبيانات مختلفة.",
@@ -446,6 +454,30 @@ export const arabicDictionary: Dictionary = {
   "events.attendees.title": "\u0627\u0644\u062d\u0636\u0648\u0631",
   "events.attendees.phase4":
     "\u0633\u062a\u062a\u0648\u0641\u0631 \u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u062d\u0636\u0648\u0631 \u0641\u064a \u0627\u0644\u0645\u0631\u062d\u0644\u0629 \u0627\u0644\u0631\u0627\u0628\u0639\u0629.",
+  "events.attendees.capacity": "الأماكن المحجوزة",
+  "events.attendees.confirmed": "مؤكد",
+  "events.attendees.cashPending": "النقد قيد الانتظار",
+  "events.attendees.waitlisted": "قائمة الانتظار",
+  "events.attendees.search": "البحث عن الحضور",
+  "events.attendees.state": "حالة التسجيل",
+  "events.attendees.allStates": "كل الحالات",
+  "events.attendees.apply": "تطبيق المرشحات",
+  "events.attendees.export": "إعداد CSV خاص",
+  "events.attendees.exportQueued":
+    "تمت إضافة إعداد CSV الخاص إلى قائمة الانتظار. سيتم تسليمه عبر مسار المنظم الآمن.",
+  "events.attendees.confirmedNotice":
+    "تم تأكيد التسجيل النقدي من أحدث حالة للخادم.",
+  "events.attendees.empty": "لا يوجد حضور يطابق هذه المرشحات.",
+  "events.attendees.member": "العضو",
+  "events.attendees.method": "الطريقة",
+  "events.attendees.action": "الإجراء",
+  "events.attendees.confirmCash": "تأكيد الدفع النقدي",
+  "events.attendees.loadMore": "تحميل المزيد من الحضور",
+  "events.attendees.state.confirmed": "مؤكد",
+  "events.attendees.state.cash_pending": "النقد قيد الانتظار",
+  "events.attendees.state.waitlisted": "قائمة الانتظار",
+  "events.attendees.state.cancelled": "ملغى",
+  "events.attendees.state.expired": "منتهي الصلاحية",
   "events.form.regionPolicy":
     "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0645\u0646\u0637\u0642\u0629 \u0645\u0646 \u0627\u0644\u062e\u0627\u062f\u0645",
   "events.media.pending":
@@ -459,4 +491,25 @@ export const arabicDictionary: Dictionary = {
   "events.media.invalid":
     "\u0627\u062e\u062a\u0631 \u0635\u0648\u0631\u0629 JPEG \u0623\u0648 PNG \u0623\u0648 WebP.",
   "events.form.rangeSeparator": "\u0625\u0644\u0649",
+  "registration.title": "تسجيلك",
+  "registration.register": "التسجيل",
+  "registration.joinWaitlist": "الانضمام إلى قائمة الانتظار",
+  "registration.cancel": "إلغاء التسجيل",
+  "registration.confirmed": "تم تأكيد التسجيل",
+  "registration.confirmedBody":
+    "تم تأكيد مكانك. احتفظ بهذه الصفحة كتذكرة للفعالية.",
+  "registration.cashPending": "المكان محجوز — بانتظار تأكيد الدفع النقدي",
+  "registration.cashInstructions":
+    "ادفع للمنظم وفق تعليماته قبل انتهاء صلاحية هذا الحجز.",
+  "registration.waitlisted": "أنت على قائمة الانتظار",
+  "registration.waitlistedBody": "سنحدّث تسجيلك إذا توفر مكان.",
+  "registration.expires": "ينتهي الحجز",
+  "registration.remaining": "الوقت المتبقي",
+  "registration.expired": "انتهت صلاحية الحجز",
+  "registration.refreshFailed":
+    "تم استلام طلبك، لكن تعذر تحميل حالة التسجيل الحالية. حدّث الصفحة قبل المحاولة مجددًا.",
+  "registration.authRequired": "سجّل الدخول للتسجيل في هذه الفعالية.",
+  "registration.tryAgain": "يرجى المحاولة مرة أخرى.",
+  "registration.venue": "المكان المؤكد",
+  "registration.processing": "جارٍ تحديث التسجيل…",
 };

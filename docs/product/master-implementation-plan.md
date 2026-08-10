@@ -283,46 +283,46 @@
 
 **Produces:** `POST /events/{event_id}/registrations`.
 
-- [ ] Lock the event capacity row, re-check eligibility/availability inside the transaction, create `confirmed` for free or `cash_pending` for cash when a seat exists, otherwise allocate deterministic FIFO waitlist sequence.
-- [ ] Return existing active registration for a safe identical retry; reject conflicting idempotency reuse; enqueue committed notifications via outbox.
-- [ ] Gate: 50-client last-seat contention, duplicate/retry, suspended/private eligibility, deadline, and capacity invariant tests; commit `feat: add atomic event registration`.
+- [x] Lock the event capacity row, re-check eligibility/availability inside the transaction, create `confirmed` for free or `cash_pending` for cash when a seat exists, otherwise allocate deterministic FIFO waitlist sequence.
+- [x] Return existing active registration for a safe identical retry; reject conflicting idempotency reuse; enqueue committed notifications via outbox.
+- [x] Gate: 50-client last-seat contention, duplicate/retry, suspended/private eligibility, deadline, and capacity invariant tests; commit `feat: add atomic event registration`.
 
 ### Task 4.3: Cancellation and FIFO promotion
 
 **Produces:** `DELETE /events/{event_id}/registrations/me` and `PromotionService.promote_next()`.
 
-- [ ] Enforce event cutoff, release the seat, and promote exactly one oldest eligible waitlisted member in the same transaction; skip cancelled/ineligible entries deterministically.
-- [ ] For free events promote to confirmed; for cash events promote to cash-pending with a newly bounded expiry; emit transition/audit/outbox records.
-- [ ] Gate: simultaneous cancellations/promotions, cutoff boundary, worker retry, and no-overcapacity tests; commit `feat: add cancellation and FIFO promotion`.
+- [x] Enforce event cutoff, release the seat, and promote exactly one oldest eligible waitlisted member in the same transaction; skip cancelled/ineligible entries deterministically.
+- [x] For free events promote to confirmed; for cash events promote to cash-pending with a newly bounded expiry; emit transition/audit/outbox records.
+- [x] Gate: simultaneous cancellations/promotions, cutoff boundary, worker retry, and no-overcapacity tests; commit `feat: add cancellation and FIFO promotion`.
 
 ### Task 4.4: Organizer cash confirmation and attendee API
 
 **Produces:** confirm-cash endpoint plus manager-only attendee cursor list/filter/export request.
 
-- [ ] Confirm only unexpired cash-pending records for a managed event; make identical retries safe and reject cross-event/cross-club access.
-- [ ] Limit attendee fields to operational necessities; filter by state/search and audit CSV export requests.
-- [ ] Gate: cash expiry race, duplicate confirmation, authorization/privacy, pagination, and export tests; commit `feat: add cash confirmation and attendee operations`.
+- [x] Confirm only unexpired cash-pending records for a managed event; make identical retries safe and reject cross-event/cross-club access.
+- [x] Limit attendee fields to operational necessities; filter by state/search and audit CSV export requests.
+- [x] Gate: cash expiry race, duplicate confirmation, authorization/privacy, pagination, and export tests; commit `feat: add cash confirmation and attendee operations`.
 
 ### Task 4.5: Expiry worker and recovery
 
 **Produces:** lease-based cash-expiry job with bounded retries and dead-letter visibility.
 
-- [ ] Claim due reservations using PostgreSQL `FOR UPDATE SKIP LOCKED`, transition to expired, release capacity, promote waitlist, and emit notifications in one recoverable transaction.
-- [ ] Test multiple workers, crash after claim, restart recovery, clock boundaries, and idempotent replay.
-- [ ] Gate: worker integration/concurrency tests; commit `feat: expire cash reservations reliably`.
+- [x] Claim due reservations using PostgreSQL `FOR UPDATE SKIP LOCKED`, transition to expired, release capacity, promote waitlist, and emit notifications in one recoverable transaction.
+- [x] Test multiple workers, crash after claim, restart recovery, clock boundaries, and idempotent replay.
+- [x] Gate: worker integration/concurrency tests; commit `feat: expire cash reservations reliably`.
 
 ### Task 4.6: Member registration and ticket experience
 
-- [ ] Add register/cancel/waitlist controls, free confirmation, cash instructions/countdown, ticket/reservation views, capacity states, venue disclosure, and actionable localized errors.
-- [ ] Revalidate server state after mutations; never infer confirmation from optimistic UI.
-- [ ] Gate: component tests and Playwright free, cash, full/waitlist, cancel/promote, and unauthorized journeys in mobile/RTL modes.
-- [ ] Commit `feat: deliver member registration experience`.
+- [x] Add register/cancel/waitlist controls, free confirmation, cash instructions/countdown, ticket/reservation views, capacity states, venue disclosure, and actionable localized errors.
+- [x] Revalidate server state after mutations; never infer confirmation from optimistic UI.
+- [x] Gate: component tests and Playwright free, cash, full/waitlist, cancel/promote, and unauthorized journeys in mobile/RTL modes.
+- [x] Commit `feat: deliver member registration experience`.
 
 ### Task 4.7: Organizer attendee experience
 
-- [ ] Build filterable/paginated attendee table, cash-confirm confirmation, waitlist/capacity summary, privacy-safe CSV generation status, and narrow responsive layout.
-- [ ] Gate: owner/admin/independent-owner positive paths, unrelated organizer negative path, keyboard/RTL, and build.
-- [ ] Commit `feat: deliver attendee and cash operations UI`.
+- [x] Build filterable/paginated attendee table, cash-confirm confirmation, waitlist/capacity summary, privacy-safe CSV generation status, and narrow responsive layout.
+- [x] Gate: owner/admin/independent-owner positive paths, unrelated organizer negative path, keyboard/RTL, and build.
+- [x] Commit `feat: deliver attendee and cash operations UI`.
 
 **Phase 4 exit:** Last-seat and waitlist invariants hold under concurrency; workers recover after interruption; members and managers can complete all free/cash journeys without direct database intervention.
 

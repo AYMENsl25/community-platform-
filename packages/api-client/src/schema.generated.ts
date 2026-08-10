@@ -583,6 +583,57 @@ export interface paths {
         patch: operations["updateEvent"];
         trace?: never;
     };
+    "/api/v1/events/{event_id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Attendees */
+        get: operations["listEventAttendees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/attendees/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Event Attendee Export */
+        post: operations["requestEventAttendeeExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/attendees/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event Attendee Summary */
+        get: operations["getEventAttendeeSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/cancel": {
         parameters: {
             query?: never;
@@ -681,6 +732,57 @@ export interface paths {
         /** Rotate Private Link */
         post: operations["rotateEventPrivateLink"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/registrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Registration */
+        post: operations["createEventRegistration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/registrations/{registration_id}/confirm-cash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Cash Registration */
+        post: operations["confirmCashRegistration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/registrations/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancel My Registration */
+        delete: operations["cancelMyEventRegistration"];
         options?: never;
         head?: never;
         patch?: never;
@@ -948,6 +1050,86 @@ export interface components {
              * @constant
              */
             status: "actioned";
+        };
+        /** AttendeeExportRequest */
+        AttendeeExportRequest: {
+            /** Search */
+            search?: string | null;
+            /** State */
+            state?: ("confirmed" | "cash_pending" | "waitlisted" | "cancelled" | "expired") | null;
+        };
+        /** AttendeeExportResponse */
+        AttendeeExportResponse: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "queued";
+        };
+        /** AttendeePageResponse */
+        AttendeePageResponse: {
+            /** Items */
+            items: components["schemas"]["AttendeeResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** AttendeeResponse */
+        AttendeeResponse: {
+            /** Cash Expires At */
+            cash_expires_at: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "free" | "cash_organizer_confirmed";
+            /**
+             * Registration Id
+             * Format: uuid
+             */
+            registration_id: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "confirmed" | "cash_pending" | "waitlisted" | "cancelled" | "expired";
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Username */
+            username: string;
+            /** Waitlist Sequence */
+            waitlist_sequence: number | null;
+        };
+        /** AttendeeSummaryResponse */
+        AttendeeSummaryResponse: {
+            /** Cancelled */
+            cancelled: number;
+            /** Cash Pending */
+            cash_pending: number;
+            /** Confirmed */
+            confirmed: number;
+            /** Expired */
+            expired: number;
+            /** Held */
+            held: number;
+            /** Waitlisted */
+            waitlisted: number;
         };
         /** AuditPageResponse */
         AuditPageResponse: {
@@ -1437,6 +1619,14 @@ export interface components {
             price_type: "free" | "cash";
             /** Public Meeting Area */
             public_meeting_area: string | null;
+            /** Registration Cash Expires At */
+            registration_cash_expires_at: string | null;
+            /** Registration Confirmed At */
+            registration_confirmed_at: string | null;
+            /** Registration Id */
+            registration_id: string | null;
+            /** Registration Method */
+            registration_method: ("free" | "cash_organizer_confirmed") | null;
             /** Registration State */
             registration_state: string | null;
             /**
@@ -2172,6 +2362,11 @@ export interface components {
             /** Revision */
             revision: number;
         };
+        /** RegistrationCreateRequest */
+        RegistrationCreateRequest: {
+            /** Private Link */
+            private_link?: string | null;
+        };
         /** RegistrationRequest */
         RegistrationRequest: {
             /**
@@ -2187,15 +2382,6 @@ export interface components {
             privacy_version: string;
             /** Terms Version */
             terms_version: string;
-        };
-        /** RegistrationResponse */
-        RegistrationResponse: {
-            /**
-             * Accepted
-             * @default true
-             * @constant
-             */
-            accepted: true;
         };
         /** RevokedResponse */
         RevokedResponse: {
@@ -2276,6 +2462,67 @@ export interface components {
         SessionsResponse: {
             /** Sessions */
             sessions: components["schemas"]["SessionResponse"][];
+        };
+        /** RegistrationResponse */
+        talaqi__identity__schemas__RegistrationResponse: {
+            /**
+             * Accepted
+             * @default true
+             * @constant
+             */
+            accepted: true;
+        };
+        /** RegistrationResponse */
+        talaqi__registrations__schemas__RegistrationResponse: {
+            /** Cancellation Reason */
+            cancellation_reason: string | null;
+            /** Cancelled At */
+            cancelled_at: string | null;
+            /** Cash Expires At */
+            cash_expires_at: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Event Id
+             * Format: uuid
+             */
+            event_id: string;
+            /** Expired At */
+            expired_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "free" | "cash_organizer_confirmed";
+            /** Seat Held */
+            seat_held: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "confirmed" | "cash_pending" | "waitlisted" | "cancelled" | "expired";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Waitlist Sequence */
+            waitlist_sequence: number | null;
         };
         /** TargetPageResponse */
         TargetPageResponse: {
@@ -2865,7 +3112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegistrationResponse"];
+                    "application/json": components["schemas"]["talaqi__identity__schemas__RegistrationResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];
@@ -4330,6 +4577,190 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    listEventAttendees: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+                search?: string | null;
+                state?: ("confirmed" | "cash_pending" | "waitlisted" | "cancelled" | "expired") | null;
+            };
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendeePageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    requestEventAttendeeExport: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a registration mutation. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttendeeExportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendeeExportResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration deadline or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getEventAttendeeSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendeeSummaryResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     cancelEvent: {
         parameters: {
             query?: never;
@@ -4763,6 +5194,223 @@ export interface operations {
                 };
             };
             /** @description Private-link state conflicts with the request. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    createEventRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization?: string | null;
+                /** @description Stable key for retrying a registration mutation. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RegistrationCreateRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Existing active registration. */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration deadline or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    confirmCashRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a registration mutation. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+                registration_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration deadline or idempotency conflict. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    cancelMyEventRegistration: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a registration mutation. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration eligibility or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Event or private access is unavailable. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Registration deadline or idempotency conflict. */
             409: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];

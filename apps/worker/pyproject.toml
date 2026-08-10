@@ -2,7 +2,7 @@
 name = "talaqi-worker"
 version = "0.0.0"
 requires-python = ">=3.13,<3.14"
-dependencies = []
+dependencies = ["talaqi-api"]
 
 [build-system]
 requires = ["hatchling"]

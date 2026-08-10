@@ -16,25 +16,13 @@ from talaqi.db.engine import build_async_engine
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.db.safety import validate_test_database_url
 
+from apps.api.tests.database_url import resolve_test_database_url
+
 ROOT = Path(__file__).resolve().parents[4]
 
 
 def _load_safe_test_database_url() -> SecretStr:
-    environment_value = os.environ.get("TEST_DATABASE_URL")
-    if environment_value:
-        secret = SecretStr(environment_value)
-        validate_test_database_url(secret)
-        return secret
-    entries = [
-        line
-        for line in (ROOT / ".env.test.local").read_text(encoding="utf-8").splitlines()
-        if line.strip().startswith("TEST_DATABASE_URL=")
-    ]
-    if len(entries) != 1:
-        raise RuntimeError("expected exactly one ignored test database setting")
-    secret = SecretStr(entries[0].split("=", maxsplit=1)[1].strip().strip("\"'"))
-    validate_test_database_url(secret)
-    return secret
+    return resolve_test_database_url(ROOT)
 
 
 @pytest.fixture(scope="session")

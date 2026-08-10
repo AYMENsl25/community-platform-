@@ -933,6 +933,12 @@ requires-dist = [
 name = "talaqi-worker"
 version = "0.0.0"
 source = { editable = "apps/worker" }
+dependencies = [
+    { name = "talaqi-api" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "talaqi-api", editable = "apps/api" }]
 
 [[package]]
 name = "talaqi-workspace"

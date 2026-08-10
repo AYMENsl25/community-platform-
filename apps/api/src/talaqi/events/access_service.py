@@ -7,7 +7,12 @@ from uuid import UUID
 
 from talaqi.audit import AuditService
 from talaqi.db.identifiers import generate_uuid7
-from talaqi.events.access_models import EventAudienceProjection, ManagerVenueProjection
+from talaqi.events.access_models import (
+    EventAudienceProjection,
+    EventCancellationTerms,
+    EventRegistrationTerms,
+    ManagerVenueProjection,
+)
 from talaqi.events.access_repository import EventAccessRepository
 from talaqi.events.access_tokens import PrivateLinkTokenCodec
 from talaqi.events.models import Event
@@ -26,6 +31,8 @@ class ClubManagerAccess(Protocol):
         *,
         for_update: bool = False,
     ) -> None: ...
+
+    async def require_registration_available(self, club_id: UUID, *, for_update: bool) -> None: ...
 
 
 def _not_found() -> ApiError:
@@ -184,6 +191,72 @@ class EventAccessService:
         if projection is None:
             raise _not_found()
         return projection
+
+    async def require_manager(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Event:
+        event = await self._events.get(event_id, for_update=for_update)
+        if event is None:
+            raise _not_found()
+        await self._authorize_manager(principal, event, for_update=for_update)
+        return event
+
+    async def registration_terms(
+        self,
+        event_id: UUID,
+        *,
+        private_link_hash: bytes | None,
+        now: datetime,
+    ) -> EventRegistrationTerms:
+        event = await self._events.get(event_id, for_update=True)
+        if event is None or event.status != "published" or event.suspended_at is not None:
+            raise _not_found()
+        if event.ownership_type == "club":
+            if event.club_id is None:
+                raise _not_found()
+            await self._clubs.require_registration_available(event.club_id, for_update=True)
+        if event.visibility == "private_link" and (
+            private_link_hash is None
+            or not await self._repository.authorize_registration_link(
+                event.id, private_link_hash, now=now
+            )
+        ):
+            raise _not_found()
+        if event.start_at is None or event.registration_method is None:
+            raise _not_found()
+        return EventRegistrationTerms(
+            id=event.id,
+            start_at=event.start_at,
+            capacity=event.capacity,
+            method=event.registration_method,
+            cash_expiry_minutes=event.cash_expiry_minutes,
+        )
+
+    async def cancellation_terms(
+        self,
+        event_id: UUID,
+    ) -> EventCancellationTerms:
+        event = await self._events.get(event_id, for_update=True)
+        if (
+            event is None
+            or event.status != "published"
+            or event.start_at is None
+            or event.registration_method is None
+            or event.cancellation_cutoff_minutes is None
+        ):
+            raise _not_found()
+        return EventCancellationTerms(
+            id=event.id,
+            start_at=event.start_at,
+            capacity=event.capacity,
+            method=event.registration_method,
+            cash_expiry_minutes=event.cash_expiry_minutes,
+            cancellation_cutoff_minutes=event.cancellation_cutoff_minutes,
+        )
 
     async def _authorize_manager(
         self,

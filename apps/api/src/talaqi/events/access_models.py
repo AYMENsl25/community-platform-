@@ -40,7 +40,11 @@ class EventAudienceProjection:
     club_name: str | None
     organizer_display_name: str | None
     is_saved: bool
+    registration_id: UUID | None
+    registration_method: Literal["free", "cash_organizer_confirmed"] | None
     registration_state: RegistrationState | None
+    registration_cash_expires_at: datetime | None
+    registration_confirmed_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +52,25 @@ class ManagerVenueProjection:
     exact_address: str | None
     latitude: float | None
     longitude: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class EventRegistrationTerms:
+    id: UUID
+    start_at: datetime
+    capacity: int | None
+    method: Literal["free", "cash_organizer_confirmed"]
+    cash_expiry_minutes: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class EventCancellationTerms:
+    id: UUID
+    start_at: datetime
+    capacity: int | None
+    method: Literal["free", "cash_organizer_confirmed"]
+    cash_expiry_minutes: int | None
+    cancellation_cutoff_minutes: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +83,8 @@ class PrivateLinkRecord:
 
 __all__ = [
     "EventAudienceProjection",
+    "EventCancellationTerms",
+    "EventRegistrationTerms",
     "ManagerVenueProjection",
     "PrivateLinkRecord",
     "RegistrationState",

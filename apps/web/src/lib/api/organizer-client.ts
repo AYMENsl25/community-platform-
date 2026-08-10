@@ -14,6 +14,14 @@ export type MediaUploadCreate =
   components["schemas"]["MediaUploadCreateRequest"];
 export type MediaUpload = components["schemas"]["MediaUploadResponse"];
 export type MediaAsset = components["schemas"]["MediaAssetResponse"];
+export type Attendee = components["schemas"]["AttendeeResponse"];
+export type AttendeePage = components["schemas"]["AttendeePageResponse"];
+export type AttendeeSummary = components["schemas"]["AttendeeSummaryResponse"];
+export type AttendeeExport = components["schemas"]["AttendeeExportResponse"];
+export type Registration =
+  components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
+export type RegistrationState =
+  components["schemas"]["AttendeeExportRequest"]["state"];
 
 export type OrganizerResult<T> =
   | { ok: true; data: T }
@@ -71,6 +79,21 @@ export interface OrganizerClient {
     eventId: string,
     revision: number,
   ): Promise<OrganizerResult<void>>;
+  listAttendees(
+    eventId: string,
+    filters?: { state?: RegistrationState; search?: string; cursor?: string },
+  ): Promise<OrganizerResult<AttendeePage>>;
+  getAttendeeSummary(
+    eventId: string,
+  ): Promise<OrganizerResult<AttendeeSummary>>;
+  confirmCash(
+    eventId: string,
+    registrationId: string,
+  ): Promise<OrganizerResult<Registration>>;
+  requestAttendeeExport(
+    eventId: string,
+    filters: { state?: RegistrationState; search?: string },
+  ): Promise<OrganizerResult<AttendeeExport>>;
   getCapabilities(): Promise<OrganizerResult<Capabilities>>;
   getRegionPolicy(countryCode: string): Promise<OrganizerResult<RegionPolicy>>;
   listManagedClubs(): Promise<OrganizerResult<ManagedClubPage>>;
@@ -228,6 +251,29 @@ export function createOrganizerClient(
       request(eventPath(eventId), {
         method: "DELETE",
         body: { revision },
+      }),
+    listAttendees: (eventId, filters = {}) => {
+      const query = new URLSearchParams({ limit: "20" });
+      if (filters.state) query.set("state", filters.state);
+      if (filters.search) query.set("search", filters.search);
+      if (filters.cursor) query.set("cursor", filters.cursor);
+      return request(`${eventPath(eventId)}/attendees?${query}`);
+    },
+    getAttendeeSummary: (eventId) =>
+      request(`${eventPath(eventId)}/attendees/summary`),
+    confirmCash: (eventId, registrationId) =>
+      request(
+        `${eventPath(eventId)}/registrations/${encodeURIComponent(registrationId)}/confirm-cash`,
+        { method: "POST", idempotencyKey: globalThis.crypto.randomUUID() },
+      ),
+    requestAttendeeExport: (eventId, filters) =>
+      request(`${eventPath(eventId)}/attendees/export`, {
+        method: "POST",
+        body: {
+          state: filters.state ?? null,
+          search: filters.search || null,
+        },
+        idempotencyKey: globalThis.crypto.randomUUID(),
       }),
     getCapabilities: () => request("/api/v1/profiles/capabilities"),
     getRegionPolicy: (countryCode) =>

@@ -6,29 +6,18 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
-from alembic import command
-from alembic.config import Config
 from pydantic import SecretStr
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from talaqi.db.engine import build_async_engine
-from talaqi.db.safety import validate_test_database_url
 from talaqi.discovery.fixtures import seed_discovery_fixtures
+
+from apps.api.tests.database_url import reset_test_database_schema, resolve_test_database_url
 
 ROOT = Path(__file__).resolve().parents[4]
 
 
 def _url() -> SecretStr:
-    value = os.environ.get("TEST_DATABASE_URL")
-    if value is None:
-        entry = next(
-            line
-            for line in (ROOT / ".env.test.local").read_text(encoding="utf-8").splitlines()
-            if line.startswith("TEST_DATABASE_URL=")
-        )
-        value = entry.split("=", 1)[1].strip().strip("\"'")
-    secret = SecretStr(value)
-    validate_test_database_url(secret)
-    return secret
+    return resolve_test_database_url(ROOT)
 
 
 @pytest.fixture(scope="session")
@@ -36,7 +25,7 @@ def discovery_database_url() -> Iterator[SecretStr]:
     secret = _url()
     previous = os.environ.get("TEST_DATABASE_URL")
     os.environ["TEST_DATABASE_URL"] = secret.get_secret_value()
-    command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
+    reset_test_database_schema(secret, ROOT)
     try:
         yield secret
     finally:
@@ -44,6 +33,21 @@ def discovery_database_url() -> Iterator[SecretStr]:
             os.environ.pop("TEST_DATABASE_URL", None)
         else:
             os.environ["TEST_DATABASE_URL"] = previous
+
+
+@pytest.fixture
+def isolated_discovery_database(discovery_database_url: SecretStr) -> Iterator[None]:
+    try:
+        yield
+    finally:
+        reset_test_database_schema(discovery_database_url, ROOT)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    discovery_tests = Path(__file__).parent
+    for item in items:
+        if item.path.is_relative_to(discovery_tests):
+            item.add_marker(pytest.mark.usefixtures("isolated_discovery_database"))
 
 
 @pytest_asyncio.fixture

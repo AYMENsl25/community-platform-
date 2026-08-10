@@ -4,15 +4,24 @@ import hashlib
 import json
 import re
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Final, Protocol
 from uuid import UUID
 
+from talaqi.audit import AuditService
 from talaqi.audit.models import ActorKind
 from talaqi.db.identifiers import generate_uuid7, validate_uuid7
+from talaqi.events.access_models import EventCancellationTerms, EventRegistrationTerms
+from talaqi.identity.models import AuthPrincipal
+from talaqi.platform import ApiError
+from talaqi.profiles.schemas import Capabilities
 from talaqi.registrations.models import (
+    Attendee,
+    AttendeeSummary,
     Registration,
     RegistrationContext,
+    RegistrationCreationResult,
+    RegistrationMethod,
     RegistrationMutation,
     RegistrationState,
     RegistrationTransition,
@@ -57,6 +66,105 @@ class RegistrationRepositoryProtocol(Protocol):
         command_hash: bytes,
         mutation: RegistrationMutation,
     ) -> TransitionResult: ...
+
+
+class RegistrationCreationRepositoryProtocol(Protocol):
+    async def get_active(self, event_id: UUID, user_id: UUID) -> Registration | None: ...
+
+    async def held_seat_count(self, event_id: UUID) -> int: ...
+
+    async def next_waitlist_sequence(self, event_id: UUID) -> int: ...
+
+    async def create_registration(
+        self,
+        *,
+        registration_id: UUID,
+        command_id: UUID,
+        command_hash: bytes,
+        event_id: UUID,
+        user_id: UUID,
+        method: RegistrationMethod,
+        state: RegistrationState,
+        seat_held: bool,
+        waitlist_sequence: int | None,
+        cash_expires_at: datetime | None,
+        confirmed_at: datetime | None,
+        request_id: UUID,
+        occurred_at: datetime,
+    ) -> Registration: ...
+
+
+class RegistrationEligibilityProtocol(Protocol):
+    async def evaluate(self, principal: AuthPrincipal) -> Capabilities: ...
+
+
+class RegistrationEventAccessProtocol(Protocol):
+    async def registration_terms(
+        self,
+        event_id: UUID,
+        *,
+        private_link_hash: bytes | None,
+        now: datetime,
+    ) -> EventRegistrationTerms: ...
+
+    async def cancellation_terms(self, event_id: UUID) -> EventCancellationTerms: ...
+
+
+class RegistrationCancellationRepositoryProtocol(Protocol):
+    async def get_active(
+        self, event_id: UUID, user_id: UUID, *, for_update: bool = False
+    ) -> Registration | None: ...
+
+    async def oldest_waitlisted(self, event_id: UUID) -> Registration | None: ...
+
+    async def held_seat_count(self, event_id: UUID) -> int: ...
+
+
+class PromotionEligibilityProtocol(Protocol):
+    async def evaluate_user(self, user_id: UUID) -> Capabilities | None: ...
+
+
+class RegistrationManagerAccessProtocol(Protocol):
+    async def require_manager(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        for_update: bool,
+    ) -> object: ...
+
+
+class AttendeeRepositoryProtocol(Protocol):
+    async def get_for_event(
+        self,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        for_update: bool,
+    ) -> Registration | None: ...
+
+    async def list_attendees(
+        self,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]: ...
+
+    async def attendee_summary(self, event_id: UUID) -> AttendeeSummary: ...
+
+    async def enqueue_attendee_export(
+        self,
+        event_id: UUID,
+        request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        requested_at: datetime,
+    ) -> None: ...
 
 
 def is_transition_allowed(current: RegistrationState, target: RegistrationState) -> bool:
@@ -174,6 +282,104 @@ def _mutation(current: Registration, command: TransitionCommand) -> Registration
     raise RegistrationTransitionError("invalid_registration_transition")
 
 
+class RegistrationCreationService:
+    def __init__(
+        self,
+        repository: RegistrationCreationRepositoryProtocol,
+        events: RegistrationEventAccessProtocol,
+        eligibility: RegistrationEligibilityProtocol,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._eligibility = eligibility
+
+    async def register(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        private_link_hash: bytes | None,
+        request_id: UUID,
+        now: datetime,
+    ) -> RegistrationCreationResult:
+        current = _instant(now, field="registration_time")
+        event = await self._events.registration_terms(
+            event_id, private_link_hash=private_link_hash, now=current
+        )
+        capabilities = await self._eligibility.evaluate(principal)
+        if not capabilities.register_event:
+            raise ApiError(
+                code="registration_not_allowed",
+                message_key="errors.registration_not_allowed",
+                status_code=403,
+            )
+        existing = await self._repository.get_active(event.id, principal.user_id)
+        if existing is not None:
+            return RegistrationCreationResult(registration=existing, created=False)
+        if event.start_at <= current:
+            raise ApiError(
+                code="registration_closed",
+                message_key="errors.registration_closed",
+                status_code=409,
+            )
+        registration = await self._create(principal, event, request_id=request_id, now=current)
+        return RegistrationCreationResult(registration=registration, created=True)
+
+    async def _create(
+        self,
+        principal: AuthPrincipal,
+        event: EventRegistrationTerms,
+        *,
+        request_id: UUID,
+        now: datetime,
+    ) -> Registration:
+        held = await self._repository.held_seat_count(event.id)
+        seat_available = event.capacity is None or held < event.capacity
+        state: RegistrationState
+        if not seat_available:
+            state = "waitlisted"
+        elif event.method == "free":
+            state = "confirmed"
+        else:
+            state = "cash_pending"
+
+        waitlist_sequence = (
+            await self._repository.next_waitlist_sequence(event.id)
+            if state == "waitlisted"
+            else None
+        )
+        cash_expires_at = None
+        if state == "cash_pending":
+            if event.cash_expiry_minutes is None:
+                raise RuntimeError("published cash event has no expiry policy")
+            cash_expires_at = min(
+                now + timedelta(minutes=event.cash_expiry_minutes), event.start_at
+            )
+        registration_id = generate_uuid7()
+        command_id = generate_uuid7()
+        command_hash = hashlib.sha256(
+            (
+                f"registration-create-v1:{command_id}:{registration_id}:"
+                f"{event.id}:{principal.user_id}:{state}"
+            ).encode("ascii")
+        ).digest()
+        return await self._repository.create_registration(
+            registration_id=registration_id,
+            command_id=command_id,
+            command_hash=command_hash,
+            event_id=event.id,
+            user_id=principal.user_id,
+            method=event.method,
+            state=state,
+            seat_held=state in ("confirmed", "cash_pending"),
+            waitlist_sequence=waitlist_sequence,
+            cash_expires_at=cash_expires_at,
+            confirmed_at=now if state == "confirmed" else None,
+            request_id=request_id,
+            occurred_at=now,
+        )
+
+
 class RegistrationTransitionService:
     def __init__(self, repository: RegistrationRepositoryProtocol) -> None:
         self._repository = repository
@@ -196,7 +402,9 @@ class RegistrationTransitionService:
             return replay
 
         current = context.registration
-        if context.event_status != "published" or context.event_start_at <= command.occurred_at:
+        if context.event_status != "published" or (
+            command.target_state != "expired" and context.event_start_at <= command.occurred_at
+        ):
             raise RegistrationTransitionError("event_not_transitionable")
         if not is_transition_allowed(current.state, command.target_state):
             raise RegistrationTransitionError("invalid_registration_transition")
@@ -225,6 +433,312 @@ class RegistrationTransitionService:
         if context is None:
             raise RegistrationTransitionError("registration_not_found")
         return TransitionResult(registration=context.registration, transition=transition)
+
+
+class PromotionService:
+    def __init__(
+        self,
+        repository: RegistrationCancellationRepositoryProtocol,
+        events: RegistrationEventAccessProtocol,
+        eligibility: PromotionEligibilityProtocol,
+        transitions: RegistrationTransitionService,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._eligibility = eligibility
+        self._transitions = transitions
+        self._audit = audit
+
+    async def promote_next(
+        self,
+        event_id: UUID,
+        *,
+        now: datetime,
+        request_id: UUID | None,
+    ) -> Registration | None:
+        current = _instant(now, field="promotion_time")
+        event = await self._events.cancellation_terms(event_id)
+        if event.start_at <= current:
+            return None
+        if (
+            event.capacity is not None
+            and await self._repository.held_seat_count(event.id) >= event.capacity
+        ):
+            return None
+        while candidate := await self._repository.oldest_waitlisted(event.id):
+            capabilities = await self._eligibility.evaluate_user(candidate.user_id)
+            if capabilities is None or not capabilities.register_event:
+                skipped = await self._transitions.transition(
+                    new_transition_command(
+                        registration_id=candidate.id,
+                        target_state="cancelled",
+                        actor_user_id=None,
+                        actor_kind="system",
+                        reason_code="promotion_ineligible",
+                        occurred_at=current,
+                        request_id=request_id,
+                    )
+                )
+                await self._audit.record(
+                    actor_user_id=None,
+                    actor_kind="system",
+                    action="registration.promotion_skip",
+                    target_type="registration",
+                    target_id=candidate.id,
+                    reason="promotion_ineligible",
+                    safe_before={"state": candidate.state},
+                    safe_after={"state": skipped.registration.state},
+                    request_id=request_id,
+                )
+                continue
+
+            target: RegistrationState = "confirmed" if event.method == "free" else "cash_pending"
+            cash_expires_at = None
+            if target == "cash_pending":
+                if event.cash_expiry_minutes is None:
+                    raise RuntimeError("published cash event has no expiry policy")
+                cash_expires_at = min(
+                    current + timedelta(minutes=event.cash_expiry_minutes), event.start_at
+                )
+            promoted = await self._transitions.transition(
+                new_transition_command(
+                    registration_id=candidate.id,
+                    target_state=target,
+                    actor_user_id=None,
+                    actor_kind="system",
+                    reason_code="waitlist_promoted",
+                    occurred_at=current,
+                    request_id=request_id,
+                    cash_expires_at=cash_expires_at,
+                )
+            )
+            await self._audit.record(
+                actor_user_id=None,
+                actor_kind="system",
+                action="registration.promote",
+                target_type="registration",
+                target_id=candidate.id,
+                reason="waitlist_promoted",
+                safe_before={"state": candidate.state},
+                safe_after={"state": promoted.registration.state},
+                request_id=request_id,
+            )
+            return promoted.registration
+        return None
+
+
+class RegistrationCancellationService:
+    def __init__(
+        self,
+        repository: RegistrationCancellationRepositoryProtocol,
+        events: RegistrationEventAccessProtocol,
+        transitions: RegistrationTransitionService,
+        promotion: PromotionService,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._transitions = transitions
+        self._promotion = promotion
+        self._audit = audit
+
+    async def cancel(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        request_id: UUID,
+        now: datetime,
+    ) -> Registration:
+        current = _instant(now, field="cancellation_time")
+        event = await self._events.cancellation_terms(event_id)
+        cutoff = event.start_at - timedelta(minutes=event.cancellation_cutoff_minutes)
+        if current >= cutoff:
+            raise ApiError(
+                code="cancellation_closed",
+                message_key="errors.cancellation_closed",
+                status_code=409,
+            )
+        registration = await self._repository.get_active(
+            event.id, principal.user_id, for_update=True
+        )
+        if registration is None:
+            raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
+        cancelled = await self._transitions.transition(
+            new_transition_command(
+                registration_id=registration.id,
+                target_state="cancelled",
+                actor_user_id=principal.user_id,
+                actor_kind="member",
+                reason_code="member_cancelled",
+                occurred_at=current,
+                request_id=request_id,
+            )
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="member",
+            action="registration.cancel",
+            target_type="registration",
+            target_id=registration.id,
+            reason="member_cancelled",
+            safe_before={"state": registration.state},
+            safe_after={"state": cancelled.registration.state},
+            request_id=request_id,
+        )
+        if registration.seat_held:
+            await self._promotion.promote_next(
+                event.id,
+                now=current,
+                request_id=request_id,
+            )
+        return cancelled.registration
+
+
+class CashConfirmationService:
+    def __init__(
+        self,
+        repository: AttendeeRepositoryProtocol,
+        events: RegistrationManagerAccessProtocol,
+        transitions: RegistrationTransitionService,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._transitions = transitions
+        self._audit = audit
+
+    async def confirm(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        registration_id: UUID,
+        *,
+        request_id: UUID,
+        now: datetime,
+    ) -> Registration:
+        current = _instant(now, field="confirmation_time")
+        await self._events.require_manager(principal, event_id, for_update=True)
+        registration = await self._repository.get_for_event(
+            event_id, registration_id, for_update=True
+        )
+        if registration is None:
+            raise ApiError(code="not_found", message_key="errors.not_found", status_code=404)
+        if registration.method != "cash_organizer_confirmed":
+            raise ApiError(code="conflict", message_key="errors.conflict", status_code=409)
+        if registration.state == "confirmed":
+            return registration
+        if registration.state != "cash_pending":
+            raise ApiError(code="conflict", message_key="errors.conflict", status_code=409)
+        if registration.cash_expires_at is None or registration.cash_expires_at <= current:
+            raise ApiError(
+                code="cash_confirmation_expired",
+                message_key="errors.cash_confirmation_expired",
+                status_code=409,
+            )
+        confirmed = await self._transitions.transition(
+            new_transition_command(
+                registration_id=registration.id,
+                target_state="confirmed",
+                actor_user_id=principal.user_id,
+                actor_kind="organizer",
+                reason_code="cash_confirmed",
+                occurred_at=current,
+                request_id=request_id,
+            )
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="organizer",
+            action="registration.cash_confirm",
+            target_type="registration",
+            target_id=registration.id,
+            reason="cash_confirmed",
+            safe_before={"state": registration.state},
+            safe_after={"state": confirmed.registration.state},
+            request_id=request_id,
+        )
+        return confirmed.registration
+
+
+class AttendeeService:
+    def __init__(
+        self,
+        repository: AttendeeRepositoryProtocol,
+        events: RegistrationManagerAccessProtocol,
+        audit: AuditService,
+    ) -> None:
+        self._repository = repository
+        self._events = events
+        self._audit = audit
+
+    async def list(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        limit: int,
+        after_created_at: datetime | None,
+        after_id: UUID | None,
+    ) -> list[Attendee]:
+        await self._events.require_manager(principal, event_id, for_update=False)
+        normalized = _normalize_attendee_search(search)
+        return await self._repository.list_attendees(
+            event_id,
+            state=state,
+            search=normalized or None,
+            limit=limit,
+            after_created_at=after_created_at,
+            after_id=after_id,
+        )
+
+    async def request_export(
+        self,
+        principal: AuthPrincipal,
+        event_id: UUID,
+        export_request_id: UUID,
+        *,
+        state: RegistrationState | None,
+        search: str | None,
+        request_id: UUID,
+        now: datetime,
+    ) -> None:
+        current = _instant(now, field="export_request_time")
+        await self._events.require_manager(principal, event_id, for_update=False)
+        normalized = _normalize_attendee_search(search)
+        await self._repository.enqueue_attendee_export(
+            event_id,
+            export_request_id,
+            state=state,
+            search=normalized or None,
+            requested_at=current,
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="organizer",
+            action="attendees.export_request",
+            target_type="event",
+            target_id=event_id,
+            reason="attendee_operations",
+            safe_after={"request_id": str(export_request_id), "state": state},
+            request_id=request_id,
+        )
+
+    async def summary(self, principal: AuthPrincipal, event_id: UUID) -> AttendeeSummary:
+        await self._events.require_manager(principal, event_id, for_update=False)
+        return await self._repository.attendee_summary(event_id)
+
+
+def _normalize_attendee_search(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().casefold()
+    if not normalized:
+        return None
+    return normalized
 
 
 def new_transition_command(
