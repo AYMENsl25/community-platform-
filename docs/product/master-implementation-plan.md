@@ -338,9 +338,9 @@
 
 **Produces:** notification list/unread count/read endpoints and preference-aware delivery decisions.
 
-- [ ] Create notifications for security, membership, event, registration, cash, waitlist, cancellation, and moderation events; security-critical email cannot be disabled.
-- [ ] Test recipient isolation, preference handling, cursor pagination, unread consistency, and outbox replay.
-- [ ] Commit `feat: add in-app notifications and preferences` after API/client tests pass.
+- [x] Create notifications for security, membership, event, registration, cash, waitlist, cancellation, and moderation events; security-critical email cannot be disabled.
+- [x] Test recipient isolation, preference handling, cursor pagination, unread consistency, and outbox replay.
+- [x] Commit `feat: add in-app notifications and preferences` after API/client tests pass.
 
 ### Task 5.3: Transactional email adapters and templates
 

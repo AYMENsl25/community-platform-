@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from talaqi.clubs.membership_routes import router as club_memberships_router
 from talaqi.clubs.routes import router as clubs_router
+from talaqi.communications.routes import router as communications_router
 from talaqi.config import Settings, get_settings
 from talaqi.db.engine import build_async_engine, build_session_factory
 from talaqi.discovery.routes import router as discovery_router
@@ -85,6 +86,7 @@ def create_app(
     application.include_router(regions_router)
     application.include_router(identity_router)
     application.include_router(profiles_router)
+    application.include_router(communications_router)
     application.include_router(clubs_router)
     application.include_router(club_memberships_router)
     application.include_router(events_router)

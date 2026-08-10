@@ -17,6 +17,7 @@ from talaqi.events.models import (
     EventVisibility,
     RegistrationMethod,
 )
+from talaqi.outbox import TransactionalEventPublisher
 from talaqi.platform import ApiError
 
 _EVENT_SELECT = """
@@ -297,6 +298,7 @@ class EventRepository:
         result = await self.get(event.id)
         if result is None:
             raise RuntimeError("updated event could not be reloaded")
+        await self._enqueue_attendee_notifications(result, "event.updated")
         return result
 
     async def transition(
@@ -340,7 +342,41 @@ class EventRepository:
         result = await self.get(event_id)
         if result is None:
             raise RuntimeError("transitioned event could not be reloaded")
+        if status == "cancelled":
+            await self._enqueue_attendee_notifications(result, "event.cancelled")
         return result
+
+    async def _enqueue_attendee_notifications(self, event: Event, event_type: str) -> None:
+        recipients = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT DISTINCT user_id
+                        FROM talaqi.registrations
+                        WHERE event_id = :event_id
+                          AND state IN ('confirmed', 'cash_pending', 'waitlisted')
+                        """
+                    ),
+                    {"event_id": event.id},
+                )
+            )
+            .scalars()
+            .all()
+        )
+        publisher = TransactionalEventPublisher(self._session)
+        for recipient_user_id in recipients:
+            await publisher.publish(
+                aggregate_type="event",
+                aggregate_id=event.id,
+                event_type=event_type,
+                payload={
+                    "recipient_user_id": str(recipient_user_id),
+                    "event_id": str(event.id),
+                },
+                deduplication_key=(f"{event_type}:{event.id}:{event.revision}:{recipient_user_id}"),
+                available_at=event.updated_at,
+            )
 
     async def revoke_invite_tokens(self, event_id: UUID, *, occurred_at: datetime) -> None:
         await self._session.execute(

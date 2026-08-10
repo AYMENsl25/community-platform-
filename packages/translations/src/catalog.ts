@@ -31,6 +31,8 @@ export const API_MESSAGE_KEYS = [
   "errors.invalid_credentials",
   "errors.invalid_credentials_input",
   "errors.invalid_cursor",
+  "errors.notification_not_found",
+  "errors.profile_required",
   "errors.invalid_profile",
   "errors.invalid_recovery_token",
   "errors.invalid_session",

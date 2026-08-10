@@ -346,6 +346,8 @@ export const arabicDictionary: Dictionary = {
   "errors.invalid_credentials_input":
     "تحقق من معلومات تسجيل الدخول وحاول مرة أخرى.",
   "errors.invalid_cursor": "رابط النتائج غير صالح أو انتهت صلاحيته.",
+  "errors.notification_not_found": "تعذر العثور على هذا الإشعار.",
+  "errors.profile_required": "أكمل ملفك الشخصي لإدارة تفضيلات الإشعارات.",
   "errors.invalid_profile": "تحقق من حقول الملف الشخصي وحاول مرة أخرى.",
   "errors.invalid_recovery_token":
     "رابط الاسترداد هذا غير صالح أو انتهت صلاحيته.",

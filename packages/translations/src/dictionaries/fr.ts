@@ -357,6 +357,9 @@ export const frenchDictionary: Dictionary = {
     "Vérifiez les informations de connexion, puis réessayez.",
   "errors.invalid_cursor":
     "Le lien vers les résultats est invalide ou a expiré.",
+  "errors.notification_not_found": "Cette notification est introuvable.",
+  "errors.profile_required":
+    "Complétez votre profil pour gérer les préférences de notification.",
   "errors.invalid_profile": "Vérifiez les champs du profil, puis réessayez.",
   "errors.invalid_recovery_token":
     "Ce lien de récupération est invalide ou a expiré.",

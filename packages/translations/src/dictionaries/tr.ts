@@ -351,6 +351,9 @@ export const turkishDictionary = {
   "errors.invalid_credentials_input":
     "Giriş bilgilerini kontrol edip yeniden deneyin.",
   "errors.invalid_cursor": "Sonuç bağlantısı geçersiz veya süresi dolmuş.",
+  "errors.notification_not_found": "Bu bildirim bulunamadı.",
+  "errors.profile_required":
+    "Bildirim tercihlerini yönetmek için profilinizi tamamlayın.",
   "errors.invalid_profile": "Profil alanlarını kontrol edip yeniden deneyin.",
   "errors.invalid_recovery_token":
     "Bu kurtarma bağlantısı geçersiz veya süresi dolmuş.",

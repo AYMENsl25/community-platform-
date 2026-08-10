@@ -318,7 +318,20 @@ async def test_action_requires_mfa_and_is_idempotent_per_case(
                 {"target_id": first_target.user_id},
             )
         ).scalar_one()
+        notification_event = (
+            await connection.execute(
+                text(
+                    """
+                    SELECT event_type, payload ->> 'recipient_user_id'
+                    FROM talaqi.outbox_events
+                    WHERE aggregate_id = :case_id
+                    """
+                ),
+                {"case_id": first_case},
+            )
+        ).one()
     assert event_count == audit_count == 1
+    assert notification_event == ("moderation.action_taken", str(first_target.user_id))
 
 
 @pytest.mark.asyncio

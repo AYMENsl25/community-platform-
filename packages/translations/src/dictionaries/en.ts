@@ -340,6 +340,9 @@ export const englishDictionary = {
   "errors.invalid_credentials_input":
     "Check the sign-in information and try again.",
   "errors.invalid_cursor": "The results link is invalid or expired.",
+  "errors.notification_not_found": "That notification was not found.",
+  "errors.profile_required":
+    "Complete your profile to manage notification preferences.",
   "errors.invalid_profile": "Check the profile fields and try again.",
   "errors.invalid_recovery_token": "This recovery link is invalid or expired.",
   "errors.invalid_session": "This session is invalid or expired.",
