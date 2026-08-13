@@ -40,11 +40,13 @@ async function expectAccessibleContrast(page: Page) {
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
 }
 
 for (const locale of locales) {
