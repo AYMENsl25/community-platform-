@@ -21,8 +21,13 @@ html {
   z-index: 20;
 }
 
-.tq-pwa-prompt p { margin: 0; }
-.tq-offline-shell { min-height: 50vh; padding-block: 4rem; }
+.tq-pwa-prompt p {
+  margin: 0;
+}
+.tq-offline-shell {
+  min-height: 50vh;
+  padding-block: 4rem;
+}
 
 .tq-dashboard {
   padding-block: var(--tq-space-6);
@@ -48,9 +53,12 @@ html {
   gap: var(--tq-space-3);
   border-block-end: 1px solid var(--tq-color-border);
   padding-block-end: var(--tq-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .tq-dashboard-list span {
   display: block;
+  min-width: 0;
 }
 @media (max-width: 52rem) {
   .tq-dashboard-grid {

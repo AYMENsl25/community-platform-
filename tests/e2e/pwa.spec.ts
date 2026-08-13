@@ -1,8 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("is installable and serves the public offline shell", async ({ context, page }) => {
+test("is installable and serves the public offline shell", async ({
+  context,
+  page,
+}) => {
   await page.goto("/");
-  const manifest = await page.locator('link[rel="manifest"]').getAttribute("href");
+  const manifest = await page
+    .locator('link[rel="manifest"]')
+    .getAttribute("href");
   expect(manifest).toBe("/manifest.webmanifest");
   const response = await page.request.get(manifest!);
   const body = await response.json();
@@ -13,9 +18,13 @@ test("is installable and serves the public offline shell", async ({ context, pag
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) {
       await new Promise<void>((resolve) =>
-        navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), {
-          once: true,
-        }),
+        navigator.serviceWorker.addEventListener(
+          "controllerchange",
+          () => resolve(),
+          {
+            once: true,
+          },
+        ),
       );
     }
     const response = await fetch("/api/public/api/v1/clubs");
@@ -36,7 +45,11 @@ test("successful logout clears user-scoped browser and runtime cache state", asy
   page,
 }) => {
   await context.addCookies([
-    { name: "talaqi_access", value: "member-token", url: "http://127.0.0.1:3100" },
+    {
+      name: "talaqi_access",
+      value: "member-token",
+      url: "http://127.0.0.1:3100",
+    },
     {
       name: "talaqi_csrf",
       value: "fixture-csrf",

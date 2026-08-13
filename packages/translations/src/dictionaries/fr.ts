@@ -571,7 +571,8 @@ export const frenchDictionary: Dictionary = {
   "pwa.update.body": "Une nouvelle version de Talaqi est disponible.",
   "pwa.update.action": "Mettre à jour",
   "pwa.offline.title": "Vous êtes hors ligne",
-  "pwa.offline.body": "Reconnectez-vous pour charger les communautés et événements actuels.",
+  "pwa.offline.body":
+    "Reconnectez-vous pour charger les communautés et événements actuels.",
   "pwa.offline.retry": "Réessayer",
   "pwa.logout.action": "Se déconnecter",
   "pwa.logout.error": "La déconnexion a échoué. Réessayez.",

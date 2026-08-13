@@ -48,7 +48,9 @@ it("registers the module worker and offers the captured install prompt", async (
     scope: "/",
     type: "module",
   });
-  await act(async () => screen.getByRole("button", { name: "Install" }).click());
+  await act(async () =>
+    screen.getByRole("button", { name: "Install" }).click(),
+  );
   expect(prompt).toHaveBeenCalledOnce();
 });
 
@@ -66,7 +68,9 @@ it("clears only user-scoped storage and asks the worker to clear runtime data", 
 it("waits for controller activation before resolving an update", async () => {
   const container = new EventTarget() as ServiceWorkerContainer;
   const worker = {
-    postMessage: vi.fn(() => container.dispatchEvent(new Event("controllerchange"))),
+    postMessage: vi.fn(() =>
+      container.dispatchEvent(new Event("controllerchange")),
+    ),
   } as unknown as ServiceWorker;
   await activateWaitingWorker(worker, container, 50);
   expect(worker.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });

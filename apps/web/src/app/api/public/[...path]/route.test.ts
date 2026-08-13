@@ -10,7 +10,9 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("public mutation proxy", () => {
   it("serves only explicit anonymous discovery GETs without session cookies", async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ items: [] }));
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ items: [] }));
     vi.stubGlobal("fetch", fetcher);
     process.env.API_PUBLIC_URL = "http://api.test";
     const response = await GET(

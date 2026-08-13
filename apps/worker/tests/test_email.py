@@ -184,7 +184,7 @@ async def test_email_worker_delivers_logs_provider_id_and_enforces_quota(
     worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
     )
     result = await worker.run_once(now=now)

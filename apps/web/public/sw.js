@@ -6,7 +6,9 @@ const PUBLIC_CACHE = `${VERSION}-public`;
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.add(OFFLINE_URL)));
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => cache.add(OFFLINE_URL)),
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -14,7 +16,14 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key.startsWith("talaqi-pwa-") && !key.startsWith(VERSION)).map((key) => caches.delete(key))),
+        Promise.all(
+          keys
+            .filter(
+              (key) =>
+                key.startsWith("talaqi-pwa-") && !key.startsWith(VERSION),
+            )
+            .map((key) => caches.delete(key)),
+        ),
       )
       .then(() => self.clients.claim()),
   );
@@ -24,7 +33,11 @@ async function cached(request, cacheName, event) {
   const cache = await caches.open(cacheName);
   const hit = await cache.match(request);
   const revalidate = fetch(request).then((response) => {
-    if (response.ok && response.type !== "opaque" && !response.headers.has("Set-Cookie")) {
+    if (
+      response.ok &&
+      response.type !== "opaque" &&
+      !response.headers.has("Set-Cookie")
+    ) {
       return cache.put(request, response.clone()).then(() => response);
     }
     return response;
@@ -41,8 +54,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   const category = cacheCategory(request);
-  if (category === "static") event.respondWith(cached(request, STATIC_CACHE, event));
-  if (category === "public") event.respondWith(cached(request, PUBLIC_CACHE, event));
+  if (category === "static")
+    event.respondWith(cached(request, STATIC_CACHE, event));
+  if (category === "public")
+    event.respondWith(cached(request, PUBLIC_CACHE, event));
 });
 
 self.addEventListener("message", (event) => {

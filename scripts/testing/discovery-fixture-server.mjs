@@ -343,7 +343,12 @@ createServer(async (request, response) => {
   if (url.pathname === "/health") return send(response, 200, { status: "ok" });
   if (url.pathname === "/api/v1/auth/logout" && request.method === "POST") {
     if (!hasCsrf(request))
-      return send(response, 403, { error: { code: "csrf_failed" } }, "private, no-store");
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
     response.writeHead(200, {
       "Content-Type": "application/json",
       "Cache-Control": "private, no-store",

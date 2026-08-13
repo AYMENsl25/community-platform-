@@ -561,7 +561,8 @@ export const turkishDictionary = {
   "pwa.update.body": "Talaqi'nin yeni bir sürümü hazır.",
   "pwa.update.action": "Güncelle",
   "pwa.offline.title": "Çevrimdışısınız",
-  "pwa.offline.body": "Güncel toplulukları ve etkinlikleri yüklemek için yeniden bağlanın.",
+  "pwa.offline.body":
+    "Güncel toplulukları ve etkinlikleri yüklemek için yeniden bağlanın.",
   "pwa.offline.retry": "Tekrar dene",
   "pwa.logout.action": "Çıkış yap",
   "pwa.logout.error": "Çıkış yapılamadı. Tekrar deneyin.",

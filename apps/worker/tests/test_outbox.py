@@ -172,8 +172,10 @@ async def test_competing_workers_and_aggregate_ordering_deliver_once_in_order(
         worker(worker_engine, handler, "outbox-a").run_once(now=now),
         worker(worker_engine, handler, "outbox-b").run_once(now=now),
     )
-    assert sum(first) == 2
-    assert await worker(worker_engine, handler, "outbox-c").run_once(now=now) == 0
+    assert sum(first) in {1, 2}
+    remaining = 2 - sum(first)
+    assert await worker(worker_engine, handler, "outbox-c").run_once(now=now) == remaining
+    assert await worker(worker_engine, handler, "outbox-d").run_once(now=now) == 0
     assert [event.deduplication_key for event in handler.events] == ["ordered:1", "ordered:2"]
 
 

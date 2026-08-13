@@ -9,7 +9,11 @@ type InstallPrompt = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-const USER_STATE_PREFIXES = ["talaqi:user:", "talaqi:member:", "talaqi:organizer:"];
+const USER_STATE_PREFIXES = [
+  "talaqi:user:",
+  "talaqi:member:",
+  "talaqi:organizer:",
+];
 
 function clearStore(store: Storage) {
   for (let index = store.length - 1; index >= 0; index -= 1) {
@@ -79,7 +83,10 @@ export function PwaManager() {
         value.addEventListener("updatefound", () => {
           const worker = value.installing;
           worker?.addEventListener("statechange", () => {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            if (
+              worker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
               setWaitingWorker(worker);
             }
           });
@@ -96,22 +103,32 @@ export function PwaManager() {
   return (
     <aside aria-live="polite" className="tq-pwa-prompt">
       <p>
-        {translate(locale, waitingWorker ? "pwa.update.body" : "pwa.install.body")}
+        {translate(
+          locale,
+          waitingWorker ? "pwa.update.body" : "pwa.install.body",
+        )}
       </p>
       <button
         className="tq-action-link"
         onClick={() => {
           if (waitingWorker) {
-            void activateWaitingWorker(waitingWorker).then(() => window.location.reload());
+            void activateWaitingWorker(waitingWorker).then(() =>
+              window.location.reload(),
+            );
             return;
           }
           if (!installPrompt) return;
           void installPrompt.prompt();
-          void installPrompt.userChoice.finally(() => setInstallPrompt(undefined));
+          void installPrompt.userChoice.finally(() =>
+            setInstallPrompt(undefined),
+          );
         }}
         type="button"
       >
-        {translate(locale, waitingWorker ? "pwa.update.action" : "pwa.install.action")}
+        {translate(
+          locale,
+          waitingWorker ? "pwa.update.action" : "pwa.install.action",
+        )}
       </button>
     </aside>
   );

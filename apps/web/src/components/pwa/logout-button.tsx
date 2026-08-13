@@ -43,7 +43,9 @@ export function LogoutButton({ locale }: { locale: LocaleCode }) {
       >
         {translate(locale, "pwa.logout.action")}
       </button>
-      {failed ? <p role="alert">{translate(locale, "pwa.logout.error")}</p> : null}
+      {failed ? (
+        <p role="alert">{translate(locale, "pwa.logout.error")}</p>
+      ) : null}
     </div>
   );
 }

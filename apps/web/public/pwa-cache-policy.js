@@ -20,9 +20,7 @@ export function cacheCategory(request) {
   ) {
     return "bypass";
   }
-  if (
-    path.startsWith("/_next/static/")
-  ) {
+  if (path.startsWith("/_next/static/")) {
     return "static";
   }
   if (

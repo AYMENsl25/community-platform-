@@ -57,12 +57,14 @@ async function forward(
   const csrf = request.headers.get("x-csrf-token");
   const idempotencyKey = request.headers.get("idempotency-key");
   const safePublicGet = isSafePublicGet(request.method, path);
-  const cookie = safePublicGet ? "" : [
-    access ? `talaqi_access=${access}` : undefined,
-    csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
-  ]
-    .filter(Boolean)
-    .join("; ");
+  const cookie = safePublicGet
+    ? ""
+    : [
+        access ? `talaqi_access=${access}` : undefined,
+        csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
+      ]
+        .filter(Boolean)
+        .join("; ");
   const headers: Record<string, string> = {};
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-CSRF-Token"] = csrf;
@@ -74,8 +76,11 @@ async function forward(
       cache: "no-store",
     });
     const outgoingHeaders = new Headers({
-      "Content-Type": response.headers.get("content-type") ?? "application/json",
-      "Cache-Control": safePublicGet ? "public, max-age=60" : "private, no-store",
+      "Content-Type":
+        response.headers.get("content-type") ?? "application/json",
+      "Cache-Control": safePublicGet
+        ? "public, max-age=60"
+        : "private, no-store",
     });
     if (path[2] === "auth" && path[3] === "logout") {
       for (const cookie of response.headers.getSetCookie())
