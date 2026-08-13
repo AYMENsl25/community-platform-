@@ -232,30 +232,38 @@ class OrganizerContentRepository:
     async def list_event(
         self, event_id: UUID, user_id: UUID, *, manager: bool = False
     ) -> tuple[PublishedContent, ...]:
-        audience_filter = (
-            ""
-            if manager
-            else """
-            AND EXISTS (
-                SELECT 1 FROM talaqi.event_update_recipients AS recipient
-                WHERE recipient.event_update_id = event_update.id
-                  AND recipient.recipient_user_id = :user_id
+        query = (
+            text(
+                """
+                SELECT event_update.id, event_update.title, event_update.body,
+                       event_update.audience_key, event_update.published_at
+                FROM talaqi.event_updates AS event_update
+                WHERE event_update.event_id = :scope_id
+                ORDER BY event_update.published_at DESC, event_update.id DESC
+                LIMIT 100
+                """
             )
-        """
+            if manager
+            else text(
+                """
+                SELECT event_update.id, event_update.title, event_update.body,
+                       event_update.audience_key, event_update.published_at
+                FROM talaqi.event_updates AS event_update
+                WHERE event_update.event_id = :scope_id
+                  AND EXISTS (
+                      SELECT 1 FROM talaqi.event_update_recipients AS recipient
+                      WHERE recipient.event_update_id = event_update.id
+                        AND recipient.recipient_user_id = :user_id
+                  )
+                ORDER BY event_update.published_at DESC, event_update.id DESC
+                LIMIT 100
+                """
+            )
         )
         rows = (
             (
                 await self._session.execute(
-                    text(
-                        """
-                        SELECT event_update.id, event_update.title, event_update.body,
-                               event_update.audience_key, event_update.published_at
-                        FROM talaqi.event_updates AS event_update
-                        WHERE event_update.event_id = :scope_id
-                        """
-                        + audience_filter
-                        + " ORDER BY event_update.published_at DESC, event_update.id DESC LIMIT 100"
-                    ),
+                    query,
                     {"scope_id": event_id, "user_id": user_id},
                 )
             )
@@ -299,32 +307,41 @@ class OrganizerContentRepository:
         )
 
     async def _club_recipients(self, club_id: UUID, audience: ClubAudience) -> list[UUID]:
-        role_filter = "AND role IN ('owner', 'admin')" if audience == "admins" else ""
+        query = (
+            text(
+                "SELECT user_id FROM talaqi.club_memberships "
+                "WHERE club_id = :scope_id AND role IN ('owner', 'admin')"
+            )
+            if audience == "admins"
+            else text("SELECT user_id FROM talaqi.club_memberships WHERE club_id = :scope_id")
+        )
         return list(
             (
                 await self._session.execute(
-                    text(
-                        "SELECT user_id FROM talaqi.club_memberships "
-                        "WHERE club_id = :scope_id " + role_filter
-                    ),
+                    query,
                     {"scope_id": club_id},
                 )
             ).scalars()
         )
 
     async def _event_recipients(self, event_id: UUID, audience: EventAudience) -> list[UUID]:
-        condition = (
-            "state IN ('confirmed', 'cash_pending', 'waitlisted')"
+        query = (
+            text(
+                "SELECT user_id FROM talaqi.registrations "
+                "WHERE event_id = :scope_id "
+                "AND state IN ('confirmed', 'cash_pending', 'waitlisted')"
+            )
             if audience == "all_active"
-            else "state = CAST(:audience AS talaqi.registration_state)"
+            else text(
+                "SELECT user_id FROM talaqi.registrations "
+                "WHERE event_id = :scope_id "
+                "AND state = CAST(:audience AS talaqi.registration_state)"
+            )
         )
         return list(
             (
                 await self._session.execute(
-                    text(
-                        "SELECT user_id FROM talaqi.registrations "
-                        f"WHERE event_id = :scope_id AND {condition}"
-                    ),
+                    query,
                     {"scope_id": event_id, "audience": audience},
                 )
             ).scalars()
@@ -359,15 +376,25 @@ class OrganizerContentRepository:
     ) -> None:
         if not recipients:
             return
-        table = f"{kind}_recipients"
-        parent_column = f"{kind}_id"
-        await self._session.execute(
+        query = (
             text(
-                f"INSERT INTO talaqi.{table} ({parent_column}, recipient_user_id) "
-                f"SELECT :content_id, recipient FROM "
+                "INSERT INTO talaqi.announcement_recipients "
+                "(announcement_id, recipient_user_id) "
+                "SELECT :content_id, recipient FROM "
                 "unnest(CAST(:recipients AS uuid[])) AS recipient "
                 "ON CONFLICT DO NOTHING"
-            ),
+            )
+            if kind == "announcement"
+            else text(
+                "INSERT INTO talaqi.event_update_recipients "
+                "(event_update_id, recipient_user_id) "
+                "SELECT :content_id, recipient FROM "
+                "unnest(CAST(:recipients AS uuid[])) AS recipient "
+                "ON CONFLICT DO NOTHING"
+            )
+        )
+        await self._session.execute(
+            query,
             {"content_id": content_id, "recipients": recipients},
         )
 

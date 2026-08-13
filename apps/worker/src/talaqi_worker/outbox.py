@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import random
+import secrets
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -24,7 +24,7 @@ Clock = Callable[[], datetime]
 
 
 def _random_jitter(ceiling: float) -> float:
-    return random.uniform(0.0, ceiling)
+    return secrets.SystemRandom().uniform(0.0, ceiling)
 
 
 class TransactionalOutboxWorker:
