@@ -312,6 +312,12 @@
     flex-direction: column;
   }
 
+  .tq-navigation--public ul {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tq-navigation--public a,
   .tq-navigation--workspace a {
     inline-size: 100%;
     white-space: normal;

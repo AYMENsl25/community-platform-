@@ -57,10 +57,13 @@
   display: grid;
   gap: 0.35rem;
   font-weight: 700;
+  min-inline-size: 0;
 }
 .tq-filter-dialog input,
 .tq-filter-dialog select {
   inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   padding-inline: 0.75rem;
 }
 .tq-filter-dialog__close {
