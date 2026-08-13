@@ -52,6 +52,10 @@
   font-size: var(--tq-font-size-sm);
 }
 
+.tq-workspace-shell {
+  overflow-x: clip;
+}
+
 .tq-workspace-header__inner > * {
   min-inline-size: 0;
 }
