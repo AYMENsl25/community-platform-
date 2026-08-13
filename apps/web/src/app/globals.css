@@ -54,6 +54,7 @@ html {
 }
 .tq-dashboard-list li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--tq-space-3);
   border-block-end: 1px solid var(--tq-color-border);
@@ -66,7 +67,9 @@ html {
   min-width: 0;
 }
 .tq-dashboard-list a {
+  max-width: 100%;
   overflow-wrap: anywhere;
+  white-space: normal;
 }
 @media (max-width: 52rem) {
   .tq-dashboard-grid {
