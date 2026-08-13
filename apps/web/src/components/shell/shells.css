@@ -52,6 +52,10 @@
   font-size: var(--tq-font-size-sm);
 }
 
+.tq-workspace-shell {
+  overflow-x: clip;
+}
+
 .tq-workspace-header__inner > * {
   min-inline-size: 0;
 }
@@ -301,5 +305,21 @@
 
   .tq-home-actions > * {
     inline-size: 100%;
+  }
+
+  .tq-navigation--workspace ul {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tq-navigation--public ul {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tq-navigation--public a,
+  .tq-navigation--workspace a {
+    inline-size: 100%;
+    white-space: normal;
   }
 }
