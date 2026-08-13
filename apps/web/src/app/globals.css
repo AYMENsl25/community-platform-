@@ -77,6 +77,13 @@ html {
   }
 }
 
+@media (max-width: 24rem) {
+  .tq-dashboard-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 body {
   margin: 0;
 }
