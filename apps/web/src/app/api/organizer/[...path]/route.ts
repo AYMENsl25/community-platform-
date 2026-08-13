@@ -9,6 +9,13 @@ function allowed(method: string, path: string[]): boolean {
   if (path[0] !== "api" || path[1] !== "v1") return false;
   const resource = path[2];
   if (
+    method === "GET" &&
+    path.length === 4 &&
+    ((resource === "me" && path[3] === "dashboard") ||
+      (resource === "organizer" && path[3] === "dashboard"))
+  )
+    return true;
+  if (
     resource === "profiles" &&
     method === "GET" &&
     path.length === 4 &&
@@ -45,6 +52,12 @@ function allowed(method: string, path: string[]): boolean {
     if (method === "GET" && path.length === 5 && path[4] === "managed")
       return true;
     if (
+      (method === "GET" || method === "POST") &&
+      path.length === 5 &&
+      path[4] === "updates"
+    )
+      return true;
+    if (
       method === "GET" &&
       ((path.length === 5 && path[4] === "attendees") ||
         (path.length === 6 && path[4] === "attendees" && path[5] === "summary"))
@@ -73,6 +86,12 @@ function allowed(method: string, path: string[]): boolean {
   const clubId = path[3];
   if (!clubId || !UUID.test(clubId)) return false;
   if (method === "PATCH" && path.length === 4) return true;
+  if (
+    (method === "GET" || method === "POST") &&
+    path.length === 5 &&
+    path[4] === "announcements"
+  )
+    return true;
   if (
     method === "GET" &&
     path.length === 5 &&

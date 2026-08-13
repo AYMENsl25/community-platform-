@@ -17,6 +17,7 @@ import { useLocale } from "@/lib/locale/locale-context";
 
 import "./organizer.css";
 import { AttendeeWorkspace } from "./attendee-workspace";
+import { CommunicationsPanel } from "./communications-panel";
 
 type Metadata = {
   countries: { code: string; name_key: string }[];
@@ -708,6 +709,13 @@ export function EventWorkspace({
               key={selected.id}
               eventId={selected.id}
               capacity={selected.capacity}
+            />
+          ) : null}
+          {!creating && selected ? (
+            <CommunicationsPanel
+              kind="event"
+              resourceId={selected.id}
+              revision={selected.revision}
             />
           ) : null}
         </section>

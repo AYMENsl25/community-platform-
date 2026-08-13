@@ -41,6 +41,7 @@
 .tq-workspace-header__inner {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--tq-space-5);
   justify-content: space-between;
   min-block-size: 5.5rem;
@@ -49,6 +50,21 @@
 .tq-workspace-header__inner strong {
   color: var(--tq-color-brand);
   font-size: var(--tq-font-size-sm);
+}
+
+.tq-workspace-header__inner > * {
+  min-inline-size: 0;
+}
+
+.tq-logout,
+.tq-logout button {
+  max-inline-size: 100%;
+}
+
+.tq-logout button {
+  line-height: var(--tq-line-height-body);
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .tq-navigation ul {

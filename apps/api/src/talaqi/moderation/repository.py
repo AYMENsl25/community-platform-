@@ -17,6 +17,7 @@ from talaqi.moderation.models import (
     ModerationTarget,
     TargetType,
 )
+from talaqi.outbox import TransactionalEventPublisher
 
 _PRIORITY_RANK_SQL = "CASE priority WHEN 'emergency' THEN 3 WHEN 'high' THEN 2 ELSE 1 END"
 
@@ -478,6 +479,18 @@ class ModerationRepository:
         updated = await self.get_case(case.id)
         if updated is None:
             raise RuntimeError("moderation case disappeared during action")
+        if case.target_type == "user":
+            await TransactionalEventPublisher(self._session).publish(
+                aggregate_type="moderation_case",
+                aggregate_id=case.id,
+                event_type="moderation.action_taken",
+                payload={
+                    "recipient_user_id": str(case.target_id),
+                    "case_id": str(case.id),
+                },
+                deduplication_key=f"moderation:{case.id}:action:{action}",
+                available_at=now,
+            )
         return updated
 
 

@@ -148,8 +148,29 @@ async def test_approval_requests_and_duplicate_approval_are_idempotent(
             ),
             {"request_id": UUID(request_id)},
         )
+        notification_events = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                    SELECT event_type, payload ->> 'recipient_user_id'
+                    FROM talaqi.outbox_events
+                    WHERE aggregate_id = :request_id
+                    ORDER BY event_type
+                    """
+                    ),
+                    {"request_id": UUID(request_id)},
+                )
+            )
+            .tuples()
+            .all()
+        )
     assert membership_count == 1
     assert approval_audits == 1
+    assert notification_events == [
+        ("membership.approved", str(applicant.user_id)),
+        ("membership.requested", str(owner.user_id)),
+    ]
 
 
 @pytest.mark.asyncio

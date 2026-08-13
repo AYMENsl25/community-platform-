@@ -22,6 +22,14 @@ export type Registration =
   components["schemas"]["talaqi__registrations__schemas__RegistrationResponse"];
 export type RegistrationState =
   components["schemas"]["AttendeeExportRequest"]["state"];
+export type PublishedContent = {
+  id: string;
+  title: string;
+  body: string;
+  audience: string;
+  published_at: string;
+};
+export type PublishedContentPage = { items: PublishedContent[] };
 
 export type OrganizerResult<T> =
   | { ok: true; data: T }
@@ -125,6 +133,25 @@ export interface OrganizerClient {
     reason: string,
   ): Promise<OrganizerResult<void>>;
   closeClub(clubId: string, reason: string): Promise<OrganizerResult<void>>;
+  listClubAnnouncements(
+    clubId: string,
+  ): Promise<OrganizerResult<PublishedContentPage>>;
+  createClubAnnouncement(
+    clubId: string,
+    value: { title: string; body: string; audience: "all_members" | "admins" },
+  ): Promise<OrganizerResult<PublishedContent>>;
+  listEventUpdates(
+    eventId: string,
+  ): Promise<OrganizerResult<PublishedContentPage>>;
+  createEventUpdate(
+    eventId: string,
+    value: {
+      title: string;
+      body: string;
+      audience: "all_active" | "confirmed" | "cash_pending" | "waitlisted";
+      revision: number;
+    },
+  ): Promise<OrganizerResult<PublishedContent>>;
 }
 
 function mappedErrorKey(code: unknown, status: number): TranslationKey {
@@ -307,6 +334,21 @@ export function createOrganizerClient(
       request(`${clubPath(clubId)}/close`, {
         method: "POST",
         body: { reason },
+      }),
+    listClubAnnouncements: (clubId) =>
+      request(`${clubPath(clubId)}/announcements`),
+    createClubAnnouncement: (clubId, value) =>
+      request(`${clubPath(clubId)}/announcements`, {
+        method: "POST",
+        body: value,
+        idempotencyKey: globalThis.crypto.randomUUID(),
+      }),
+    listEventUpdates: (eventId) => request(`${eventPath(eventId)}/updates`),
+    createEventUpdate: (eventId, value) =>
+      request(`${eventPath(eventId)}/updates`, {
+        method: "POST",
+        body: value,
+        idempotencyKey: globalThis.crypto.randomUUID(),
       }),
   };
 }

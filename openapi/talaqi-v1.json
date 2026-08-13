@@ -874,6 +874,37 @@
         "title": "CloseClubRequest",
         "type": "object"
       },
+      "ClubAnnouncementRequest": {
+        "properties": {
+          "audience": {
+            "default": "all_members",
+            "enum": [
+              "all_members",
+              "admins"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ],
+        "title": "ClubAnnouncementRequest",
+        "type": "object"
+      },
       "ClubCardResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1579,6 +1610,214 @@
           "next_cursor"
         ],
         "title": "CursorPage",
+        "type": "object"
+      },
+      "DashboardAlert": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "action_path"
+        ],
+        "title": "DashboardAlert",
+        "type": "object"
+      },
+      "DashboardClub": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pending_requests": {
+            "default": 0,
+            "title": "Pending Requests",
+            "type": "integer"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "role",
+          "status",
+          "action_path"
+        ],
+        "title": "DashboardClub",
+        "type": "object"
+      },
+      "DashboardEvent": {
+        "properties": {
+          "action_path": {
+            "title": "Action Path",
+            "type": "string"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "cash_pending": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cash Pending"
+          },
+          "held": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Held"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "registration_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration State"
+          },
+          "start_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "start_at",
+          "status",
+          "action_path"
+        ],
+        "title": "DashboardEvent",
+        "type": "object"
+      },
+      "DashboardNotification": {
+        "properties": {
+          "action_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Path"
+          },
+          "body_key": {
+            "title": "Body Key",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "title_key": {
+            "title": "Title Key",
+            "type": "string"
+          },
+          "type_key": {
+            "title": "Type Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type_key",
+          "title_key",
+          "body_key",
+          "action_path",
+          "read_at",
+          "created_at"
+        ],
+        "title": "DashboardNotification",
         "type": "object"
       },
       "DecisionRequest": {
@@ -2779,6 +3018,45 @@
         "title": "EventRevisionRequest",
         "type": "object"
       },
+      "EventUpdateRequest": {
+        "properties": {
+          "audience": {
+            "default": "all_active",
+            "enum": [
+              "all_active",
+              "confirmed",
+              "cash_pending",
+              "waitlisted"
+            ],
+            "title": "Audience",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "title",
+          "body"
+        ],
+        "title": "EventUpdateRequest",
+        "type": "object"
+      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -3680,6 +3958,20 @@
         "title": "ManagedEventResponse",
         "type": "object"
       },
+      "MarkAllReadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "marked_count": {
+            "title": "Marked Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "marked_count"
+        ],
+        "title": "MarkAllReadResponse",
+        "type": "object"
+      },
       "MediaAssetResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3869,6 +4161,54 @@
         "title": "MediaUploadResponse",
         "type": "object"
       },
+      "MemberDashboardResponse": {
+        "properties": {
+          "joined_clubs": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardClub"
+            },
+            "title": "Joined Clubs",
+            "type": "array"
+          },
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardNotification"
+            },
+            "title": "Notifications",
+            "type": "array"
+          },
+          "profile_blockers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Profile Blockers",
+            "type": "array"
+          },
+          "saved_events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Saved Events",
+            "type": "array"
+          },
+          "upcoming_events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Upcoming Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "upcoming_events",
+          "saved_events",
+          "joined_clubs",
+          "notifications",
+          "profile_blockers"
+        ],
+        "title": "MemberDashboardResponse",
+        "type": "object"
+      },
       "MemberPageResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3941,6 +4281,171 @@
         "title": "MemberResponse",
         "type": "object"
       },
+      "NotificationPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "NotificationPageResponse",
+        "type": "object"
+      },
+      "NotificationPreferencesRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "community_email": {
+            "title": "Community Email",
+            "type": "boolean"
+          },
+          "event_email": {
+            "title": "Event Email",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "event_email",
+          "community_email"
+        ],
+        "title": "NotificationPreferencesRequest",
+        "type": "object"
+      },
+      "NotificationPreferencesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "community_email": {
+            "title": "Community Email",
+            "type": "boolean"
+          },
+          "event_email": {
+            "title": "Event Email",
+            "type": "boolean"
+          },
+          "security_email": {
+            "const": true,
+            "title": "Security Email",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "security_email",
+          "event_email",
+          "community_email"
+        ],
+        "title": "NotificationPreferencesResponse",
+        "type": "object"
+      },
+      "NotificationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Path"
+          },
+          "body_key": {
+            "title": "Body Key",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "title": "Parameters",
+            "type": "object"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "title_key": {
+            "title": "Title Key",
+            "type": "string"
+          },
+          "type_key": {
+            "title": "Type Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type_key",
+          "title_key",
+          "body_key",
+          "parameters",
+          "action_path",
+          "source_type",
+          "source_id",
+          "read_at",
+          "created_at"
+        ],
+        "title": "NotificationResponse",
+        "type": "object"
+      },
       "OperationResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3961,6 +4466,38 @@
           "status"
         ],
         "title": "OperationResponse",
+        "type": "object"
+      },
+      "OrganizerDashboardResponse": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardAlert"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "clubs": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardClub"
+            },
+            "title": "Clubs",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "clubs",
+          "events",
+          "alerts"
+        ],
+        "title": "OrganizerDashboardResponse",
         "type": "object"
       },
       "OwnershipTransferRequest": {
@@ -4309,6 +4846,57 @@
           "profile_completed_at"
         ],
         "title": "ProfileResponse",
+        "type": "object"
+      },
+      "PublishedContentPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublishedContentResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "PublishedContentPageResponse",
+        "type": "object"
+      },
+      "PublishedContentResponse": {
+        "properties": {
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body",
+          "audience",
+          "published_at"
+        ],
+        "title": "PublishedContentResponse",
         "type": "object"
       },
       "ReadyResponse": {
@@ -4822,6 +5410,20 @@
           "status"
         ],
         "title": "TargetResponse",
+        "type": "object"
+      },
+      "UnreadCountResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "unread_count": {
+            "title": "Unread Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "unread_count"
+        ],
+        "title": "UnreadCountResponse",
         "type": "object"
       },
       "UploadGrantResponse": {
@@ -6894,6 +7496,107 @@
         "summary": "Update Club",
         "tags": [
           "clubs"
+        ]
+      }
+    },
+    "/api/v1/clubs/{club_id}/announcements": {
+      "get": {
+        "operationId": "list_club_announcements_api_v1_clubs__club_id__announcements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "club_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Club Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContentPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "List Club Announcements",
+        "tags": [
+          "communications"
+        ]
+      },
+      "post": {
+        "operationId": "create_club_announcement_api_v1_clubs__club_id__announcements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "club_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Club Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClubAnnouncementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContentResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Create Club Announcement",
+        "tags": [
+          "communications"
         ]
       }
     },
@@ -10276,6 +10979,107 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/updates": {
+      "get": {
+        "operationId": "list_event_updates_api_v1_events__event_id__updates_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContentPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "List Event Updates",
+        "tags": [
+          "communications"
+        ]
+      },
+      "post": {
+        "operationId": "create_event_update_api_v1_events__event_id__updates_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContentResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Create Event Update",
+        "tags": [
+          "communications"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "operationId": "getMyProfile",
@@ -10437,6 +11241,353 @@
         "summary": "Get My Capabilities",
         "tags": [
           "profiles"
+        ]
+      }
+    },
+    "/api/v1/me/dashboard": {
+      "get": {
+        "operationId": "member_dashboard_api_v1_me_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDashboardResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Member Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
+    "/api/v1/me/notifications": {
+      "get": {
+        "operationId": "listMyNotifications",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "List My Notifications",
+        "tags": [
+          "communications"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/items/{notification_id}/read": {
+      "post": {
+        "operationId": "markMyNotificationRead",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "notification_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Notification Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Mark Notification Read",
+        "tags": [
+          "communications"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/preferences": {
+      "get": {
+        "operationId": "getMyNotificationPreferences",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Get Notification Preferences",
+        "tags": [
+          "communications"
+        ]
+      },
+      "patch": {
+        "operationId": "updateMyNotificationPreferences",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Update Notification Preferences",
+        "tags": [
+          "communications"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/read-all": {
+      "post": {
+        "operationId": "markAllMyNotificationsRead",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkAllReadResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Mark All Notifications Read",
+        "tags": [
+          "communications"
+        ]
+      }
+    },
+    "/api/v1/me/notifications/unread-count": {
+      "get": {
+        "operationId": "getMyNotificationUnreadCount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Get Unread Count",
+        "tags": [
+          "communications"
         ]
       }
     },
@@ -10820,6 +11971,32 @@
         "summary": "Get Metadata",
         "tags": [
           "discovery"
+        ]
+      }
+    },
+    "/api/v1/organizer/dashboard": {
+      "get": {
+        "operationId": "organizer_dashboard_api_v1_organizer_dashboard_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizerDashboardResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Organizer Dashboard",
+        "tags": [
+          "dashboard"
         ]
       }
     },

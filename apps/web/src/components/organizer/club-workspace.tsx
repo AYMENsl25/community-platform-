@@ -18,6 +18,7 @@ import {
   type OrganizerResult,
 } from "@/lib/api/organizer-client";
 import { useLocale } from "@/lib/locale/locale-context";
+import { CommunicationsPanel } from "./communications-panel";
 
 type Feedback = {
   key: TranslationKey;
@@ -655,6 +656,10 @@ export function ClubWorkspace({
                   requests={requests}
                   t={t}
                 />
+              ) : null}
+
+              {hasCapability(selected, "edit_profile") ? (
+                <CommunicationsPanel kind="club" resourceId={selected.id} />
               ) : null}
 
               {hasCapability(selected, "close_club") ? (

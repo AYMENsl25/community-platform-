@@ -325,6 +325,24 @@ export interface paths {
         patch: operations["updateClub"];
         trace?: never;
     };
+    "/api/v1/clubs/{club_id}/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Club Announcements */
+        get: operations["list_club_announcements_api_v1_clubs__club_id__announcements_get"];
+        put?: never;
+        /** Create Club Announcement */
+        post: operations["create_club_announcement_api_v1_clubs__club_id__announcements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clubs/{club_id}/close": {
         parameters: {
             query?: never;
@@ -806,6 +824,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Event Updates */
+        get: operations["list_event_updates_api_v1_events__event_id__updates_get"];
+        put?: never;
+        /** Create Event Update */
+        post: operations["create_event_update_api_v1_events__event_id__updates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/managed": {
         parameters: {
             query?: never;
@@ -850,6 +886,109 @@ export interface paths {
         };
         /** Get My Capabilities */
         get: operations["getMyCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Member Dashboard */
+        get: operations["member_dashboard_api_v1_me_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Notifications */
+        get: operations["listMyNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/items/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Notification Read */
+        post: operations["markMyNotificationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Notification Preferences */
+        get: operations["getMyNotificationPreferences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Notification Preferences */
+        patch: operations["updateMyNotificationPreferences"];
+        trace?: never;
+    };
+    "/api/v1/me/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark All Notifications Read */
+        post: operations["markAllMyNotificationsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Unread Count */
+        get: operations["getMyNotificationUnreadCount"];
         put?: never;
         post?: never;
         delete?: never;
@@ -935,6 +1074,23 @@ export interface paths {
         };
         /** Get Metadata */
         get: operations["getDiscoveryMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizer/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organizer Dashboard */
+        get: operations["organizer_dashboard_api_v1_organizer_dashboard_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1313,6 +1469,19 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** ClubAnnouncementRequest */
+        ClubAnnouncementRequest: {
+            /**
+             * Audience
+             * @default all_members
+             * @enum {string}
+             */
+            audience: "all_members" | "admins";
+            /** Body */
+            body: string;
+            /** Title */
+            title: string;
+        };
         /** ClubCardResponse */
         ClubCardResponse: {
             /** Category Slug */
@@ -1513,6 +1682,83 @@ export interface components {
         CursorPage: {
             items: unknown[];
             next_cursor: string | null;
+        };
+        /** DashboardAlert */
+        DashboardAlert: {
+            /** Action Path */
+            action_path: string;
+            /** Key */
+            key: string;
+        };
+        /** DashboardClub */
+        DashboardClub: {
+            /** Action Path */
+            action_path: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /**
+             * Pending Requests
+             * @default 0
+             */
+            pending_requests: number;
+            /** Role */
+            role: string;
+            /** Slug */
+            slug: string;
+            /** Status */
+            status: string;
+        };
+        /** DashboardEvent */
+        DashboardEvent: {
+            /** Action Path */
+            action_path: string;
+            /** Capacity */
+            capacity?: number | null;
+            /** Cash Pending */
+            cash_pending?: number | null;
+            /** Held */
+            held?: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Registration State */
+            registration_state?: string | null;
+            /** Start At */
+            start_at: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        };
+        /** DashboardNotification */
+        DashboardNotification: {
+            /** Action Path */
+            action_path: string | null;
+            /** Body Key */
+            body_key: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Read At */
+            read_at: string | null;
+            /** Title Key */
+            title_key: string;
+            /** Type Key */
+            type_key: string;
         };
         /** DecisionRequest */
         DecisionRequest: {
@@ -1825,6 +2071,21 @@ export interface components {
             /** Revision */
             revision: number;
         };
+        /** EventUpdateRequest */
+        EventUpdateRequest: {
+            /**
+             * Audience
+             * @default all_active
+             * @enum {string}
+             */
+            audience: "all_active" | "confirmed" | "cash_pending" | "waitlisted";
+            /** Body */
+            body: string;
+            /** Revision */
+            revision: number;
+            /** Title */
+            title: string;
+        };
         /** FieldError */
         FieldError: {
             code: string;
@@ -2085,6 +2346,11 @@ export interface components {
              */
             visibility: "public" | "private_link";
         };
+        /** MarkAllReadResponse */
+        MarkAllReadResponse: {
+            /** Marked Count */
+            marked_count: number;
+        };
         /** MediaAssetResponse */
         MediaAssetResponse: {
             /** Byte Size */
@@ -2148,6 +2414,19 @@ export interface components {
             /** Width */
             width: number | null;
         };
+        /** MemberDashboardResponse */
+        MemberDashboardResponse: {
+            /** Joined Clubs */
+            joined_clubs: components["schemas"]["DashboardClub"][];
+            /** Notifications */
+            notifications: components["schemas"]["DashboardNotification"][];
+            /** Profile Blockers */
+            profile_blockers: string[];
+            /** Saved Events */
+            saved_events: components["schemas"]["DashboardEvent"][];
+            /** Upcoming Events */
+            upcoming_events: components["schemas"]["DashboardEvent"][];
+        };
         /** MemberPageResponse */
         MemberPageResponse: {
             /** Items */
@@ -2175,6 +2454,63 @@ export interface components {
              */
             user_id: string;
         };
+        /** NotificationPageResponse */
+        NotificationPageResponse: {
+            /** Items */
+            items: components["schemas"]["NotificationResponse"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** NotificationPreferencesRequest */
+        NotificationPreferencesRequest: {
+            /** Community Email */
+            community_email: boolean;
+            /** Event Email */
+            event_email: boolean;
+        };
+        /** NotificationPreferencesResponse */
+        NotificationPreferencesResponse: {
+            /** Community Email */
+            community_email: boolean;
+            /** Event Email */
+            event_email: boolean;
+            /**
+             * Security Email
+             * @constant
+             */
+            security_email: true;
+        };
+        /** NotificationResponse */
+        NotificationResponse: {
+            /** Action Path */
+            action_path: string | null;
+            /** Body Key */
+            body_key: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parameters */
+            parameters: {
+                [key: string]: unknown;
+            };
+            /** Read At */
+            read_at: string | null;
+            /** Source Id */
+            source_id: string | null;
+            /** Source Type */
+            source_type: string | null;
+            /** Title Key */
+            title_key: string;
+            /** Type Key */
+            type_key: string;
+        };
         /** OperationResponse */
         OperationResponse: {
             /**
@@ -2182,6 +2518,15 @@ export interface components {
              * @enum {string}
              */
             status: "left" | "approved" | "rejected" | "role_changed" | "transferred" | "closed";
+        };
+        /** OrganizerDashboardResponse */
+        OrganizerDashboardResponse: {
+            /** Alerts */
+            alerts: components["schemas"]["DashboardAlert"][];
+            /** Clubs */
+            clubs: components["schemas"]["DashboardClub"][];
+            /** Events */
+            events: components["schemas"]["DashboardEvent"][];
         };
         /** OwnershipTransferRequest */
         OwnershipTransferRequest: {
@@ -2292,6 +2637,30 @@ export interface components {
             time_zone: string | null;
             /** Username */
             username: string | null;
+        };
+        /** PublishedContentPageResponse */
+        PublishedContentPageResponse: {
+            /** Items */
+            items: components["schemas"]["PublishedContentResponse"][];
+        };
+        /** PublishedContentResponse */
+        PublishedContentResponse: {
+            /** Audience */
+            audience: string;
+            /** Body */
+            body: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Title */
+            title: string;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -2549,6 +2918,11 @@ export interface components {
              * @enum {string}
              */
             type: "user" | "club" | "event";
+        };
+        /** UnreadCountResponse */
+        UnreadCountResponse: {
+            /** Unread Count */
+            unread_count: number;
         };
         /** UploadGrantResponse */
         UploadGrantResponse: {
@@ -3586,6 +3960,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    list_club_announcements_api_v1_clubs__club_id__announcements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    create_club_announcement_api_v1_clubs__club_id__announcements_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                club_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClubAnnouncementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];
@@ -5527,6 +5955,60 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    list_event_updates_api_v1_events__event_id__updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    create_event_update_api_v1_events__event_id__updates_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedContentResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     listManagedEvents: {
         parameters: {
             query?: never;
@@ -5672,6 +6154,235 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    member_dashboard_api_v1_me_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberDashboardResponse"];
+                };
+            };
+        };
+    };
+    listMyNotifications: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    markMyNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getMyNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferencesResponse"];
+                };
+            };
+        };
+    };
+    updateMyNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferencesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferencesResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    markAllMyNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarkAllReadResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    getMyNotificationUnreadCount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponse"];
                 };
             };
         };
@@ -5898,6 +6609,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DiscoveryMetadataResponse"];
+                };
+            };
+        };
+    };
+    organizer_dashboard_api_v1_organizer_dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizerDashboardResponse"];
                 };
             };
         };

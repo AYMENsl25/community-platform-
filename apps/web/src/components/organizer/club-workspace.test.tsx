@@ -10,6 +10,10 @@ import { LocaleProvider } from "@/lib/locale/locale-context";
 
 import { ClubWorkspace } from "./club-workspace";
 
+vi.mock("./communications-panel", () => ({
+  CommunicationsPanel: () => <section>Club announcements</section>,
+}));
+
 const clubBase = {
   id: "019f9e7d-d7a0-7d86-9166-2053f7de24a3",
   slug: "workspace-club",

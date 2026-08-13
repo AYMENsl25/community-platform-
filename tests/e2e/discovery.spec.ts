@@ -64,6 +64,47 @@ test("member free registration is confirmed from refreshed server state and can 
   await expect(page.getByText("Moda Community Hall, Kadikoy")).toHaveCount(0);
 });
 
+test("only an eligible member sees the targeted event update", async ({
+  context,
+  page,
+}) => {
+  await registrationCookies(context, "fixture-member-update");
+  await page.goto(eventPath);
+  await page.getByRole("button", { name: "Register" }).click();
+
+  await registrationCookies(context, "fixture-owner");
+  const published = await page.request.post(
+    "/api/organizer/api/v1/events/11111111-1111-4111-8111-111111111111/updates",
+    {
+      data: {
+        title: "Member meeting update",
+        body: "Confirmed members enter through the east gate.",
+        audience: "confirmed",
+        revision: 1,
+      },
+      headers: {
+        "Idempotency-Key": "member-update-e2e-0001",
+        "X-CSRF-Token": "fixture-csrf",
+      },
+    },
+  );
+  expect(published.ok()).toBe(true);
+
+  await registrationCookies(context, "fixture-member-update");
+  await page.reload();
+  await expect(page.getByText("Member meeting update")).toBeVisible();
+  await expect(
+    page.getByText("Confirmed members enter through the east gate."),
+  ).toBeVisible();
+  await expect(page.getByRole("textbox", { name: /reply/i })).toHaveCount(0);
+
+  await registrationCookies(context, "fixture-member-late");
+  await page.reload();
+  await page.getByRole("button", { name: "Register" }).click();
+  await page.reload();
+  await expect(page.getByText("Member meeting update")).toHaveCount(0);
+});
+
 test("cash reservation shows instructions and countdown in mobile RTL", async ({
   context,
   page,

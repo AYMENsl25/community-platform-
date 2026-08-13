@@ -330,47 +330,47 @@
 
 ### Task 5.1: Transactional outbox runtime
 
-- [ ] Implement atomic event writes, lease/claim, deduplication, bounded exponential retry with jitter, delivery status, dead-letter review, and retention cleanup.
-- [ ] Gate: competing workers, crash/restart, poison event, ordering-by-aggregate, and duplicate delivery contract tests.
-- [ ] Commit `feat: add reliable transactional outbox worker`.
+- [x] Implement atomic event writes, lease/claim, deduplication, bounded exponential retry with jitter, delivery status, dead-letter review, and retention cleanup.
+- [x] Gate: competing workers, crash/restart, poison event, ordering-by-aggregate, and duplicate delivery contract tests.
+- [x] Commit `feat: add reliable transactional outbox worker`.
 
 ### Task 5.2: In-app notifications and preferences
 
 **Produces:** notification list/unread count/read endpoints and preference-aware delivery decisions.
 
-- [ ] Create notifications for security, membership, event, registration, cash, waitlist, cancellation, and moderation events; security-critical email cannot be disabled.
-- [ ] Test recipient isolation, preference handling, cursor pagination, unread consistency, and outbox replay.
-- [ ] Commit `feat: add in-app notifications and preferences` after API/client tests pass.
+- [x] Create notifications for security, membership, event, registration, cash, waitlist, cancellation, and moderation events; security-critical email cannot be disabled.
+- [x] Test recipient isolation, preference handling, cursor pagination, unread consistency, and outbox replay.
+- [x] Commit `feat: add in-app notifications and preferences` after API/client tests pass.
 
 ### Task 5.3: Transactional email adapters and templates
 
-- [ ] Provide console/test and production-provider interfaces; implement four-locale verification, reset, security, membership, registration, cash-expiry, promotion, cancellation, and event-change templates.
-- [ ] Keep exact private venue out of pre-confirmation emails; add daily quotas, provider IDs, retry classifications, and delivery logging without tokens/private bodies.
-- [ ] Gate: template parity/render snapshots, adapter contracts, privacy, retry, and quota tests; commit `feat: add localized transactional email`.
+- [x] Provide console/test and production-provider interfaces; implement four-locale verification, reset, security, membership, registration, cash-expiry, promotion, cancellation, and event-change templates.
+- [x] Keep exact private venue out of pre-confirmation emails; add daily quotas, provider IDs, retry classifications, and delivery logging without tokens/private bodies.
+- [x] Gate: template parity/render snapshots, adapter contracts, privacy, retry, and quota tests; commit `feat: add localized transactional email`.
 
 ### Task 5.4: Club announcements and event updates
 
-- [ ] Add manager-authorized create/list endpoints, audience selection, revision-safe event updates, and delivery through outbox; notify only eligible recipients.
-- [ ] Build organizer composer/history and member notification views; do not add chat, comments, or replies.
-- [ ] Gate: authorization, audience privacy, dedupe, localized UI, and E2E tests; commit `feat: add announcements and event updates`.
+- [x] Add manager-authorized create/list endpoints, audience selection, revision-safe event updates, and delivery through outbox; notify only eligible recipients.
+- [x] Build organizer composer/history and member notification views; do not add chat, comments, or replies.
+- [x] Gate: authorization, audience privacy, dedupe, localized UI, and E2E tests; commit `feat: add announcements and event updates`.
 
 ### Task 5.5: Member and organizer dashboards
 
-- [ ] Member: upcoming events, confirmed/cash-pending/waitlisted actions, saved events, joined clubs, notifications, and profile blockers.
-- [ ] Organizer: owned/managed clubs, independent events, status/capacity/cash queues, membership requests, alerts, and quick actions using the approved three-column desktop/stacked-mobile pattern.
-- [ ] Gate: permission-specific component/E2E tests, empty/error/loading, RTL, accessibility, and build; commit `feat: complete member and organizer dashboards`.
+- [x] Member: upcoming events, confirmed/cash-pending/waitlisted actions, saved events, joined clubs, notifications, and profile blockers.
+- [x] Organizer: owned/managed clubs, independent events, status/capacity/cash queues, membership requests, alerts, and quick actions using the approved three-column desktop/stacked-mobile pattern.
+- [x] Gate: permission-specific component/E2E tests, empty/error/loading, RTL, accessibility, and build; commit `feat: complete member and organizer dashboards`.
 
 ### Task 5.6: Safe PWA installation and offline behavior
 
-- [ ] Add manifest, Talaqi icons, theme colors, installability, update prompt, offline shell, and cache rules limited to versioned static assets and safe public GET responses.
-- [ ] Explicitly bypass auth, `/me`, invitations, registrations, notifications, attendee, admin, and mutation requests; clear user-scoped browser state on logout.
-- [ ] Gate: Lighthouse installability, cache allow/deny tests, offline public-shell journey, and logout privacy test; commit `feat: make Talaqi a privacy-safe PWA`.
+- [x] Add manifest, Talaqi icons, theme colors, installability, update prompt, offline shell, and cache rules limited to versioned static assets and safe public GET responses.
+- [x] Explicitly bypass auth, `/me`, invitations, registrations, notifications, attendee, admin, and mutation requests; clear user-scoped browser state on logout.
+- [x] Gate: Lighthouse installability, cache allow/deny tests, offline public-shell journey, and logout privacy test; commit `feat: make Talaqi a privacy-safe PWA`.
 
 ### Task 5.7: Four-locale accessibility and responsive completion
 
-- [ ] Reach dictionary parity for every screen/email/error; perform Arabic RTL, long French/Turkish copy, keyboard, focus, screen-reader, contrast, reduced-motion, and 320 px layout QA.
-- [ ] Gate: automated axe has zero serious/critical issues, visual baselines approved for critical routes, and all four-locale Playwright journeys pass.
-- [ ] Commit `fix: complete localization accessibility and responsive QA`.
+- [x] Reach dictionary parity for every screen/email/error; perform Arabic RTL, long French/Turkish copy, keyboard, focus, screen-reader, contrast, reduced-motion, and 320 px layout QA.
+- [x] Gate: automated axe has zero serious/critical issues, visual baselines approved for critical routes, and all four-locale Playwright journeys pass.
+- [x] Commit `fix: complete localization accessibility and responsive QA`.
 
 **Phase 5 exit:** All critical journeys are installable, usable at mobile widths, accessible, and fully localized; communications are reliable and privacy-safe.
 

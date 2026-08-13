@@ -4,6 +4,8 @@ const port = Number(process.env.DISCOVERY_FIXTURE_PORT ?? 4100);
 const privateCanary = "PRIVATE_EXACT_ADDRESS_CANARY";
 const memberVenue = "Moda Community Hall, Kadikoy";
 const memberRegistrations = new Map();
+const eventUpdateRecipients = new Set();
+let publishedEventUpdates = [];
 
 const events = [
   {
@@ -339,6 +341,25 @@ function send(
 createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
   if (url.pathname === "/health") return send(response, 200, { status: "ok" });
+  if (url.pathname === "/api/v1/auth/logout" && request.method === "POST") {
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    response.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Set-Cookie": [
+        "talaqi_access=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax",
+        "talaqi_csrf=; Path=/; Max-Age=0; SameSite=Lax",
+      ],
+    });
+    response.end(JSON.stringify({ logged_out: true }));
+    return;
+  }
   if (url.searchParams.get("search") === "fixture-error") {
     return send(response, 500, {
       error: { code: "fixture_failure", message_key: privateCanary },
@@ -347,6 +368,75 @@ createServer(async (request, response) => {
   const empty = url.searchParams.get("search") === "fixture-empty";
   const role = fixtureRole(request);
   const platformAdmin = adminKind(request);
+  if (url.pathname === "/api/v1/me/dashboard") {
+    if (!accessToken(request))
+      return send(response, 401, { error: { code: "unauthorized" } });
+    const dashboardEvent = {
+      id: events[0].id,
+      title: events[0].title,
+      start_at: events[0].start_at,
+      status: "published",
+      registration_state: "confirmed",
+      capacity: null,
+      held: null,
+      cash_pending: null,
+      action_path: `/events/${events[0].id}`,
+    };
+    return send(response, 200, {
+      upcoming_events: [dashboardEvent],
+      saved_events: [dashboardEvent],
+      joined_clubs: [
+        {
+          id: clubs[0].id,
+          name: clubs[0].name,
+          slug: clubs[0].slug,
+          role: "member",
+          status: "published",
+          pending_requests: 0,
+          action_path: `/clubs/${clubs[0].slug}`,
+        },
+      ],
+      notifications: [],
+      profile_blockers: [],
+    });
+  }
+  if (url.pathname === "/api/v1/organizer/dashboard") {
+    if (role === "member")
+      return send(response, 403, { error: { code: "forbidden" } });
+    return send(response, 200, {
+      clubs: [
+        {
+          id: organizerClub.id,
+          name: organizerClub.name,
+          slug: organizerClub.slug,
+          role,
+          status: organizerClub.status,
+          pending_requests: 1,
+          action_path: "/organizer/clubs",
+        },
+      ],
+      events: [
+        {
+          id: organizerEvent.id,
+          title: organizerEvent.title,
+          start_at: organizerEvent.start_at,
+          status: organizerEvent.status,
+          registration_state: null,
+          capacity: organizerEvent.capacity,
+          held: 1,
+          cash_pending: 1,
+          action_path: "/organizer/events",
+        },
+      ],
+      alerts: [
+        { key: "membership_requests", action_path: "/organizer/clubs" },
+        {
+          key: "cash_pending",
+          action_path: "/organizer/events?state=cash_pending",
+        },
+      ],
+    });
+  }
   if (url.pathname === "/api/v1/admin/moderation/cases") {
     if (!platformAdmin)
       return send(
@@ -794,6 +884,38 @@ createServer(async (request, response) => {
   const savedPath = `/api/v1/events/${events[0].id}/saved`;
   const registrationPath = `/api/v1/events/${events[0].id}/registrations`;
   const cancellationPath = `${registrationPath}/me`;
+  const eventUpdatesPath = `/api/v1/events/${events[0].id}/updates`;
+  if (url.pathname === eventUpdatesPath && request.method === "POST") {
+    if (accessToken(request) !== "fixture-owner")
+      return send(response, 403, { error: { code: "forbidden" } });
+    if (!hasCsrf(request))
+      return send(response, 403, { error: { code: "csrf_failed" } });
+    const payload = await body(request);
+    const update = {
+      id: "88888888-8888-4888-8888-888888888888",
+      title: payload.title,
+      body: payload.body,
+      audience: payload.audience,
+      published_at: "2026-08-10T12:00:00Z",
+    };
+    publishedEventUpdates = [update];
+    eventUpdateRecipients.clear();
+    for (const token of memberRegistrations.keys())
+      eventUpdateRecipients.add(token);
+    return send(response, 201, update, "private, no-store");
+  }
+  if (url.pathname === eventUpdatesPath && request.method === "GET") {
+    const token = accessToken(request);
+    const eligible = token && eventUpdateRecipients.has(token);
+    return send(
+      response,
+      eligible ? 200 : 404,
+      eligible
+        ? { items: publishedEventUpdates }
+        : { error: { code: "not_found" } },
+      "private, no-store",
+    );
+  }
   if (url.pathname === registrationPath && request.method === "POST") {
     const token = accessToken(request);
     if (!token)

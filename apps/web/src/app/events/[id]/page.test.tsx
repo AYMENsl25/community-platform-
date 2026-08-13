@@ -18,6 +18,10 @@ vi.mock("@/lib/locale/request-locale", () => ({
 
 import EventPage, { generateMetadata } from "./page";
 
+vi.mock("@/components/communications/member-communications", () => ({
+  MemberCommunications: () => null,
+}));
+
 const event = {
   id: "018f0000-0000-7000-8000-000000000201",
   title: "Istanbul Weekend Run",

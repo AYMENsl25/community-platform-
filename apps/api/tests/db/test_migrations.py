@@ -36,9 +36,13 @@ REQUIRED_TABLES = {
     "registrations",
     "registration_transitions",
     "announcements",
+    "announcement_recipients",
     "event_updates",
+    "event_update_recipients",
     "notifications",
     "notification_deliveries",
+    "email_delivery_intents",
+    "email_quota_reservations",
     "outbox_events",
     "moderation_cases",
     "moderation_case_events",
@@ -52,7 +56,9 @@ REQUIRED_TABLES = {
 def test_alembic_has_exactly_one_head() -> None:
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
 
-    assert scripts.get_heads() == ["0009_registration_state_machine"]
+    assert scripts.get_heads() == ["0012_communications"]
+    assert scripts.get_revision("0012_communications").down_revision == "0011_email_intents"
+    assert scripts.get_revision("0011_email_intents").down_revision == "0010_notifications"
     assert scripts.get_revision("0009_registration_state_machine").down_revision == (
         "0008_event_publishing"
     )
@@ -162,6 +168,161 @@ async def _base_state(database_url: SecretStr) -> tuple[bool, int]:
                 await connection.execute(text("SELECT count(*) FROM public.alembic_version"))
             ).scalar_one()
             return schema_exists, revision_count
+    finally:
+        await engine.dispose()
+
+
+async def _legacy_email_intent(database_url: SecretStr, *, seed: bool) -> tuple[str, str] | None:
+    engine = build_async_engine(database_url)
+    try:
+        if not seed:
+            async with engine.connect() as connection:
+                row = (
+                    await connection.execute(
+                        text(
+                            "SELECT auth_token_id::text, locale_hint "
+                            "FROM talaqi.email_delivery_intents"
+                        )
+                    )
+                ).one_or_none()
+                return None if row is None else (str(row[0]), str(row[1]))
+        async with engine.begin() as connection:
+            user_id = await connection.scalar(
+                text(
+                    """
+                    INSERT INTO talaqi.users (
+                        email, password_hash, terms_version, privacy_version, age_attested_at
+                    ) VALUES (
+                        'legacy-email@example.test', '$argon2id$test',
+                        '2026-07-11', '2026-07-11', clock_timestamp()
+                    ) RETURNING id
+                    """
+                )
+            )
+            token_id = await connection.scalar(text("SELECT uuidv7()"))
+            outbox_id = await connection.scalar(
+                text(
+                    """
+                    INSERT INTO talaqi.outbox_events (
+                        aggregate_type, aggregate_id, event_type, payload,
+                        deduplication_key, status, processed_at
+                    ) VALUES (
+                        'user', :user_id, 'identity.email_verification_requested',
+                        jsonb_build_object(
+                            'user_id', CAST(:user_text AS text),
+                            'auth_token_id', CAST(:token_text AS text),
+                            'locale_hint', 'fr'
+                        ), 'legacy-email-intent', 'delivered', clock_timestamp()
+                    ) RETURNING id
+                    """
+                ),
+                {
+                    "user_id": user_id,
+                    "user_text": str(user_id),
+                    "token_text": str(token_id),
+                },
+            )
+            notification_id = await connection.scalar(
+                text(
+                    """
+                    INSERT INTO talaqi.notifications (
+                        recipient_user_id, type_key, title_key, body_key, outbox_event_id
+                    ) VALUES (
+                        :user_id, 'identity.email_verification_requested',
+                        'notifications.security.title',
+                        'notifications.identity.email_verification_requested.body',
+                        :outbox_id
+                    ) RETURNING id
+                    """
+                ),
+                {"user_id": user_id, "outbox_id": outbox_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO talaqi.notification_deliveries (notification_id, channel) "
+                    "VALUES (:notification_id, 'email')"
+                ),
+                {"notification_id": notification_id},
+            )
+            return str(token_id), "fr"
+    finally:
+        await engine.dispose()
+
+
+async def _legacy_communications(database_url: SecretStr, *, seed: bool) -> tuple[int, int]:
+    engine = build_async_engine(database_url)
+    try:
+        async with engine.begin() as connection:
+            if not seed:
+                announcements = await connection.scalar(
+                    text("SELECT count(*) FROM talaqi.announcement_recipients")
+                )
+                updates = await connection.scalar(
+                    text("SELECT count(*) FROM talaqi.event_update_recipients")
+                )
+                return int(announcements or 0), int(updates or 0)
+            owner_id = await connection.scalar(
+                text(
+                    "INSERT INTO talaqi.users (email, password_hash, terms_version, "
+                    "privacy_version, age_attested_at) VALUES "
+                    "('legacy-owner@example.test', '$argon2id$test', '2026-07-11', "
+                    "'2026-07-11', clock_timestamp()) RETURNING id"
+                )
+            )
+            member_id = await connection.scalar(
+                text(
+                    "INSERT INTO talaqi.users (email, password_hash, terms_version, "
+                    "privacy_version, age_attested_at) VALUES "
+                    "('legacy-member@example.test', '$argon2id$test', '2026-07-11', "
+                    "'2026-07-11', clock_timestamp()) RETURNING id"
+                )
+            )
+            club_id = await connection.scalar(
+                text(
+                    "INSERT INTO talaqi.clubs (owner_user_id, slug, name) "
+                    "VALUES (:owner_id, 'legacy-club', 'Legacy club') RETURNING id"
+                ),
+                {"owner_id": owner_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO talaqi.club_memberships (club_id, user_id, role) "
+                    "VALUES (:club_id, :member_id, 'member')"
+                ),
+                {"club_id": club_id, "member_id": member_id},
+            )
+            event_id = await connection.scalar(
+                text(
+                    "INSERT INTO talaqi.events (ownership_type, owner_user_id, title) "
+                    "VALUES ('independent', :owner_id, 'Legacy event') RETURNING id"
+                ),
+                {"owner_id": owner_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO talaqi.registrations (event_id, user_id, method, state, "
+                    "seat_held, confirmed_at) VALUES "
+                    "(:event_id, :member_id, 'free', 'confirmed', true, clock_timestamp())"
+                ),
+                {"event_id": event_id, "member_id": member_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO talaqi.announcements "
+                    "(club_id, author_user_id, title, body) VALUES "
+                    "(:club_id, :owner_id, 'Legacy announcement', 'Retained')"
+                ),
+                {"club_id": club_id, "owner_id": owner_id},
+            )
+            await connection.execute(
+                text(
+                    "INSERT INTO talaqi.event_updates "
+                    "(event_id, author_user_id, title, body) VALUES "
+                    "(:event_id, :owner_id, 'Legacy update', 'Retained')"
+                ),
+                {"event_id": event_id, "owner_id": owner_id},
+            )
+            return 0, 0
     finally:
         await engine.dispose()
 
@@ -395,6 +556,28 @@ APPROVED_CATALOG = {
 }
 
 
+def test_email_intent_migration_backfills_pending_0010_delivery(
+    test_database_url: SecretStr,
+) -> None:
+    config = Config(str(ROOT / "alembic.ini"))
+    asyncio.run(_reset_safe_test_schema(test_database_url))
+    command.upgrade(config, "0010_notifications")
+    expected = asyncio.run(_legacy_email_intent(test_database_url, seed=True))
+    command.upgrade(config, "head")
+    assert asyncio.run(_legacy_email_intent(test_database_url, seed=False)) == expected
+
+
+def test_communications_migration_backfills_legacy_recipient_history(
+    test_database_url: SecretStr,
+) -> None:
+    config = Config(str(ROOT / "alembic.ini"))
+    asyncio.run(_reset_safe_test_schema(test_database_url))
+    command.upgrade(config, "0011_email_intents")
+    asyncio.run(_legacy_communications(test_database_url, seed=True))
+    command.upgrade(config, "head")
+    assert asyncio.run(_legacy_communications(test_database_url, seed=False)) == (1, 1)
+
+
 def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     test_database_url: SecretStr,
 ) -> None:
@@ -408,7 +591,7 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0009_registration_state_machine"
+    assert revision == "0012_communications"
     assert asyncio.run(_regional_seed_counts(test_database_url)) == (2, 2, 6, 2, 1)
     assert asyncio.run(_regional_catalog_state(test_database_url)) == APPROVED_CATALOG
     assert asyncio.run(_server_uuid_version(test_database_url)) == 7
@@ -443,7 +626,12 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
 
     command.downgrade(config, "0001_closed_beta_baseline")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
-    assert table_names == REQUIRED_TABLES
+    assert table_names == REQUIRED_TABLES - {
+        "email_delivery_intents",
+        "email_quota_reservations",
+        "announcement_recipients",
+        "event_update_recipients",
+    }
     assert revision == "0001_closed_beta_baseline"
     assert asyncio.run(_regional_seed_counts(test_database_url)) == (2, 2, 2, 2, 0)
     assert asyncio.run(_regional_catalog_state(test_database_url)) == BASELINE_CATALOG
@@ -459,4 +647,4 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0009_registration_state_machine"
+    assert revision == "0012_communications"

@@ -165,6 +165,7 @@ async def test_revision_lifecycle_duplicate_delete_and_cross_owner_denial(
 ) -> None:
     owner = await create_user(event_engine)
     outsider = await create_user(event_engine)
+    attendee = await create_user(event_engine)
     app = app_for(event_engine)
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://localhost"
@@ -175,6 +176,25 @@ async def test_revision_lifecycle_duplicate_delete_and_cross_owner_denial(
             headers=owner.headers(idempotency_key=f"create-{generate_uuid7()}"),
         )
         event_id = created.json()["id"]
+        registration_id = generate_uuid7()
+        async with event_engine.begin() as connection:
+            await connection.execute(
+                text(
+                    """
+                    INSERT INTO talaqi.registrations (
+                        id, event_id, user_id, method, state, seat_held, confirmed_at
+                    ) VALUES (
+                        :id, :event_id, :user_id, 'free', 'confirmed', true,
+                        clock_timestamp()
+                    )
+                    """
+                ),
+                {
+                    "id": registration_id,
+                    "event_id": UUID(event_id),
+                    "user_id": attendee.user_id,
+                },
+            )
         second_created = await client.post(
             "/api/v1/events",
             json=complete_event_body(title="Second source event", publish=False),
@@ -306,6 +326,23 @@ async def test_revision_lifecycle_duplicate_delete_and_cross_owner_denial(
                 ).scalars()
             ),
         }
+        attendee_events = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                    SELECT event_type, payload ->> 'recipient_user_id'
+                    FROM talaqi.outbox_events
+                    WHERE aggregate_id = :event_id
+                    ORDER BY event_type
+                    """
+                    ),
+                    {"event_id": UUID(event_id)},
+                )
+            )
+            .tuples()
+            .all()
+        )
 
     assert updated.status_code == 200
     assert updated.json()["revision"] == 2
@@ -328,6 +365,10 @@ async def test_revision_lifecycle_duplicate_delete_and_cross_owner_denial(
     assert completed.status_code == 200
     assert completed.json()["status"] == "completed"
     assert "event.cancelled" in lifecycle_actions[event_id]
+    assert attendee_events == [
+        ("event.cancelled", str(attendee.user_id)),
+        ("event.updated", str(attendee.user_id)),
+    ]
     assert lifecycle_actions[str(completable_id)] == [
         "event.create",
         "event.publish",

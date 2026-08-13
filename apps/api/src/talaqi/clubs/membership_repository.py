@@ -13,6 +13,7 @@ from talaqi.clubs.models import Club
 from talaqi.clubs.repository import ClubRepository
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.identity.models import AuthPrincipal
+from talaqi.outbox import TransactionalEventPublisher
 from talaqi.platform import ApiError
 
 
@@ -177,7 +178,35 @@ class MembershipRepository:
             .mappings()
             .one()
         )
-        return _join_request(cast(Mapping[str, object], row)), True
+        result = _join_request(cast(Mapping[str, object], row))
+        organizers = (
+            (
+                await self._session.execute(
+                    text(
+                        "SELECT user_id FROM talaqi.club_memberships "
+                        "WHERE club_id = :club_id AND role IN ('owner', 'admin')"
+                    ),
+                    {"club_id": club_id},
+                )
+            )
+            .scalars()
+            .all()
+        )
+        publisher = TransactionalEventPublisher(self._session)
+        for organizer_id in organizers:
+            await publisher.publish(
+                aggregate_type="membership",
+                aggregate_id=result.id,
+                event_type="membership.requested",
+                payload={
+                    "recipient_user_id": str(organizer_id),
+                    "club_id": str(club_id),
+                    "membership_id": str(result.id),
+                },
+                deduplication_key=f"membership:{result.id}:requested:{organizer_id}",
+                available_at=result.created_at,
+            )
+        return result, True
 
     async def cancel_pending_request(self, club_id: UUID, user_id: UUID) -> bool:
         cancelled = await self._session.scalar(
@@ -194,9 +223,28 @@ class MembershipRepository:
         return cancelled is not None
 
     async def remove_membership(self, membership_id: UUID) -> None:
-        await self._session.execute(
-            text("DELETE FROM talaqi.club_memberships WHERE id = :id"),
-            {"id": membership_id},
+        removed = (
+            await self._session.execute(
+                text(
+                    "DELETE FROM talaqi.club_memberships WHERE id = :id RETURNING club_id, user_id"
+                ),
+                {"id": membership_id},
+            )
+        ).one_or_none()
+        if removed is None:
+            return
+        club_id, user_id = removed
+        await TransactionalEventPublisher(self._session).publish(
+            aggregate_type="membership",
+            aggregate_id=membership_id,
+            event_type="membership.removed",
+            payload={
+                "recipient_user_id": str(user_id),
+                "club_id": str(club_id),
+                "membership_id": str(membership_id),
+            },
+            deduplication_key=f"membership:{membership_id}:removed",
+            available_at=datetime.now().astimezone(),
         )
 
     async def list_members(self, club_id: UUID) -> list[Membership]:
@@ -325,7 +373,20 @@ class MembershipRepository:
         )
         if row is None:
             raise ApiError(code="conflict", message_key="errors.conflict", status_code=409)
-        return _join_request(cast(Mapping[str, object], row))
+        result = _join_request(cast(Mapping[str, object], row))
+        await TransactionalEventPublisher(self._session).publish(
+            aggregate_type="membership",
+            aggregate_id=result.id,
+            event_type=f"membership.{status}",
+            payload={
+                "recipient_user_id": str(result.user_id),
+                "club_id": str(result.club_id),
+                "membership_id": str(result.id),
+            },
+            deduplication_key=f"membership:{result.id}:{status}",
+            available_at=decided_at,
+        )
+        return result
 
     async def set_role(self, membership_id: UUID, role: str) -> Membership:
         row = (

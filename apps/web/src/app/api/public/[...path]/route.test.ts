@@ -9,6 +9,60 @@ const context = (path: string[]) => ({ params: Promise.resolve({ path }) });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("public mutation proxy", () => {
+  it("serves only explicit anonymous discovery GETs without session cookies", async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ items: [] }));
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const response = await GET(
+      new NextRequest("http://web.test/api/public/api/v1/clubs", {
+        headers: { Cookie: "talaqi_access=never; talaqi_csrf=never" },
+      }),
+      context(["api", "v1", "clubs"]),
+    );
+    expect(response.headers.get("cache-control")).toBe("public, max-age=60");
+    expect(fetcher).toHaveBeenCalledWith("http://api.test/api/v1/clubs", {
+      method: "GET",
+      headers: {},
+      cache: "no-store",
+    });
+  });
+
+  it("forwards logout safely and preserves only upstream cookie clearing", async () => {
+    const upstream = Response.json(
+      { logged_out: true },
+      {
+        headers: {
+          "Set-Cookie": "talaqi_access=; Path=/; HttpOnly; Max-Age=0",
+        },
+      },
+    );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(upstream);
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const response = await POST(
+      new NextRequest("http://web.test/api/public/api/v1/auth/logout", {
+        method: "POST",
+        headers: {
+          Cookie: "talaqi_access=access; talaqi_csrf=csrf; other=never",
+          "X-CSRF-Token": "csrf",
+        },
+      }),
+      context(["api", "v1", "auth", "logout"]),
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toContain("talaqi_access=");
+    expect(fetcher).toHaveBeenCalledWith("http://api.test/api/v1/auth/logout", {
+      method: "POST",
+      headers: {
+        Cookie: "talaqi_access=access; talaqi_csrf=csrf",
+        "X-CSRF-Token": "csrf",
+      },
+      cache: "no-store",
+    });
+  });
+
   it("forwards only minimal session cookies and CSRF", async () => {
     const fetcher = vi
       .fn<typeof fetch>()

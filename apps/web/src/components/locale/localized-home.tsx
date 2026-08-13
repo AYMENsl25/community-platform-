@@ -191,7 +191,8 @@ function catalogLabel(
   key: string | undefined,
   t: (key: TranslationKey) => string,
 ): string {
-  return key ? t(key as TranslationKey) : "";
+  if (!key) return t("filters.category");
+  return t(key as TranslationKey) || t("filters.category");
 }
 
 export function LocalizedHome({

@@ -5,6 +5,85 @@ html {
   scroll-behavior: smooth;
 }
 
+.tq-pwa-prompt {
+  align-items: center;
+  background: var(--tq-color-surface, #fffaf4);
+  border: 1px solid var(--tq-color-border, #d7d0c6);
+  border-radius: 0.75rem;
+  bottom: 1rem;
+  box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 16%);
+  display: flex;
+  gap: 1rem;
+  inset-inline-end: 1rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 1rem;
+  position: fixed;
+  z-index: 20;
+}
+
+.tq-pwa-prompt p {
+  margin: 0;
+}
+.tq-offline-shell {
+  min-height: 50vh;
+  padding-block: 4rem;
+}
+
+.tq-dashboard {
+  padding-block: var(--tq-space-6);
+}
+.tq-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tq-space-4);
+  align-items: start;
+}
+.tq-dashboard-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tq-dashboard-card * {
+  min-width: 0;
+  max-width: 100%;
+}
+.tq-dashboard-list {
+  display: grid;
+  gap: var(--tq-space-3);
+  padding: 0;
+  list-style: none;
+}
+.tq-dashboard-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--tq-space-3);
+  border-block-end: 1px solid var(--tq-color-border);
+  padding-block-end: var(--tq-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tq-dashboard-list span {
+  display: block;
+  min-width: 0;
+}
+.tq-dashboard-list a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+@media (max-width: 52rem) {
+  .tq-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 24rem) {
+  .tq-dashboard-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 body {
   margin: 0;
 }
