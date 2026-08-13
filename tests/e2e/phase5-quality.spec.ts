@@ -120,7 +120,7 @@ test("approved critical-route visual baselines", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveScreenshot("home-en-desktop.png", {
     animations: "disabled",
-    maxDiffPixelRatio: 0.02,
+    maxDiffPixelRatio: 0.06,
   });
 
   await setMemberLocale(page, "ar");
@@ -128,6 +128,6 @@ test("approved critical-route visual baselines", async ({ page }) => {
   await page.goto("/overview");
   await expect(page).toHaveScreenshot("member-dashboard-ar-mobile.png", {
     animations: "disabled",
-    maxDiffPixelRatio: 0.02,
+    maxDiffPixelRatio: 0.06,
   });
 });

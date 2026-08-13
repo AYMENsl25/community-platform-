@@ -253,7 +253,7 @@ async def test_email_worker_delivers_logs_provider_id_and_enforces_quota(
     quota_worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
         daily_recipient_quota=0,
     )
@@ -276,7 +276,7 @@ async def test_email_worker_delivers_logs_provider_id_and_enforces_quota(
     next_day_worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
         daily_recipient_quota=1,
     )
@@ -305,7 +305,7 @@ async def test_email_worker_classifies_retryable_provider_failure(
     worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
     )
     assert await worker.run_once(now=now) == 0
@@ -351,7 +351,7 @@ async def test_recovery_intent_survives_outbox_cleanup_and_uses_requested_locale
     email_worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
     )
     assert await email_worker.run_once(now=now) == 1
@@ -396,7 +396,7 @@ async def test_concurrent_workers_reserve_only_one_last_daily_quota_slot(
         EmailDeliveryWorker(
             factory,
             provider,
-            session_secret="email-worker-test-secret",
+            session_secret="email-worker-test-secret",  # pragma: allowlist secret
             web_public_url="https://talaqi.test",
             daily_recipient_quota=1,
         )
@@ -448,7 +448,7 @@ async def test_stale_claim_replay_uses_provider_idempotency_and_fencing(
     worker = EmailDeliveryWorker(
         factory,
         provider,
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
     )
     assert await worker.run_once(now=now) == 0
@@ -477,7 +477,7 @@ async def test_smtp_5xx_is_permanent_without_logging_body(
     worker = EmailDeliveryWorker(
         factory,
         PermanentFailureProvider(),
-        session_secret="email-worker-test-secret",
+        session_secret="email-worker-test-secret",  # pragma: allowlist secret
         web_public_url="https://talaqi.test",
     )
     assert await worker.run_once(now=now) == 0

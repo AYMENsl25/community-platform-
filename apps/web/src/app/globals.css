@@ -40,6 +40,11 @@ html {
 }
 .tq-dashboard-card {
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tq-dashboard-card * {
+  min-width: 0;
+  max-width: 100%;
 }
 .tq-dashboard-list {
   display: grid;
@@ -59,6 +64,9 @@ html {
 .tq-dashboard-list span {
   display: block;
   min-width: 0;
+}
+.tq-dashboard-list a {
+  overflow-wrap: anywhere;
 }
 @media (max-width: 52rem) {
   .tq-dashboard-grid {
