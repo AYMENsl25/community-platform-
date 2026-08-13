@@ -306,4 +306,14 @@
   .tq-home-actions > * {
     inline-size: 100%;
   }
+
+  .tq-navigation--workspace ul {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tq-navigation--workspace a {
+    inline-size: 100%;
+    white-space: normal;
+  }
 }

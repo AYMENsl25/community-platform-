@@ -3,11 +3,14 @@
   flex-direction: column;
   gap: 0.35rem;
   max-inline-size: 100%;
+  min-inline-size: 0;
   font-size: 0.875rem;
   font-weight: 700;
 }
 
 .tq-locale-selector select {
+  inline-size: 100%;
+  min-inline-size: 0;
   min-block-size: 44px;
   max-inline-size: 100%;
   padding-block: 0.5rem;
