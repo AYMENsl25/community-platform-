@@ -42,11 +42,25 @@ async function expectAccessibleContrast(page: Page) {
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
     .poll(() =>
-      page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
+      page.evaluate(() => {
+        if (document.documentElement.scrollWidth <= window.innerWidth) {
+          return [];
+        }
+        return [...document.querySelectorAll<HTMLElement>("body *")]
+          .map((element) => {
+            const bounds = element.getBoundingClientRect();
+            return {
+              element: `${element.tagName.toLowerCase()}.${element.className}`,
+              left: Math.round(bounds.left),
+              right: Math.round(bounds.right),
+              width: Math.round(bounds.width),
+            };
+          })
+          .filter(({ left, right }) => left < 0 || right > window.innerWidth)
+          .slice(0, 10);
+      }),
     )
-    .toBe(true);
+    .toEqual([]);
 }
 
 for (const locale of locales) {
