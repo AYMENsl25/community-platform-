@@ -6,6 +6,7 @@ import re
 import time
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
+from secrets import token_hex
 from typing import Final, cast
 
 from fastapi import FastAPI
@@ -19,6 +20,7 @@ _CREDENTIAL = re.compile(
     r"(?:\b(?:bearer|basic)\s+\S+|\b(?:password|passwd|secret|token|api[_-]?key)\s*[:=]\s*\S+|[a-z][a-z0-9+.-]*://[^\s/@:]+:[^\s/@]+@)",
     re.I,
 )
+_TRACEPARENT = re.compile(r"^00-([0-9a-f]{32})-[0-9a-f]{16}-0[01]$")
 
 
 def redact_sensitive(value: object, *, key: str | None = None) -> object:
@@ -71,6 +73,10 @@ class SafeRequestLoggingMiddleware:
         started = self._clock()
         status_code = 500
         request_id = "unavailable"
+        headers = {name.lower(): value for name, value in scope.get("headers", ())}
+        traceparent = headers.get(b"traceparent", b"").decode("ascii", errors="ignore").lower()
+        match = _TRACEPARENT.fullmatch(traceparent)
+        trace_id = match.group(1) if match and match.group(1) != "0" * 32 else token_hex(16)
 
         async def capture(message: Message) -> None:
             nonlocal request_id, status_code
@@ -80,6 +86,10 @@ class SafeRequestLoggingMiddleware:
                     if name.lower() == b"x-request-id":
                         request_id = value.decode("ascii", errors="ignore")
                         break
+                message["headers"] = [
+                    *message.get("headers", ()),
+                    (b"x-trace-id", trace_id.encode("ascii")),
+                ]
             await send(message)
 
         await self.app(scope, receive, capture)
@@ -100,6 +110,7 @@ class SafeRequestLoggingMiddleware:
             "status_code": status_code,
             "duration_ms": duration,
             "request_id": request_id,
+            "trace_id": trace_id,
             "level": level,
         }
         message = json.dumps(event, ensure_ascii=False, separators=(",", ":"))

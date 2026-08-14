@@ -1,0 +1,31 @@
+groups:
+  - name: talaqi-beta-release
+    rules:
+      - alert: api_outage
+        expression: http_5xx_ratio > 0.05
+        for: 5m
+        runbook: api-outage
+      - alert: migration_failure
+        expression: migration_failures_total >= 1
+        for: 0m
+        runbook: migration-rollback
+      - alert: stalled_queue
+        expression: outbox_oldest_pending_seconds > 300
+        for: 10m
+        runbook: outbox-stalled
+      - alert: database_capacity
+        expression: db_pool_saturation_ratio > 0.85
+        for: 10m
+        runbook: database-capacity
+      - alert: storage_capacity
+        expression: object_storage_capacity_ratio > 0.85
+        for: 15m
+        runbook: storage-capacity
+      - alert: critical_email_failure
+        expression: critical_email_failures_total >= 1
+        for: 0m
+        runbook: critical-email
+      - alert: invariant_violation
+        expression: invariant_violations_total >= 1
+        for: 0m
+        runbook: invariant-violation

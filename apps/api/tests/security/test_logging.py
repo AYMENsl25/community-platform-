@@ -24,6 +24,7 @@ ALLOWED_KEYS = {
     "status_code",
     "duration_ms",
     "request_id",
+    "trace_id",
     "level",
 }
 
@@ -79,6 +80,8 @@ async def test_lazy_settings_failure_returns_one_safe_completed_event() -> None:
     assert len(events) == 1
     assert events[0]["status_code"] == 500
     assert events[0]["request_id"] == request_id
+    assert response.headers["x-trace-id"] == events[0]["trace_id"]
+    assert len(events[0]["trace_id"]) == 32
     assert events[0]["level"] == "ERROR"
     assert not any(
         value in stream.getvalue() or value in response.text
@@ -126,6 +129,7 @@ async def test_completed_events_have_exact_safe_schema_and_templates() -> None:
         "status_code": 200,
         "duration_ms": 0,
         "request_id": events[0]["request_id"],
+        "trace_id": events[0]["trace_id"],
         "level": "INFO",
     }
     assert events[1]["route"] == "unmatched"
@@ -192,3 +196,29 @@ def test_recursive_redaction_never_echoes_sensitive_sources() -> None:
         value in rendered
         for value in ("hunter2", "abc.def", "very-secret", "user:pass", "key-value")
     )
+
+
+@pytest.mark.asyncio
+async def test_valid_traceparent_is_correlated_and_hostile_value_is_replaced() -> None:
+    logger, stream = logger_and_stream()
+    app = FastAPI()
+    register_platform_contracts(app)
+    install_request_logging(app, logger=logger)
+
+    @app.get("/trace")
+    async def trace() -> dict[str, bool]:  # pyright: ignore[reportUnusedFunction]
+        return {"ok": True}
+
+    valid = "0123456789abcdef0123456789abcdef"
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        correlated = await client.get(
+            "/trace", headers={"traceparent": f"00-{valid}-0123456789abcdef-01"}
+        )
+        replaced = await client.get("/trace", headers={"traceparent": "Bearer private-token"})
+    events = [json.loads(line) for line in stream.getvalue().splitlines()]
+    assert correlated.headers["x-trace-id"] == events[0]["trace_id"] == valid
+    assert replaced.headers["x-trace-id"] == events[1]["trace_id"]
+    assert events[1]["trace_id"] != "Bearer private-token"
+    assert "private-token" not in stream.getvalue()
