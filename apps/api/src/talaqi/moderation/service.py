@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from talaqi.audit import AuditEvent, AuditService
@@ -37,6 +37,32 @@ def _reason(value: str) -> str:
 
 def emergency_notice(case: ModerationCase) -> bool:
     return case.category == "safety" or case.priority == "emergency"
+
+
+def acknowledgement_deadline(case: ModerationCase) -> datetime:
+    """Return the beta human-acknowledgement target in UTC.
+
+    Emergency and high-priority reports share the four-hour human response
+    target. Standard reports receive two business days; weekends do not consume
+    that allowance.
+    """
+    created_at = case.created_at.astimezone(UTC)
+    if case.priority in {"emergency", "high"}:
+        return created_at + timedelta(hours=4)
+    deadline = created_at
+    remaining_business_days = 2
+    while remaining_business_days:
+        deadline += timedelta(days=1)
+        if deadline.weekday() < 5:
+            remaining_business_days -= 1
+    return deadline
+
+
+def response_breached(case: ModerationCase, *, now: datetime | None = None) -> bool:
+    deadline = acknowledgement_deadline(case)
+    if case.acknowledged_at is not None:
+        return case.acknowledged_at.astimezone(UTC) > deadline
+    return (now or datetime.now(UTC)).astimezone(UTC) > deadline
 
 
 def capabilities(target: ModerationTarget) -> tuple[ModerationAction, ...]:
@@ -208,4 +234,10 @@ class ModerationService:
         return case
 
 
-__all__ = ["ModerationService", "capabilities", "emergency_notice"]
+__all__ = [
+    "ModerationService",
+    "acknowledgement_deadline",
+    "capabilities",
+    "emergency_notice",
+    "response_breached",
+]

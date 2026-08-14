@@ -32,6 +32,8 @@ class CaseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     emergency_notice: bool
+    response_due_at: datetime
+    response_breached: bool
     target: TargetResponse
     available_actions: list[ModerationAction]
 

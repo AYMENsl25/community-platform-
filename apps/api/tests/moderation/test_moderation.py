@@ -15,9 +15,9 @@ from talaqi.discovery.fixtures import (
     PUBLIC_EVENT_IDS,
     seed_discovery_fixtures,
 )
-from talaqi.moderation.models import REPORT_CATEGORIES, ModerationTarget
+from talaqi.moderation.models import REPORT_CATEGORIES, ModerationCase, ModerationTarget
 from talaqi.moderation.repository import ModerationRepository
-from talaqi.moderation.service import capabilities
+from talaqi.moderation.service import acknowledgement_deadline, capabilities, response_breached
 
 
 async def make_admin(engine: AsyncEngine, *, mfa: bool) -> AuthenticatedUser:
@@ -109,6 +109,65 @@ def test_launch_report_categories_are_exactly_the_approved_set() -> None:
         "privacy",
         "spam",
         "other",
+    )
+
+
+def _sla_case(
+    *,
+    priority: str,
+    created_at: datetime,
+    acknowledged_at: datetime | None = None,
+) -> ModerationCase:
+    identifier = generate_uuid7()
+    return ModerationCase(
+        id=identifier,
+        reporter_user_id=None,
+        target_type="user",
+        target_id=identifier,
+        category="spam",
+        description="Private evidence stays outside admin queue responses.",
+        status="open",
+        priority=priority,  # type: ignore[arg-type]
+        assigned_admin_user_id=None,
+        resolution_reason=None,
+        acknowledged_at=acknowledged_at,
+        resolved_at=None,
+        created_at=created_at,
+        updated_at=created_at,
+    )
+
+
+def test_moderation_acknowledgement_deadlines_and_breach_indicators() -> None:
+    friday = datetime(2026, 8, 14, 12, tzinfo=UTC)
+    high = _sla_case(priority="high", created_at=friday)
+    emergency = _sla_case(priority="emergency", created_at=friday)
+    standard = _sla_case(priority="standard", created_at=friday)
+
+    assert acknowledgement_deadline(high) == datetime(2026, 8, 14, 16, tzinfo=UTC)
+    assert acknowledgement_deadline(emergency) == datetime(2026, 8, 14, 16, tzinfo=UTC)
+    assert acknowledgement_deadline(standard) == datetime(2026, 8, 18, 12, tzinfo=UTC)
+    assert response_breached(high, now=datetime(2026, 8, 14, 16, 0, 1, tzinfo=UTC)) is True
+    assert (
+        response_breached(
+            _sla_case(
+                priority="high",
+                created_at=friday,
+                acknowledged_at=datetime(2026, 8, 14, 15, tzinfo=UTC),
+            ),
+            now=datetime(2026, 8, 14, 20, tzinfo=UTC),
+        )
+        is False
+    )
+    assert (
+        response_breached(
+            _sla_case(
+                priority="standard",
+                created_at=friday,
+                acknowledged_at=datetime(2026, 8, 18, 12, 0, 1, tzinfo=UTC),
+            ),
+            now=datetime(2026, 8, 18, 12, 0, 1, tzinfo=UTC),
+        )
+        is True
     )
 
 
@@ -236,6 +295,8 @@ async def test_admin_reads_are_private_and_report_evidence_is_not_serialized(
     assert "reporter_user_id" not in serialized
     assert "@example.test" not in serialized
     assert detail.json()["case"]["emergency_notice"] is True
+    assert detail.json()["case"]["response_due_at"] is not None
+    assert detail.json()["case"]["response_breached"] is False
     assert detail.json()["case"]["available_actions"] == ["suspend"]
 
 

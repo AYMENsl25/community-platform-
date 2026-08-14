@@ -758,6 +758,15 @@
             ],
             "title": "Resolved At"
           },
+          "response_breached": {
+            "title": "Response Breached",
+            "type": "boolean"
+          },
+          "response_due_at": {
+            "format": "date-time",
+            "title": "Response Due At",
+            "type": "string"
+          },
           "status": {
             "enum": [
               "open",
@@ -789,6 +798,8 @@
           "created_at",
           "updated_at",
           "emergency_notice",
+          "response_due_at",
+          "response_breached",
           "target",
           "available_actions"
         ],

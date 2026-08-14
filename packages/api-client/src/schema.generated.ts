@@ -1428,6 +1428,13 @@ export interface components {
             resolution_reason: string | null;
             /** Resolved At */
             resolved_at: string | null;
+            /** Response Breached */
+            response_breached: boolean;
+            /**
+             * Response Due At
+             * Format: date-time
+             */
+            response_due_at: string;
             /**
              * Status
              * @enum {string}

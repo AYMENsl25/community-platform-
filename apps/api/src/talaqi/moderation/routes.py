@@ -33,7 +33,13 @@ from talaqi.moderation.schemas import (
     TargetPageResponse,
     TargetResponse,
 )
-from talaqi.moderation.service import ModerationService, capabilities, emergency_notice
+from talaqi.moderation.service import (
+    ModerationService,
+    acknowledgement_deadline,
+    capabilities,
+    emergency_notice,
+    response_breached,
+)
 from talaqi.platform import (
     ApiError,
     CursorCodec,
@@ -135,6 +141,8 @@ def _case(
         created_at=value.created_at,
         updated_at=value.updated_at,
         emergency_notice=emergency_notice(value),
+        response_due_at=acknowledgement_deadline(value),
+        response_breached=response_breached(value),
         target=_target(target),
         available_actions=list(actions),
     )
