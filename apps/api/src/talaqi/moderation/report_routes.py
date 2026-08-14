@@ -15,6 +15,8 @@ from talaqi.moderation.service import ModerationService, emergency_notice
 from talaqi.platform import IdempotencyCoordinator, IdempotencyRepository, hash_request_body
 from talaqi.platform.errors import ErrorEnvelope, request_id_for
 from talaqi.runtime import LazySessionFactory
+from talaqi.settings.repository import PlatformSettingsRepository
+from talaqi.settings.service import PlatformSettingsService
 
 router = APIRouter(prefix="/api/v1", tags=["moderation"])
 
@@ -36,7 +38,11 @@ IdempotencyKey = Annotated[
 
 
 def _service(session: AsyncSession) -> ModerationService:
-    return ModerationService(ModerationRepository(session), AuditService(AuditRepository(session)))
+    return ModerationService(
+        ModerationRepository(session),
+        AuditService(AuditRepository(session)),
+        PlatformSettingsService(PlatformSettingsRepository(session)),
+    )
 
 
 @router.post(

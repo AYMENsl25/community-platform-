@@ -175,7 +175,23 @@ class FakeAudit:
         return values
 
 
-def service(repo: FakeRepository, *, allowed: bool = True) -> EventService:
+@dataclass
+class FakeFeatureFlags:
+    enabled: bool
+
+    async def require_enabled(self, key: str) -> None:
+        assert key == "features.independent_event_creation_enabled"
+        if not self.enabled:
+            raise ApiError(
+                code="feature_disabled",
+                message_key="errors.feature_disabled",
+                status_code=403,
+            )
+
+
+def service(
+    repo: FakeRepository, *, allowed: bool = True, feature_enabled: bool = True
+) -> EventService:
     return EventService(
         repo,
         FakeEligibility(capabilities(independent=allowed, save=allowed)),
@@ -183,7 +199,19 @@ def service(repo: FakeRepository, *, allowed: bool = True) -> EventService:
         FakeClubs(),
         FakeMedia(),
         FakeAudit(),  # type: ignore[arg-type]
+        FakeFeatureFlags(feature_enabled),  # type: ignore[arg-type]
     )
+
+
+@pytest.mark.asyncio
+async def test_independent_event_feature_flag_blocks_create_without_writes() -> None:
+    repo = FakeRepository()
+    with pytest.raises(ApiError) as error:
+        await service(repo, feature_enabled=False).create(
+            principal(), new_event(), request_id=REQUEST_ID, now=NOW
+        )
+    assert error.value.code == "feature_disabled"
+    assert repo.events == {}
 
 
 @pytest.mark.asyncio

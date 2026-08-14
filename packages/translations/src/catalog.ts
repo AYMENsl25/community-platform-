@@ -48,6 +48,7 @@ export const API_MESSAGE_KEYS = [
   "errors.unauthorized",
   "errors.username_unavailable",
   "errors.validation",
+  "errors.feature_disabled",
   "errors.validation.invalid",
   "errors.validation.missing",
   "errors.validation.extra_forbidden",

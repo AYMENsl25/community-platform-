@@ -110,6 +110,8 @@ export const frenchDictionary: Dictionary = {
     "Vous avez atteint le nombre maximal de clubs que vous pouvez gérer.",
   "blockers.independent_event_limit_reached":
     "Vous avez atteint la limite d’événements indépendants.",
+  "blockers.independent_event_creation_disabled":
+    "La création d’événements indépendants est temporairement indisponible.",
   "blockers.admin_mfa_required":
     "L’authentification multifacteur est obligatoire pour administrer la plateforme.",
   "regions.country.tr": "Turquie",
@@ -378,6 +380,7 @@ export const frenchDictionary: Dictionary = {
   "errors.unauthorized": "Vous devez vous authentifier.",
   "errors.username_unavailable": "Choisissez un autre nom d’utilisateur.",
   "errors.validation": "Vérifiez les champs mis en évidence.",
+  "errors.feature_disabled": "Cette fonctionnalité est temporairement indisponible.",
   "errors.validation.invalid": "Cette valeur n’est pas valide.",
   "errors.validation.missing": "Ce champ est obligatoire.",
   "errors.validation.extra_forbidden": "Supprimez le champ inattendu.",

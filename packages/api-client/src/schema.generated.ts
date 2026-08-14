@@ -101,6 +101,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/settings/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Feature Flags */
+        get: operations["listFeatureFlags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/feature-flags/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Feature Flag */
+        patch: operations["updateFeatureFlag"];
+        trace?: never;
+    };
+    "/api/v1/admin/settings/feature-flags/{key}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Feature Flag */
+        post: operations["previewFeatureFlag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -2150,6 +2201,57 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** FeatureFlagChangeRequest */
+        FeatureFlagChangeRequest: {
+            /** Enabled */
+            enabled: boolean;
+            /** Reason */
+            reason: string;
+            /** Revision */
+            revision: number;
+        };
+        /** FeatureFlagPageResponse */
+        FeatureFlagPageResponse: {
+            /** Items */
+            items: components["schemas"]["FeatureFlagResponse"][];
+            /** Next Cursor */
+            next_cursor?: null;
+        };
+        /** FeatureFlagPreviewResponse */
+        FeatureFlagPreviewResponse: {
+            /** Changed */
+            changed: boolean;
+            current: components["schemas"]["FeatureFlagResponse"];
+            /**
+             * Impact
+             * @default blocks_new_mutations_only
+             * @constant
+             */
+            impact: "blocks_new_mutations_only";
+            proposed: components["schemas"]["FeatureFlagResponse"];
+        };
+        /** FeatureFlagResponse */
+        FeatureFlagResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            /** Revision */
+            revision: number;
+        };
+        /** FeatureFlagUpdateResponse */
+        FeatureFlagUpdateResponse: {
+            setting: components["schemas"]["FeatureFlagResponse"];
+            /**
+             * Status
+             * @default updated
+             * @constant
+             */
+            status: "updated";
+        };
         /** FieldError */
         FieldError: {
             code: string;
@@ -3410,6 +3512,185 @@ export interface operations {
             };
             /** @description Platform-admin access, MFA, or CSRF denied. */
             403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    listFeatureFlags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    updateFeatureFlag: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagUpdateResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Setting not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision conflicted. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    previewFeatureFlag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagPreviewResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Setting not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision conflicted. */
+            409: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

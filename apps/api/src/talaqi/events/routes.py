@@ -34,6 +34,8 @@ from talaqi.profiles.repository import ProfileRepository
 from talaqi.regions.repository import RegionRepository
 from talaqi.regions.service import RegionPolicyService
 from talaqi.runtime import LazySessionFactory
+from talaqi.settings.repository import PlatformSettingsRepository
+from talaqi.settings.service import PlatformSettingsService
 
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
@@ -71,6 +73,7 @@ def _service(request: Request, session: AsyncSession) -> EventService:
         current_organizer_rules_version=settings.current_organizer_rules_version,
         current_community_rules_version=settings.current_community_rules_version,
         admin_mfa_required=settings.admin_mfa_required,
+        feature_flags=PlatformSettingsService(PlatformSettingsRepository(session)),
     )
     storage_runtime: LazyMediaStorage = request.app.state.media_storage_runtime
     media = MediaService(
@@ -86,6 +89,7 @@ def _service(request: Request, session: AsyncSession) -> EventService:
         ClubEventAccessService(ClubRepository(session)),
         media,
         AuditService(AuditRepository(session)),
+        PlatformSettingsService(PlatformSettingsRepository(session)),
     )
 
 

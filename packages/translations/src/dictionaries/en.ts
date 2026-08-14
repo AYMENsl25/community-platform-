@@ -105,6 +105,8 @@ export const englishDictionary = {
   "blockers.club_limit_reached": "Your club ownership limit is reached.",
   "blockers.independent_event_limit_reached":
     "Your independent event limit is reached.",
+  "blockers.independent_event_creation_disabled":
+    "Independent event creation is temporarily unavailable.",
   "blockers.admin_mfa_required":
     "Multi-factor authentication is required for administration.",
   "regions.country.tr": "Turkey",
@@ -359,6 +361,7 @@ export const englishDictionary = {
   "errors.unauthorized": "Authentication is required.",
   "errors.username_unavailable": "Choose a different username.",
   "errors.validation": "Check the highlighted fields.",
+  "errors.feature_disabled": "This feature is temporarily unavailable.",
   "errors.validation.invalid": "This value is invalid.",
   "errors.validation.missing": "This field is required.",
   "errors.validation.extra_forbidden": "Remove the unexpected field.",

@@ -9,6 +9,7 @@ from talaqi.communications.content_schemas import ClubAnnouncementRequest, Event
 from talaqi.events.access_service import EventAccessService
 from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
+from talaqi.settings.service import PlatformSettingsService
 
 
 class OrganizerCommunicationsService:
@@ -17,10 +18,12 @@ class OrganizerCommunicationsService:
         repository: OrganizerContentRepository,
         club_access: ClubEventAccessService,
         event_access: EventAccessService,
+        feature_flags: PlatformSettingsService | None = None,
     ) -> None:
         self._repository = repository
         self._club_access = club_access
         self._event_access = event_access
+        self._feature_flags = feature_flags
 
     async def create_club(
         self,
@@ -30,6 +33,9 @@ class OrganizerCommunicationsService:
         idempotency_key: str,
     ) -> PublishedContent:
         await self._club_access.require_event_manager(principal, club_id, for_update=True)
+        if self._feature_flags is None:
+            raise RuntimeError("announcement creation requires feature flag service")
+        await self._feature_flags.require_enabled("features.organizer_announcements_enabled")
         return await self._repository.create_club_announcement(
             club_id=club_id,
             author_user_id=principal.user_id,

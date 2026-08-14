@@ -19,6 +19,8 @@ from talaqi.profiles.schemas import Capabilities, ProfileReplacementRequest, Pro
 from talaqi.profiles.service import ProfileService
 from talaqi.regions.repository import RegionRepository
 from talaqi.regions.service import RegionPolicyService
+from talaqi.settings.repository import PlatformSettingsRepository
+from talaqi.settings.service import PlatformSettingsService
 
 router = APIRouter(prefix="/api/v1/me", tags=["profiles"])
 
@@ -48,6 +50,7 @@ def _services(
         current_organizer_rules_version=settings.current_organizer_rules_version,
         current_community_rules_version=settings.current_community_rules_version,
         admin_mfa_required=settings.admin_mfa_required,
+        feature_flags=PlatformSettingsService(PlatformSettingsRepository(session)),
     )
     return profile_service, eligibility
 

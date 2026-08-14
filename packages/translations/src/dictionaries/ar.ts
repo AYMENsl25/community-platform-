@@ -105,6 +105,8 @@ export const arabicDictionary: Dictionary = {
   "blockers.club_limit_reached": "لقد بلغت الحد الأقصى لملكية النوادي.",
   "blockers.independent_event_limit_reached":
     "لقد بلغت الحد الأقصى للفعاليات المستقلة.",
+  "blockers.independent_event_creation_disabled":
+    "إنشاء الفعاليات المستقلة غير متاح مؤقتًا.",
   "blockers.admin_mfa_required":
     "تلزم المصادقة متعددة العوامل للوصول إلى الإدارة.",
   "regions.country.tr": "تركيا",
@@ -365,6 +367,7 @@ export const arabicDictionary: Dictionary = {
   "errors.unauthorized": "المصادقة مطلوبة.",
   "errors.username_unavailable": "اختر اسم مستخدم مختلفًا.",
   "errors.validation": "تحقق من الحقول المحددة.",
+  "errors.feature_disabled": "هذه الميزة غير متاحة مؤقتًا.",
   "errors.validation.invalid": "هذه القيمة غير صالحة.",
   "errors.validation.missing": "هذا الحقل مطلوب.",
   "errors.validation.extra_forbidden": "أزل الحقل غير المتوقع.",

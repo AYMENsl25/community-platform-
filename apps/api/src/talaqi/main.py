@@ -30,6 +30,7 @@ from talaqi.regions.routes import router as regions_router
 from talaqi.registrations.routes import router as registrations_router
 from talaqi.runtime import SessionFactory, install_runtime
 from talaqi.security import RateLimiter, install_http_security, install_request_logging
+from talaqi.settings.routes import router as settings_router
 
 
 def create_app(
@@ -108,6 +109,7 @@ def create_app(
     application.include_router(media_router)
     application.include_router(moderation_router)
     application.include_router(moderation_report_router)
+    application.include_router(settings_router)
     install_openapi(application)
     return application
 

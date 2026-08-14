@@ -18,6 +18,7 @@ from talaqi.moderation.models import (
 from talaqi.moderation.repository import ModerationRepositoryProtocol
 from talaqi.platform import ApiError
 from talaqi.security import can_access_admin, can_moderate
+from talaqi.settings.service import PlatformSettingsService
 
 
 def _not_found() -> ApiError:
@@ -96,9 +97,11 @@ class ModerationService:
         self,
         repository: ModerationRepositoryProtocol,
         audit: AuditService,
+        feature_flags: PlatformSettingsService | None = None,
     ) -> None:
         self._repository = repository
         self._audit = audit
+        self._feature_flags = feature_flags
 
     async def list_cases(
         self,
@@ -141,6 +144,9 @@ class ModerationService:
         request_id: str,
         now: datetime | None = None,
     ) -> ModerationCase:
+        if self._feature_flags is None:
+            raise RuntimeError("report submission requires feature flag service")
+        await self._feature_flags.require_enabled("features.member_reports_enabled")
         normalized_description = description.strip()
         if category not in REPORT_CATEGORIES or not 10 <= len(normalized_description) <= 5_000:
             raise ApiError(code="invalid_report", message_key="errors.validation", status_code=422)

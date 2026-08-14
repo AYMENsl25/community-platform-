@@ -109,6 +109,8 @@ export const turkishDictionary = {
     "Sahip olabileceğiniz kulüp sınırına ulaştınız.",
   "blockers.independent_event_limit_reached":
     "Bağımsız etkinlik sınırına ulaştınız.",
+  "blockers.independent_event_creation_disabled":
+    "Bağımsız etkinlik oluşturma geçici olarak kullanılamıyor.",
   "blockers.admin_mfa_required":
     "Yönetim işlemleri için çok faktörlü kimlik doğrulama gereklidir.",
   "regions.country.tr": "Türkiye",
@@ -373,6 +375,7 @@ export const turkishDictionary = {
   "errors.unauthorized": "Kimlik doğrulaması gereklidir.",
   "errors.username_unavailable": "Farklı bir kullanıcı adı seçin.",
   "errors.validation": "İşaretli alanları kontrol edin.",
+  "errors.feature_disabled": "Bu özellik geçici olarak kullanılamıyor.",
   "errors.validation.invalid": "Bu değer geçersiz.",
   "errors.validation.missing": "Bu alan zorunludur.",
   "errors.validation.extra_forbidden": "Beklenmeyen alanı kaldırın.",

@@ -3139,6 +3139,130 @@
         "title": "EventUpdateRequest",
         "type": "object"
       },
+      "FeatureFlagChangeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "revision",
+          "reason"
+        ],
+        "title": "FeatureFlagChangeRequest",
+        "type": "object"
+      },
+      "FeatureFlagPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureFlagResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "title": "Next Cursor",
+            "type": "null"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FeatureFlagPageResponse",
+        "type": "object"
+      },
+      "FeatureFlagPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "current": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          },
+          "impact": {
+            "const": "blocks_new_mutations_only",
+            "default": "blocks_new_mutations_only",
+            "title": "Impact",
+            "type": "string"
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          }
+        },
+        "required": [
+          "current",
+          "proposed",
+          "changed"
+        ],
+        "title": "FeatureFlagPreviewResponse",
+        "type": "object"
+      },
+      "FeatureFlagResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key": {
+            "enum": [
+              "features.member_reports_enabled",
+              "features.organizer_announcements_enabled",
+              "features.independent_event_creation_enabled"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "enabled",
+          "revision"
+        ],
+        "title": "FeatureFlagResponse",
+        "type": "object"
+      },
+      "FeatureFlagUpdateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "setting": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          },
+          "status": {
+            "const": "updated",
+            "default": "updated",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "setting"
+        ],
+        "title": "FeatureFlagUpdateResponse",
+        "type": "object"
+      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -6550,6 +6674,303 @@
         "summary": "Search Targets",
         "tags": [
           "moderation"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags": {
+      "get": {
+        "operationId": "listFeatureFlags",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Feature Flags",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags/{key}": {
+      "patch": {
+        "operationId": "updateFeatureFlag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "features.member_reports_enabled",
+                "features.organizer_announcements_enabled",
+                "features.independent_event_creation_enabled"
+              ],
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagUpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Setting not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Revision conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Update Feature Flag",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags/{key}/preview": {
+      "post": {
+        "operationId": "previewFeatureFlag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "features.member_reports_enabled",
+                "features.organizer_announcements_enabled",
+                "features.independent_event_creation_enabled"
+              ],
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Setting not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Revision conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Preview Feature Flag",
+        "tags": [
+          "settings"
         ]
       }
     },
