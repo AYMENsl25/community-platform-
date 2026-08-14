@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import replace
 from datetime import datetime, timedelta
+from uuid import UUID
 
+from talaqi.audit import AuditService
+from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
 from talaqi.regions.models import (
     Category,
@@ -15,14 +19,95 @@ from talaqi.regions.models import (
     RegionPolicy,
 )
 from talaqi.regions.repository import RegionRepository
+from talaqi.regions.schemas import RegionPolicyChangeRequest
+from talaqi.security import can_access_admin, can_moderate
 
 
 class RegionPolicyService:
-    def __init__(self, repository: RegionRepository) -> None:
+    def __init__(self, repository: RegionRepository, audit: AuditService | None = None) -> None:
         self._repository = repository
+        self._audit = audit
 
     async def get(self, country_code: str) -> RegionPolicy:
         return await self._repository.get_policy(country_code)
+
+    async def get_admin(self, principal: AuthPrincipal, country_code: str) -> RegionPolicy:
+        can_access_admin(principal)
+        return await self.get(country_code)
+
+    async def preview_admin(
+        self, principal: AuthPrincipal, country_code: str, change: RegionPolicyChangeRequest
+    ) -> tuple[RegionPolicy, RegionPolicy, tuple[str, ...]]:
+        await self._require_mfa_admin(principal)
+        current = await self.get(country_code)
+        return self._proposed(current, change)
+
+    async def update_admin(
+        self,
+        principal: AuthPrincipal,
+        country_code: str,
+        change: RegionPolicyChangeRequest,
+        *,
+        request_id: UUID,
+    ) -> RegionPolicy:
+        await self._require_mfa_admin(principal)
+        current = await self._repository.lock_policy(country_code)
+        current, proposed, changed = self._proposed(current, change)
+        if not changed:
+            raise ApiError(code="no_changes", message_key="errors.validation", status_code=422)
+        updated = await self._repository.update_safe_policy_controls(
+            country_code,
+            expected_revision=current.revision,
+            club_limit=proposed.club_limit,
+            independent_event_limit=proposed.independent_event_limit,
+            exact_venue_public_by_default=proposed.exact_venue_public_by_default,
+        )
+        if updated is None:
+            raise ApiError(code="stale_revision", message_key="errors.conflict", status_code=409)
+        if self._audit is None:
+            raise RuntimeError("regional policy updates require audit service")
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="admin",
+            action="regions.policy.update",
+            target_type="regional_policy",
+            target_id=None,
+            reason=change.reason.strip(),
+            safe_before={name: getattr(current, name) for name in changed}
+            | {"country_code": current.country_code, "revision": current.revision},
+            safe_after={name: getattr(updated, name) for name in changed}
+            | {"country_code": updated.country_code, "revision": updated.revision},
+            request_id=request_id,
+        )
+        return updated
+
+    def _proposed(
+        self, current: RegionPolicy, change: RegionPolicyChangeRequest
+    ) -> tuple[RegionPolicy, RegionPolicy, tuple[str, ...]]:
+        if len(change.reason.strip()) < 3:
+            raise ApiError(code="invalid_reason", message_key="errors.validation", status_code=422)
+        if current.revision != change.revision:
+            raise ApiError(code="stale_revision", message_key="errors.conflict", status_code=409)
+        values = {
+            "club_limit": change.club_limit
+            if change.club_limit is not None
+            else current.club_limit,
+            "independent_event_limit": change.independent_event_limit
+            if change.independent_event_limit is not None
+            else current.independent_event_limit,
+            "exact_venue_public_by_default": change.exact_venue_public_by_default
+            if change.exact_venue_public_by_default is not None
+            else current.exact_venue_public_by_default,
+        }
+        changed = tuple(name for name, value in values.items() if value != getattr(current, name))
+        proposed = replace(current, **values, revision=current.revision + bool(changed))
+        return current, proposed, changed
+
+    async def _require_mfa_admin(self, principal: AuthPrincipal) -> None:
+        can_access_admin(principal)
+        can_moderate(
+            principal, has_active_mfa=await self._repository.has_active_mfa(principal.user_id)
+        )
 
     async def list_countries(self) -> tuple[Country, ...]:
         return await self._repository.list_countries()

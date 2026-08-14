@@ -101,6 +101,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/regions/{country_code}/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Region Policy */
+        get: operations["getAdminRegionPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Admin Region Policy */
+        patch: operations["updateAdminRegionPolicy"];
+        trace?: never;
+    };
+    "/api/v1/admin/regions/{country_code}/policy/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Admin Region Policy */
+        post: operations["previewAdminRegionPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/settings/feature-flags": {
         parameters: {
             query?: never;
@@ -2861,6 +2896,34 @@ export interface components {
              */
             refreshed: true;
         };
+        /**
+         * RegionPolicyChangeRequest
+         * @description Safe, prospective regional controls; active records are never rewritten.
+         */
+        RegionPolicyChangeRequest: {
+            /** Club Limit */
+            club_limit?: number | null;
+            /** Exact Venue Public By Default */
+            exact_venue_public_by_default?: boolean | null;
+            /** Independent Event Limit */
+            independent_event_limit?: number | null;
+            /** Reason */
+            reason: string;
+            /** Revision */
+            revision: number;
+        };
+        /** RegionPolicyPreviewResponse */
+        RegionPolicyPreviewResponse: {
+            /** Changed Fields */
+            changed_fields: string[];
+            current: components["schemas"]["RegionPolicyResponse"];
+            /**
+             * Impact
+             * @default Changes affect future ownership and event drafts only; existing records remain unchanged.
+             */
+            impact: string;
+            proposed: components["schemas"]["RegionPolicyResponse"];
+        };
         /** RegionPolicyResponse */
         RegionPolicyResponse: {
             /** Allowed Registration Methods */
@@ -2896,6 +2959,16 @@ export interface components {
             independent_event_limit: number;
             /** Revision */
             revision: number;
+        };
+        /** RegionPolicyUpdateResponse */
+        RegionPolicyUpdateResponse: {
+            policy: components["schemas"]["RegionPolicyResponse"];
+            /**
+             * Status
+             * @default updated
+             * @constant
+             */
+            status: "updated";
         };
         /** RegistrationCreateRequest */
         RegistrationCreateRequest: {
@@ -3518,6 +3591,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    updateAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionPolicyChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyUpdateResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    previewAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionPolicyChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyPreviewResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];

@@ -5186,6 +5186,96 @@
         "title": "RefreshedResponse",
         "type": "object"
       },
+      "RegionPolicyChangeRequest": {
+        "additionalProperties": false,
+        "description": "Safe, prospective regional controls; active records are never rewritten.",
+        "properties": {
+          "club_limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Limit"
+          },
+          "exact_venue_public_by_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Venue Public By Default"
+          },
+          "independent_event_limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Independent Event Limit"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "reason"
+        ],
+        "title": "RegionPolicyChangeRequest",
+        "type": "object"
+      },
+      "RegionPolicyPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Fields",
+            "type": "array"
+          },
+          "current": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          },
+          "impact": {
+            "default": "Changes affect future ownership and event drafts only; existing records remain unchanged.",
+            "title": "Impact",
+            "type": "string"
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          }
+        },
+        "required": [
+          "current",
+          "proposed",
+          "changed_fields"
+        ],
+        "title": "RegionPolicyPreviewResponse",
+        "type": "object"
+      },
       "RegionPolicyResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5282,6 +5372,25 @@
           "revision"
         ],
         "title": "RegionPolicyResponse",
+        "type": "object"
+      },
+      "RegionPolicyUpdateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          },
+          "status": {
+            "const": "updated",
+            "default": "updated",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "title": "RegionPolicyUpdateResponse",
         "type": "object"
       },
       "RegistrationCreateRequest": {
@@ -6674,6 +6783,155 @@
         "summary": "Search Targets",
         "tags": [
           "moderation"
+        ]
+      }
+    },
+    "/api/v1/admin/regions/{country_code}/policy": {
+      "get": {
+        "operationId": "getAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Admin Region Policy",
+        "tags": [
+          "regions"
+        ]
+      },
+      "patch": {
+        "operationId": "updateAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionPolicyChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyUpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Update Admin Region Policy",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/admin/regions/{country_code}/policy/preview": {
+      "post": {
+        "operationId": "previewAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionPolicyChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Preview Admin Region Policy",
+        "tags": [
+          "regions"
         ]
       }
     },

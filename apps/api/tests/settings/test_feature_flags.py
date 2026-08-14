@@ -147,3 +147,71 @@ def test_feature_flag_keys_are_the_approved_closed_beta_set() -> None:
         "features.organizer_announcements_enabled",
         "features.independent_event_creation_enabled",
     )
+
+
+@pytest.mark.asyncio
+async def test_regional_policy_preview_update_is_mfa_revision_safe_and_audited(
+    settings_engine: AsyncEngine,
+) -> None:
+    member = await create_user(settings_engine)
+    no_mfa = await make_admin(settings_engine, mfa=False)
+    admin = await make_admin(settings_engine, mfa=True)
+    path = "/api/v1/admin/regions/TR/policy"
+    body = {
+        "revision": 1,
+        "reason": "Adjust the closed beta ownership capacity",
+        "club_limit": 2,
+        "independent_event_limit": 4,
+    }
+    app = app_for(settings_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        member_read = await client.get(path, headers=member.headers())
+        no_mfa_preview = await client.post(f"{path}/preview", json=body, headers=no_mfa.headers())
+        preview = await client.post(f"{path}/preview", json=body, headers=admin.headers())
+        key = f"region-policy-{generate_uuid7()}"
+        updated = await client.patch(path, json=body, headers=admin.headers(idempotency_key=key))
+        replay = await client.patch(path, json=body, headers=admin.headers(idempotency_key=key))
+        stale = await client.patch(
+            path,
+            json={**body, "reason": "A stale regional policy update"},
+            headers=admin.headers(idempotency_key=f"region-stale-{generate_uuid7()}"),
+        )
+    assert member_read.status_code == no_mfa_preview.status_code == 403
+    assert preview.status_code == 200
+    assert preview.json()["changed_fields"] == ["club_limit", "independent_event_limit"]
+    assert preview.json()["proposed"]["revision"] == 2
+    assert updated.status_code == replay.status_code == 200
+    assert updated.json() == replay.json()
+    assert updated.json()["policy"]["club_limit"] == 2
+    assert updated.json()["policy"]["independent_event_limit"] == 4
+    assert stale.status_code == 409
+    async with settings_engine.connect() as connection:
+        audit = (
+            await connection.execute(
+                text(
+                    "SELECT action, reason, safe_before, safe_after FROM talaqi.audit_events "
+                    "WHERE action = 'regions.policy.update'"
+                )
+            )
+        ).one()
+    assert audit[0] == "regions.policy.update"
+    assert audit[1] == body["reason"]
+    assert audit[2]["country_code"] == audit[3]["country_code"] == "TR"
+    assert audit[2]["revision"] == 1
+    assert audit[3]["revision"] == 2
+    async with settings_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                UPDATE talaqi.regional_policies AS policy
+                SET default_club_ownership_limit = 1,
+                    default_active_independent_event_limit = 3,
+                    exact_venue_public_by_default = false,
+                    revision = 1
+                FROM talaqi.countries AS country
+                WHERE policy.country_id = country.id AND country.code = 'TR'
+                """
+            )
+        )
