@@ -6,7 +6,40 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from talaqi.moderation.models import CaseStatus, ModerationAction, Priority, TargetType
+from talaqi.moderation.models import (
+    CaseStatus,
+    ModerationAction,
+    Priority,
+    TargetType,
+)
+
+
+class ReportRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    target_type: TargetType
+    target_id: UUID
+    category: Literal[
+        "safety", "harassment", "fraud", "illegal_content", "privacy", "spam", "other"
+    ]
+    description: str = Field(min_length=10, max_length=5_000)
+    source_path: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+        pattern=r"^/[A-Za-z0-9/_-]*$",
+        description="Optional query-free application path where the issue was observed.",
+    )
+
+
+class ReportResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    status: Literal["open"]
+    priority: Priority
+    emergency_notice: bool
+    created_at: datetime
 
 
 class TargetResponse(BaseModel):

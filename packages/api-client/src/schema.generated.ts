@@ -1116,6 +1116,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Report */
+        post: operations["submitReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search": {
         parameters: {
             query?: never;
@@ -2758,6 +2775,56 @@ export interface components {
             privacy_version: string;
             /** Terms Version */
             terms_version: string;
+        };
+        /** ReportRequest */
+        ReportRequest: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "safety" | "harassment" | "fraud" | "illegal_content" | "privacy" | "spam" | "other";
+            /** Description */
+            description: string;
+            /**
+             * Source Path
+             * @description Optional query-free application path where the issue was observed.
+             */
+            source_path?: string | null;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "user" | "club" | "event";
+        };
+        /** ReportResponse */
+        ReportResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Emergency Notice */
+            emergency_notice: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "standard" | "high" | "emergency";
+            /**
+             * Status
+             * @constant
+             */
+            status: "open";
         };
         /** RevokedResponse */
         RevokedResponse: {
@@ -6664,6 +6731,55 @@ export interface operations {
             };
             /** @description The requested enabled region does not exist. */
             404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    submitReport: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying one report submission. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF protection denied the report. */
+            403: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

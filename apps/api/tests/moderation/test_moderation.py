@@ -187,6 +187,156 @@ async def test_safety_cases_must_enter_the_emergency_priority_queue(
 
 
 @pytest.mark.asyncio
+async def test_authenticated_report_submission_is_private_audited_and_rate_limited(
+    moderation_engine: AsyncEngine,
+) -> None:
+    reporter = await create_user(moderation_engine)
+    target = await create_user(moderation_engine)
+    body = {
+        "target_type": "user",
+        "target_id": str(target.user_id),
+        "category": "safety",
+        "description": "Urgent private evidence that must remain server-side only.",
+        "source_path": "/events/reportable-event",
+    }
+    app = app_for(moderation_engine)
+    first_key = f"report-{generate_uuid7()}"
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        unauthenticated = await client.post(
+            "/api/v1/reports",
+            json=body,
+            headers={"Idempotency-Key": f"unauth-{generate_uuid7()}"},
+        )
+        missing_csrf = await client.post(
+            "/api/v1/reports",
+            json=body,
+            headers={
+                "cookie": reporter.cookie,
+                "Idempotency-Key": f"no-csrf-{generate_uuid7()}",
+            },
+        )
+        invalid_path = await client.post(
+            "/api/v1/reports",
+            json={**body, "source_path": "/events/x?invite=private"},
+            headers=reporter.headers(idempotency_key=f"invalid-{generate_uuid7()}"),
+        )
+        submitted = await client.post(
+            "/api/v1/reports",
+            json=body,
+            headers=reporter.headers(idempotency_key=first_key),
+        )
+        replay = await client.post(
+            "/api/v1/reports",
+            json=body,
+            headers=reporter.headers(idempotency_key=first_key),
+        )
+        for index in range(9):
+            allowed = await client.post(
+                "/api/v1/reports",
+                json={
+                    **body,
+                    "category": "spam",
+                    "description": f"Repeated safe report evidence number {index}.",
+                },
+                headers=reporter.headers(idempotency_key=f"report-{index}-{generate_uuid7()}"),
+            )
+            assert allowed.status_code == 201
+        limited = await client.post(
+            "/api/v1/reports",
+            json=body,
+            headers=reporter.headers(idempotency_key=f"limited-{generate_uuid7()}"),
+        )
+
+    assert unauthenticated.status_code == 401
+    assert missing_csrf.status_code == 403
+    assert invalid_path.status_code == 422
+    assert submitted.status_code == 201, submitted.text
+    assert replay.status_code == 201
+    assert replay.json() == submitted.json()
+    assert replay.headers["cache-control"] == "private, no-store"
+    assert submitted.headers["cache-control"] == "private, no-store"
+    assert submitted.json()["priority"] == "emergency"
+    assert submitted.json()["emergency_notice"] is True
+    assert "description" not in submitted.text
+    assert "source_path" not in submitted.text
+    assert limited.status_code == 429
+
+    case_id = UUID(submitted.json()["id"])
+    async with moderation_engine.connect() as connection:
+        stored = (
+            await connection.execute(
+                text(
+                    """
+                    SELECT reporter_user_id, description, priority::text
+                    FROM talaqi.moderation_cases WHERE id = :id
+                    """
+                ),
+                {"id": case_id},
+            )
+        ).one()
+        safe_metadata = (
+            await connection.execute(
+                text(
+                    """
+                    SELECT safe_metadata FROM talaqi.moderation_case_events
+                    WHERE moderation_case_id = :id
+                    """
+                ),
+                {"id": case_id},
+            )
+        ).scalar_one()
+        audit = (
+            await connection.execute(
+                text(
+                    """
+                    SELECT action, safe_after FROM talaqi.audit_events
+                    WHERE actor_user_id = :reporter_id
+                      AND target_id = :target_id
+                      AND action = 'moderation.report.submitted'
+                    ORDER BY created_at ASC LIMIT 1
+                    """
+                ),
+                {"reporter_id": reporter.user_id, "target_id": target.user_id},
+            )
+        ).one()
+    assert stored == (reporter.user_id, body["description"], "emergency")
+    assert safe_metadata == {"source_path": body["source_path"]}
+    assert audit[0] == "moderation.report.submitted"
+    assert "description" not in audit[1]
+    assert "source_path" not in audit[1]
+
+
+@pytest.mark.asyncio
+async def test_report_submission_rejects_self_and_unknown_targets(
+    moderation_engine: AsyncEngine,
+) -> None:
+    reporter = await create_user(moderation_engine)
+    base = {
+        "target_type": "user",
+        "category": "other",
+        "description": "Enough private detail to validate the report request.",
+    }
+    app = app_for(moderation_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        self_report = await client.post(
+            "/api/v1/reports",
+            json={**base, "target_id": str(reporter.user_id)},
+            headers=reporter.headers(idempotency_key=f"self-{generate_uuid7()}"),
+        )
+        missing = await client.post(
+            "/api/v1/reports",
+            json={**base, "target_id": str(generate_uuid7())},
+            headers=reporter.headers(idempotency_key=f"missing-{generate_uuid7()}"),
+        )
+    assert self_report.status_code == 422
+    assert missing.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_case_queue_orders_priority_first_and_cursor_stays_stable(
     moderation_engine: AsyncEngine,
 ) -> None:

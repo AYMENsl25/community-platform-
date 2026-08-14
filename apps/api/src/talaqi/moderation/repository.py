@@ -60,6 +60,19 @@ def _target(row: Mapping[str, object], target_type: TargetType) -> ModerationTar
 class ModerationRepositoryProtocol(Protocol):
     async def has_active_mfa(self, user_id: UUID) -> bool: ...
 
+    async def create_report(
+        self,
+        *,
+        reporter_user_id: UUID,
+        target_type: TargetType,
+        target_id: UUID,
+        category: str,
+        description: str,
+        priority: str,
+        source_path: str | None,
+        now: datetime,
+    ) -> ModerationCase: ...
+
     async def list_cases(
         self,
         *,
@@ -130,6 +143,76 @@ class ModerationRepository:
                 )
             ).scalar_one()
         )
+
+    async def create_report(
+        self,
+        *,
+        reporter_user_id: UUID,
+        target_type: TargetType,
+        target_id: UUID,
+        category: str,
+        description: str,
+        priority: str,
+        source_path: str | None,
+        now: datetime,
+    ) -> ModerationCase:
+        case_id = generate_uuid7()
+        target_column = {
+            "user": "target_user_id",
+            "club": "target_club_id",
+            "event": "target_event_id",
+        }[target_type]
+        await self._session.execute(
+            text(
+                f"""
+                INSERT INTO talaqi.moderation_cases (
+                    id, reporter_user_id, target_type, {target_column}, category,
+                    description, priority, created_at
+                ) VALUES (
+                    :id, :reporter_user_id,
+                    CAST(:target_type AS talaqi.moderation_target_type),
+                    :target_id, :category, :description,
+                    CAST(:priority AS talaqi.moderation_priority), :now
+                )
+                """  # noqa: S608 -- target column comes from a fixed enum map
+            ),
+            {
+                "id": case_id,
+                "reporter_user_id": reporter_user_id,
+                "target_type": target_type,
+                "target_id": target_id,
+                "category": category,
+                "description": description,
+                "priority": priority,
+                "now": now,
+            },
+        )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.moderation_case_events (
+                    id, moderation_case_id, actor_user_id, from_status,
+                    to_status, reason, safe_metadata, created_at
+                ) VALUES (
+                    :id, :case_id, :reporter_user_id, NULL, 'open',
+                    'Report submitted', CAST(:safe_metadata AS jsonb), :now
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "case_id": case_id,
+                "reporter_user_id": reporter_user_id,
+                "safe_metadata": json.dumps(
+                    {"source_path": source_path} if source_path is not None else {}
+                ),
+                "now": now,
+            },
+        )
+        case = await self.get_case(case_id)
+        if case is None:
+            raise RuntimeError("moderation report disappeared during creation")
+        return case
 
     async def list_cases(
         self,

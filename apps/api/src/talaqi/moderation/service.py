@@ -7,6 +7,7 @@ from talaqi.audit import AuditEvent, AuditService
 from talaqi.db.identifiers import validate_uuid7
 from talaqi.identity.models import AuthPrincipal
 from talaqi.moderation.models import (
+    REPORT_CATEGORIES,
     ModerationAction,
     ModerationCase,
     ModerationCaseEvent,
@@ -115,6 +116,53 @@ class ModerationService:
             if target is not None:
                 views.append((case, target, capabilities(target)))
         return views
+
+    async def submit_report(
+        self,
+        principal: AuthPrincipal,
+        *,
+        target_type: TargetType,
+        target_id: UUID,
+        category: str,
+        description: str,
+        source_path: str | None,
+        request_id: str,
+        now: datetime | None = None,
+    ) -> ModerationCase:
+        normalized_description = description.strip()
+        if category not in REPORT_CATEGORIES or not 10 <= len(normalized_description) <= 5_000:
+            raise ApiError(code="invalid_report", message_key="errors.validation", status_code=422)
+        target = await self._repository.get_target(target_type, target_id)
+        if target is None:
+            raise _not_found()
+        if target_type == "user" and target_id == principal.user_id:
+            raise ApiError(
+                code="invalid_report_target", message_key="errors.validation", status_code=422
+            )
+        current = now or datetime.now(UTC)
+        priority = "emergency" if category == "safety" else "standard"
+        case = await self._repository.create_report(
+            reporter_user_id=principal.user_id,
+            target_type=target_type,
+            target_id=target_id,
+            category=category,
+            description=normalized_description,
+            priority=priority,
+            source_path=source_path,
+            now=current,
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="member",
+            action="moderation.report.submitted",
+            target_type=target_type,
+            target_id=target_id,
+            reason=None,
+            safe_before=None,
+            safe_after={"case_id": str(case.id), "category": category, "priority": priority},
+            request_id=UUID(request_id),
+        )
+        return case
 
     async def list_audit_events(
         self,
