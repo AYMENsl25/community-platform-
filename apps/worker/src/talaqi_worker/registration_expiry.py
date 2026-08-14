@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -21,6 +22,9 @@ from talaqi.registrations.expiry import (
 )
 from talaqi.registrations.repository import RegistrationRepository
 from talaqi.registrations.service import PromotionService, RegistrationTransitionService
+from talaqi.telemetry import emit_metric
+
+LOGGER = logging.getLogger("talaqi.worker.telemetry")
 
 
 class ExpiryProcessorProtocol(Protocol):
@@ -102,6 +106,12 @@ class CashExpiryWorker:
                     await self._processor_factory(session).process(claimed, now=current)
                     await repository.complete(claimed.id, processed_at=current)
                     completed += 1
+                    emit_metric(
+                        LOGGER,
+                        "registration_expiry_total",
+                        1,
+                        {"result": "completed"},
+                    )
             except Exception as error:
                 await self._record_failure(job, error=error, now=current)
         return completed
@@ -118,6 +128,12 @@ class CashExpiryWorker:
                 retry_at=retry_at,
                 permanent=permanent,
             )
+        emit_metric(
+            LOGGER,
+            "registration_expiry_total",
+            1,
+            {"result": "permanent_failed" if permanent else "retryable_failed"},
+        )
 
     @staticmethod
     def _instant(value: datetime) -> datetime:

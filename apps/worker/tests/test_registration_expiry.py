@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -237,7 +239,20 @@ class _AlwaysFails:
 @pytest.mark.asyncio
 async def test_failures_back_off_then_become_visible_as_permanent(
     worker_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    observed: list[tuple[str, dict[str, str]]] = []
+
+    def observe(
+        logger: logging.Logger, name: str, value: int | float, labels: Mapping[str, str]
+    ) -> None:
+        del logger, value
+        observed.append((name, dict(labels)))
+
+    monkeypatch.setattr(
+        "talaqi_worker.registration_expiry.emit_metric",
+        observe,
+    )
     _, registration_id, now = await _cash_event_with_waitlist(worker_engine)
     worker = CashExpiryWorker(
         build_session_factory(worker_engine),
@@ -272,3 +287,8 @@ async def test_failures_back_off_then_become_visible_as_permanent(
     assert row["last_error_code"] == "runtimeerror"
     assert row["locked_by"] is None
     assert row["locked_until"] is None
+    assert [labels["result"] for _, labels in observed] == [
+        "retryable_failed",
+        "permanent_failed",
+    ]
+    assert all(set(labels) == {"result"} for _, labels in observed)

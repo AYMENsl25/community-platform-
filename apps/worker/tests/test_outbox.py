@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -370,7 +372,20 @@ async def test_fresh_clock_skips_later_batch_items_after_lease_expiry(
 @pytest.mark.asyncio
 async def test_poison_event_retries_with_bounded_jitter_then_enters_dead_letter_review(
     worker_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    observed: list[tuple[str, dict[str, str]]] = []
+
+    def observe(
+        logger: logging.Logger, name: str, value: int | float, labels: Mapping[str, str]
+    ) -> None:
+        del logger, value
+        observed.append((name, dict(labels)))
+
+    monkeypatch.setattr(
+        "talaqi_worker.outbox.emit_metric",
+        observe,
+    )
     aggregate_id = generate_uuid7()
     now = datetime.now(UTC)
     await enqueue(worker_engine, aggregate_id=aggregate_id, key="poison:retry", now=now)
@@ -403,6 +418,12 @@ async def test_poison_event_retries_with_bounded_jitter_then_enters_dead_letter_
         "poison:retry",
         "poison:permanent",
     }
+    assert [labels["failure_class"] for _, labels in observed] == [
+        "retryable",
+        "permanent",
+        "permanent",
+    ]
+    assert all(set(labels) == {"event_type", "failure_class"} for _, labels in observed)
 
 
 @pytest.mark.asyncio
