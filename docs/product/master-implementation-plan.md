@@ -384,9 +384,9 @@
 
 ### Task 6.2: Regional settings and operational admin tools
 
-- [ ] Build MFA-protected policy editing, feature flags, ownership limits, search, audit review, outbox/dead-letter visibility, and safe retry actions.
-- [ ] Validate changes server-side and preview impact; prohibit destructive bulk edits or direct registration-state overrides.
-- [ ] Gate: non-MFA/role negative tests, policy-boundary tests, admin E2E, and client drift check; commit `feat: add safe platform operations console`.
+- [x] Build MFA-protected policy editing, feature flags, ownership limits, search, audit review, outbox/dead-letter visibility, and safe retry actions.
+- [x] Validate changes server-side and preview impact; prohibit destructive bulk edits or direct registration-state overrides.
+- [x] Gate: non-MFA/role negative tests, policy-boundary tests, admin E2E, and client drift check; commit `feat: add safe platform operations console`.
 
 ### Task 6.3: Observability and alerting
 

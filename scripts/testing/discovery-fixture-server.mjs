@@ -223,6 +223,47 @@ let adminCaseStatus = "open";
 let adminAssignedUserId = null;
 let adminActionHistory = [];
 let adminAuditEvents = [];
+let operationalFlags = [
+  { key: "features.member_reports_enabled", enabled: true, revision: 1 },
+  {
+    key: "features.organizer_announcements_enabled",
+    enabled: true,
+    revision: 1,
+  },
+  {
+    key: "features.independent_event_creation_enabled",
+    enabled: true,
+    revision: 1,
+  },
+];
+let operationalPolicy = {
+  country_code: "TR",
+  default_locale: "tr",
+  default_currency: "TRY",
+  allowed_registration_methods: ["free", "cash_organizer_confirmed"],
+  cash_default_minutes: 1440,
+  cash_bounds: [120, 4320],
+  cancellation_default_minutes: 1440,
+  cancellation_bounds: [0, 10080],
+  club_limit: 1,
+  independent_event_limit: 3,
+  exact_venue_public_by_default: false,
+  revision: 1,
+};
+let operationalOutbox = [
+  {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    aggregate_type: "notification",
+    event_type: "notification.email",
+    status: "permanent_failed",
+    attempt_count: 4,
+    last_error_code: "provider_rejected",
+    available_at: "2026-07-27T01:00:00Z",
+    created_at: "2026-07-27T00:00:00Z",
+    processed_at: null,
+    locked_until: null,
+  },
+];
 
 function adminTarget() {
   return {
@@ -653,6 +694,171 @@ createServer(async (request, response) => {
       response,
       200,
       { items: adminAuditEvents, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/settings/feature-flags") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: operationalFlags, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  const flagMatch = url.pathname.match(
+    /^\/api\/v1\/admin\/settings\/feature-flags\/(features\.[a-z_]+)(\/preview)?$/,
+  );
+  if (flagMatch) {
+    if (platformAdmin !== "platform-admin")
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const current = operationalFlags.find((item) => item.key === flagMatch[1]);
+    if (!current)
+      return send(
+        response,
+        404,
+        { error: { code: "not_found" } },
+        "private, no-store",
+      );
+    const proposed = {
+      ...current,
+      enabled: payload.enabled,
+      revision: current.revision + Number(payload.enabled !== current.enabled),
+    };
+    if (request.method === "POST" && url.pathname.endsWith("/preview"))
+      return send(
+        response,
+        200,
+        {
+          current,
+          proposed,
+          changed: current.enabled !== proposed.enabled,
+          impact: "blocks_new_mutations_only",
+        },
+        "private, no-store",
+      );
+    if (request.method === "PATCH") {
+      operationalFlags = operationalFlags.map((item) =>
+        item.key === current.key ? proposed : item,
+      );
+      return send(
+        response,
+        200,
+        { setting: proposed, status: "updated" },
+        "private, no-store",
+      );
+    }
+  }
+  if (url.pathname === "/api/v1/admin/regions/TR/policy") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (request.method === "GET")
+      return send(response, 200, operationalPolicy, "private, no-store");
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    operationalPolicy = {
+      ...operationalPolicy,
+      club_limit: payload.club_limit,
+      revision: operationalPolicy.revision + 1,
+    };
+    return send(
+      response,
+      200,
+      { policy: operationalPolicy, status: "updated" },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/regions/TR/policy/preview") {
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const proposed = {
+      ...operationalPolicy,
+      club_limit: payload.club_limit,
+      revision: operationalPolicy.revision + 1,
+    };
+    return send(
+      response,
+      200,
+      {
+        current: operationalPolicy,
+        proposed,
+        changed_fields: ["club_limit"],
+        impact: "future only",
+      },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/outbox-events") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: operationalOutbox, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (
+    url.pathname ===
+    "/api/v1/admin/outbox-events/dddddddd-dddd-4ddd-8ddd-dddddddddddd/retry"
+  ) {
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    operationalOutbox = operationalOutbox.map((item) => ({
+      ...item,
+      status: "pending",
+      last_error_code: null,
+    }));
+    return send(
+      response,
+      200,
+      { event: operationalOutbox[0], status: "retried" },
       "private, no-store",
     );
   }

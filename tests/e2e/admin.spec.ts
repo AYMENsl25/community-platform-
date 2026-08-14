@@ -127,6 +127,40 @@ test("admin without MFA is denied a protected action", async ({ page }) => {
   await expect(page.getByRole("status")).toHaveCount(0);
 });
 
+test("MFA admin previews and applies an operational flag and retries one dead letter", async ({
+  page,
+}) => {
+  await signIn(page, "platform-admin");
+  await page.goto("/admin/operations");
+  await expect(
+    page.getByRole("heading", { name: "Platform operations" }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Operational reason")
+    .fill("Controlled beta operations check");
+  const flag = page.getByText("features.member_reports_enabled").locator("..");
+  await flag.getByRole("button", { name: "Preview change" }).click();
+  await expect(page.getByRole("status")).toContainText("Preview ready");
+  await flag.getByRole("button", { name: "Apply change" }).click();
+  await expect(page.getByRole("status")).toContainText("updated");
+  await expect(flag.getByText("Disabled")).toBeVisible();
+  await page.getByRole("button", { name: "Retry delivery" }).click();
+  await expect(page.getByRole("status")).toContainText("queued for retry");
+  await expect(
+    page.getByRole("button", { name: "Retry delivery" }),
+  ).toHaveCount(0);
+});
+
+test("admin without MFA cannot change operational controls", async ({
+  page,
+}) => {
+  await signIn(page, "platform-admin-no-mfa");
+  await page.goto("/admin/operations");
+  await page.getByLabel("Operational reason").fill("MFA boundary check");
+  await page.getByRole("button", { name: "Preview change" }).first().click();
+  await expect(page.getByRole("status")).toContainText("permission");
+});
+
 test("Arabic admin review is RTL and narrow-screen safe", async ({ page }) => {
   await signIn(page, "platform-admin", "ar");
   await page.setViewportSize({ width: 360, height: 760 });

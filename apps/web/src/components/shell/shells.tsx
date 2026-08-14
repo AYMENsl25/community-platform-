@@ -44,6 +44,7 @@ const workspaceNavigation = {
     { href: "/overview", label: "shell.navigation.overview" },
     { href: "/admin/review", label: "shell.navigation.review" },
     { href: "/admin/audit", label: "shell.navigation.audit" },
+    { href: "/admin/operations", label: "shell.navigation.operations" },
   ],
 } satisfies Record<string, NavigationItem[]>;
 

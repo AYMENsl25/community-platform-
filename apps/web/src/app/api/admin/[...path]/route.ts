@@ -10,6 +10,37 @@ function allowed(method: string, path: string[]): boolean {
     return false;
   if (method === "GET" && path.length === 4 && path[3] === "audit-events")
     return true;
+  if (path[3] === "settings" && path[4] === "feature-flags") {
+    if (method === "GET" && path.length === 5) return true;
+    if (
+      !/^features\.(member_reports|organizer_announcements|independent_event_creation)_enabled$/.test(
+        path[5] ?? "",
+      )
+    )
+      return false;
+    if (method === "PATCH" && path.length === 6) return true;
+    return method === "POST" && path.length === 7 && path[6] === "preview";
+  }
+  if (
+    path[3] === "regions" &&
+    /^[A-Z]{2}$/i.test(path[4] ?? "") &&
+    path[5] === "policy"
+  ) {
+    if ((method === "GET" || method === "PATCH") && path.length === 6)
+      return true;
+    return method === "POST" && path.length === 7 && path[6] === "preview";
+  }
+  if (path[3] === "outbox-events") {
+    if (method === "GET" && path.length === 4) return true;
+    if (method === "GET" && path.length === 5 && UUID.test(path[4] ?? ""))
+      return true;
+    return (
+      method === "POST" &&
+      path.length === 6 &&
+      UUID.test(path[4] ?? "") &&
+      path[5] === "retry"
+    );
+  }
   if (path[3] !== "moderation") return false;
   if (
     method === "GET" &&
@@ -93,3 +124,4 @@ async function forward(
 
 export const GET = forward;
 export const POST = forward;
+export const PATCH = forward;
