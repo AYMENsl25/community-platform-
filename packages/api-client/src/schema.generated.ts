@@ -101,6 +101,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/outbox-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Outbox Events */
+        get: operations["listOutboxEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/outbox-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Outbox Event */
+        get: operations["getOutboxEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/outbox-events/{event_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Outbox Event */
+        post: operations["retryOutboxEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/regions/{country_code}/policy": {
         parameters: {
             query?: never;
@@ -2712,6 +2763,45 @@ export interface components {
             /** Type Key */
             type_key: string;
         };
+        /** OperationalOutboxEventResponse */
+        OperationalOutboxEventResponse: {
+            /** Aggregate Type */
+            aggregate_type: string;
+            /** Attempt Count */
+            attempt_count: number;
+            /**
+             * Available At
+             * Format: date-time
+             */
+            available_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Locked Until */
+            locked_until: string | null;
+            /** Processed At */
+            processed_at: string | null;
+            /** Status */
+            status: string;
+        };
+        /** OperationalOutboxPageResponse */
+        OperationalOutboxPageResponse: {
+            /** Items */
+            items: components["schemas"]["OperationalOutboxEventResponse"][];
+            /** Next Cursor */
+            next_cursor?: null;
+        };
         /** OperationResponse */
         OperationResponse: {
             /**
@@ -2728,6 +2818,21 @@ export interface components {
             clubs: components["schemas"]["DashboardClub"][];
             /** Events */
             events: components["schemas"]["DashboardEvent"][];
+        };
+        /** OutboxRetryRequest */
+        OutboxRetryRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** OutboxRetryResponse */
+        OutboxRetryResponse: {
+            event: components["schemas"]["OperationalOutboxEventResponse"];
+            /**
+             * Status
+             * @default retried
+             * @constant
+             */
+            status: "retried";
         };
         /** OwnershipTransferRequest */
         OwnershipTransferRequest: {
@@ -3591,6 +3696,86 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    listOutboxEvents: {
+        parameters: {
+            query?: {
+                event_type?: string | null;
+                limit?: number;
+                status?: ("pending" | "processing" | "retryable_failed" | "permanent_failed" | "delivered") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalOutboxPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getOutboxEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalOutboxEventResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    retryOutboxEvent: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutboxRetryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutboxRetryResponse"];
                 };
             };
             422: components["responses"]["PlatformError"];

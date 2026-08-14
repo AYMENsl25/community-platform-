@@ -23,6 +23,7 @@ from talaqi.media.storage import MediaStorage
 from talaqi.moderation.rate_limits import install_moderation_rate_limits
 from talaqi.moderation.report_routes import router as moderation_report_router
 from talaqi.moderation.routes import router as moderation_router
+from talaqi.outbox.routes import router as outbox_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
 from talaqi.profiles.routes import router as profiles_router
@@ -110,6 +111,7 @@ def create_app(
     application.include_router(moderation_router)
     application.include_router(moderation_report_router)
     application.include_router(settings_router)
+    application.include_router(outbox_router)
     install_openapi(application)
     return application
 

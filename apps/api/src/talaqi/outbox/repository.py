@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import String
 
-from talaqi.outbox.models import DeadLetter, OutboxEvent
+from talaqi.outbox.models import DeadLetter, OperationalOutboxEvent, OutboxEvent
 
 
 class OutboxDeduplicationConflictError(RuntimeError):
@@ -20,6 +20,19 @@ class OutboxDeduplicationConflictError(RuntimeError):
 class OutboxRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def has_active_mfa(self, user_id: UUID) -> bool:
+        return bool(
+            await self._session.scalar(
+                text(
+                    """SELECT EXISTS (
+                        SELECT 1 FROM talaqi.user_mfa_factors
+                        WHERE user_id = :user_id AND verified_at IS NOT NULL AND disabled_at IS NULL
+                    )"""
+                ),
+                {"user_id": user_id},
+            )
+        )
 
     async def enqueue(
         self,
@@ -277,6 +290,78 @@ class OutboxRepository:
             for row in rows
         )
 
+    async def list_operational(
+        self, *, status: str | None = None, event_type: str | None = None, limit: int = 50
+    ) -> tuple[OperationalOutboxEvent, ...]:
+        rows = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT id, aggregate_type, event_type, status::text AS status,
+                               attempt_count, last_error_code, available_at, created_at,
+                               processed_at, locked_until
+                        FROM talaqi.outbox_events
+                        WHERE (CAST(:status AS text) IS NULL OR status::text = :status)
+                          AND (CAST(:event_type AS text) IS NULL OR event_type = :event_type)
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT :limit
+                        """
+                    ),
+                    {"status": status, "event_type": event_type, "limit": limit},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        return tuple(self._operational(cast(Mapping[str, object], row)) for row in rows)
+
+    async def get_operational(self, event_id: UUID) -> OperationalOutboxEvent | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        SELECT id, aggregate_type, event_type, status::text AS status,
+                               attempt_count, last_error_code, available_at, created_at,
+                               processed_at, locked_until
+                        FROM talaqi.outbox_events WHERE id = :event_id
+                        """
+                    ),
+                    {"event_id": event_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return self._operational(cast(Mapping[str, object], row)) if row is not None else None
+
+    async def retry_permanent_failure(
+        self, event_id: UUID, *, now: datetime
+    ) -> OperationalOutboxEvent | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        UPDATE talaqi.outbox_events
+                        SET status = 'pending', available_at = :now, processed_at = NULL,
+                            locked_by = NULL, locked_until = NULL, last_error_code = NULL
+                        WHERE id = :event_id AND status = 'permanent_failed'
+                          AND (locked_until IS NULL OR locked_until <= :now)
+                        RETURNING id, aggregate_type, event_type, status::text AS status,
+                                  attempt_count, last_error_code, available_at, created_at,
+                                  processed_at, locked_until
+                        """
+                    ),
+                    {"event_id": event_id, "now": now},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        return self._operational(cast(Mapping[str, object], row)) if row is not None else None
+
     async def cleanup_delivered(self, *, before: datetime, limit: int = 1_000) -> int:
         deleted = (
             (
@@ -314,6 +399,21 @@ class OutboxRepository:
             attempt_count=cast(int, row["attempt_count"]),
             created_at=cast(datetime, row["created_at"]),
             locked_until=cast(datetime, row["locked_until"]),
+        )
+
+    @staticmethod
+    def _operational(row: Mapping[str, object]) -> OperationalOutboxEvent:
+        return OperationalOutboxEvent(
+            id=cast(UUID, row["id"]),
+            aggregate_type=cast(str, row["aggregate_type"]),
+            event_type=cast(str, row["event_type"]),
+            status=cast(str, row["status"]),
+            attempt_count=cast(int, row["attempt_count"]),
+            last_error_code=cast(str | None, row["last_error_code"]),
+            available_at=cast(datetime, row["available_at"]),
+            created_at=cast(datetime, row["created_at"]),
+            processed_at=cast(datetime | None, row["processed_at"]),
+            locked_until=cast(datetime | None, row["locked_until"]),
         )
 
 

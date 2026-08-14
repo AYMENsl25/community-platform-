@@ -215,3 +215,97 @@ async def test_regional_policy_preview_update_is_mfa_revision_safe_and_audited(
                 """
             )
         )
+
+
+@pytest.mark.asyncio
+async def test_outbox_operations_are_private_and_retry_only_permanent_failures(
+    settings_engine: AsyncEngine,
+) -> None:
+    member = await create_user(settings_engine)
+    no_mfa = await make_admin(settings_engine, mfa=False)
+    admin = await make_admin(settings_engine, mfa=True)
+    event_id = generate_uuid7()
+    aggregate_id = generate_uuid7()
+    async with settings_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                INSERT INTO talaqi.outbox_events (
+                    id, aggregate_type, aggregate_id, event_type, payload,
+                    deduplication_key, status, attempt_count, last_error_code, available_at
+                ) VALUES (
+                    :id, 'user', :aggregate_id, 'test.delivery',
+                    '{"private_email":"never-return@example.test"}'::jsonb,
+                    :deduplication_key, 'permanent_failed', 4, 'provider_rejected', now()
+                )
+                """
+            ),
+            {
+                "id": event_id,
+                "aggregate_id": aggregate_id,
+                "deduplication_key": f"private-dedup-{event_id}",
+            },
+        )
+    path = f"/api/v1/admin/outbox-events/{event_id}"
+    app = app_for(settings_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        member_list = await client.get("/api/v1/admin/outbox-events", headers=member.headers())
+        listing = await client.get(
+            "/api/v1/admin/outbox-events?status=permanent_failed", headers=admin.headers()
+        )
+        denied = await client.post(
+            f"{path}/retry",
+            json={"reason": "Retry the corrected provider route"},
+            headers=no_mfa.headers(idempotency_key=f"outbox-no-mfa-{generate_uuid7()}"),
+        )
+        key = f"outbox-retry-{generate_uuid7()}"
+        retried = await client.post(
+            f"{path}/retry",
+            json={"reason": "Retry the corrected provider route"},
+            headers=admin.headers(idempotency_key=key),
+        )
+        replay = await client.post(
+            f"{path}/retry",
+            json={"reason": "Retry the corrected provider route"},
+            headers=admin.headers(idempotency_key=key),
+        )
+        conflict = await client.post(
+            f"{path}/retry",
+            json={"reason": "Cannot retry a pending event"},
+            headers=admin.headers(idempotency_key=f"outbox-conflict-{generate_uuid7()}"),
+        )
+    assert member_list.status_code == denied.status_code == 403
+    assert listing.status_code == 200
+    assert listing.headers["cache-control"] == "private, no-store"
+    serialized = listing.text
+    assert "private_email" not in serialized
+    assert "never-return" not in serialized
+    assert "private-dedup" not in serialized
+    assert str(aggregate_id) not in serialized
+    assert retried.status_code == replay.status_code == 200
+    assert retried.json() == replay.json()
+    assert retried.json()["event"]["status"] == "pending"
+    assert retried.json()["event"]["attempt_count"] == 4
+    assert conflict.status_code == 409
+    async with settings_engine.connect() as connection:
+        row = (
+            await connection.execute(
+                text(
+                    "SELECT status::text, attempt_count, payload, deduplication_key "
+                    "FROM talaqi.outbox_events WHERE id = :id"
+                ),
+                {"id": event_id},
+            )
+        ).one()
+        audit_count = await connection.scalar(
+            text("SELECT count(*) FROM talaqi.audit_events WHERE action = 'outbox.retry'")
+        )
+    assert row == (
+        "pending",
+        4,
+        {"private_email": "never-return@example.test"},
+        f"private-dedup-{event_id}",
+    )
+    assert audit_count == 1
