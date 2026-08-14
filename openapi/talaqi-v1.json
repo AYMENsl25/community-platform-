@@ -626,12 +626,28 @@
           "to_status": {
             "title": "To Status",
             "type": "string"
+          },
+          "workflow_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "acknowledge",
+                  "dismiss"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Action"
           }
         },
         "required": [
           "id",
           "actor_user_id",
           "action",
+          "workflow_action",
           "from_status",
           "to_status",
           "reason",
@@ -804,6 +820,61 @@
           "available_actions"
         ],
         "title": "CaseResponse",
+        "type": "object"
+      },
+      "CaseWorkflowRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "acknowledge",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "reason"
+        ],
+        "title": "CaseWorkflowRequest",
+        "type": "object"
+      },
+      "CaseWorkflowResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "acknowledge",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "case": {
+            "$ref": "#/components/schemas/CaseResponse"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CaseEventResponse"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "case",
+          "events"
+        ],
+        "title": "CaseWorkflowResponse",
         "type": "object"
       },
       "CategoryResponse": {
@@ -6255,6 +6326,130 @@
           }
         },
         "summary": "Perform Action",
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
+    "/api/v1/admin/moderation/cases/{case_id}/workflow": {
+      "post": {
+        "operationId": "transitionModerationCase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Stable key for retrying a moderation action.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "description": "Stable key for retrying a moderation action.",
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseWorkflowRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseWorkflowResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Case or target not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Moderation transition conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Transition Case",
         "tags": [
           "moderation"
         ]

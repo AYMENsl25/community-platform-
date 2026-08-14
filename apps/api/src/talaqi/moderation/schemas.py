@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from talaqi.moderation.models import (
     CaseStatus,
+    CaseWorkflowAction,
     ModerationAction,
     Priority,
     TargetType,
@@ -82,6 +83,7 @@ class CaseEventResponse(BaseModel):
     id: UUID
     actor_user_id: UUID | None
     action: str | None
+    workflow_action: CaseWorkflowAction | None
     from_status: str | None
     to_status: str
     reason: str
@@ -112,6 +114,19 @@ class ActionResponse(BaseModel):
     case: CaseResponse
     events: list[CaseEventResponse]
     status: Literal["actioned"] = "actioned"
+
+
+class CaseWorkflowRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    action: CaseWorkflowAction
+    reason: str = Field(min_length=3, max_length=2_000)
+
+
+class CaseWorkflowResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    action: CaseWorkflowAction
+    case: CaseResponse
+    events: list[CaseEventResponse]
 
 
 class AuditResponse(BaseModel):

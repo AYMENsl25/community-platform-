@@ -63,6 +63,20 @@ test("MFA admin reviews emergency case, suspends and restores with audit evidenc
   await page.getByRole("link", { name: "Open case" }).click();
   await expect(page).toHaveURL(new RegExp(`/admin/review/${caseId}`));
   await expect(page.getByText("PRIVATE_EXACT_ADDRESS_CANARY")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Acknowledge and assign to me" })
+    .click();
+  await confirmByKeyboard(
+    page,
+    /Acknowledge and assign to me/,
+    "Taking ownership",
+  );
+  await expect(page.getByText("Investigating")).toBeVisible();
+  await expect(page.getByText("Acknowledge and assign to me")).toBeVisible();
+  await expect(page.getByText("Taking ownership")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Acknowledge and assign to me" }),
+  ).toHaveCount(0);
   const suspend = page.getByRole("button", { name: "Suspend target" });
   await suspend.focus();
   await page.keyboard.press("Enter");

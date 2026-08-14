@@ -313,6 +313,8 @@ export const frenchDictionary: Dictionary = {
   "admin.action.suspend": "Suspendre la cible",
   "admin.action.unpublish": "Dépublier le club",
   "admin.action.restore": "Restaurer la cible",
+  "admin.action.acknowledge": "Accuser réception et me l’attribuer",
+  "admin.action.dismiss": "Rejeter le signalement",
   "admin.action.completed": "L’action de modération est terminée.",
   "admin.audit.history": "Historique des actions",
   "admin.audit.title": "Audit administrateur",
@@ -322,6 +324,8 @@ export const frenchDictionary: Dictionary = {
   "admin.dialog.suspend": "Confirmer la suspension",
   "admin.dialog.unpublish": "Confirmer la dépublication",
   "admin.dialog.restore": "Confirmer la restauration",
+  "admin.dialog.acknowledge": "Confirmer la prise en charge",
+  "admin.dialog.dismiss": "Confirmer le rejet",
   "admin.dialog.warning":
     "Cette action modifie immédiatement l’accès et est inscrite dans le journal d’audit immuable.",
   "admin.dialog.reason": "Motif de l’action",

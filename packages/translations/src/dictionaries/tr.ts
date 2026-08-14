@@ -311,6 +311,8 @@ export const turkishDictionary = {
   "admin.action.suspend": "Hedefi askıya al",
   "admin.action.unpublish": "Kulübü yayından kaldır",
   "admin.action.restore": "Hedefi geri yükle",
+  "admin.action.acknowledge": "Onayla ve bana ata",
+  "admin.action.dismiss": "Bildirimi reddet",
   "admin.action.completed": "Moderasyon işlemi tamamlandı.",
   "admin.audit.history": "İşlem geçmişi",
   "admin.audit.title": "Yönetici denetimi",
@@ -321,6 +323,8 @@ export const turkishDictionary = {
   "admin.dialog.suspend": "Askıya almayı onayla",
   "admin.dialog.unpublish": "Yayından kaldırmayı onayla",
   "admin.dialog.restore": "Geri yüklemeyi onayla",
+  "admin.dialog.acknowledge": "Onayı doğrula",
+  "admin.dialog.dismiss": "Reddetmeyi doğrula",
   "admin.dialog.warning":
     "Bu işlem platform erişimini hemen değiştirir ve değiştirilemez denetim günlüğüne kaydedilir.",
   "admin.dialog.reason": "İşlem nedeni",

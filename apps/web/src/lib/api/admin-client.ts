@@ -14,6 +14,7 @@ export type ModerationPriority = "standard" | "high" | "emergency";
 export type ModerationCaseStatus =
   "open" | "investigating" | "actioned" | "dismissed";
 export type ModerationAction = "suspend" | "unpublish" | "restore";
+export type CaseWorkflowAction = "acknowledge" | "dismiss";
 
 export interface ModerationTargetSummary {
   id: string;
@@ -38,6 +39,7 @@ export interface ModerationCaseSummary {
 export interface ModerationActionRecord {
   id: string;
   action: ModerationAction | null;
+  workflow_action: CaseWorkflowAction | null;
   reason: string;
   actor_user_id: string | null;
   created_at: string;
@@ -123,6 +125,12 @@ export interface AdminClient {
     reason: string,
     idempotencyKey: string,
   ): Promise<AdminResult<ModerationCaseDetail>>;
+  transitionModerationCase(
+    caseId: string,
+    action: CaseWorkflowAction,
+    reason: string,
+    idempotencyKey: string,
+  ): Promise<AdminResult<ModerationCaseDetail>>;
   listAuditEvents(
     query?: AdminAuditEventQuery,
   ): Promise<AdminResult<AdminAuditEventPage>>;
@@ -131,6 +139,7 @@ export interface AdminClient {
 type ApiCase = components["schemas"]["CaseResponse"];
 type ApiCaseDetail = components["schemas"]["CaseDetailResponse"];
 type ApiActionResponse = components["schemas"]["ActionResponse"];
+type ApiWorkflowResponse = components["schemas"]["CaseWorkflowResponse"];
 type ApiTarget = components["schemas"]["TargetResponse"];
 type ApiCasePage = components["schemas"]["CasePageResponse"];
 type ApiTargetPage = components["schemas"]["TargetPageResponse"];
@@ -220,13 +229,14 @@ function caseSummary(value: ApiCase): ModerationCaseSummary {
 }
 
 function caseDetail(
-  value: ApiCaseDetail | ApiActionResponse,
+  value: ApiCaseDetail | ApiActionResponse | ApiWorkflowResponse,
 ): ModerationCaseDetail {
   return {
     ...caseSummary(value.case),
     action_history: value.events.map((event) => ({
       id: event.id,
       action: event.action as ModerationAction | null,
+      workflow_action: event.workflow_action,
       reason: event.reason,
       actor_user_id: event.actor_user_id,
       created_at: event.created_at,
@@ -343,6 +353,15 @@ export function createAdminClient(options: AdminClientOptions): AdminClient {
     submitModerationAction: async (caseId, action, reason, idempotencyKey) =>
       mapResult(
         await request<ApiActionResponse>(`${casePath(caseId)}/actions`, {
+          method: "POST",
+          body: { action, reason },
+          idempotencyKey,
+        }),
+        caseDetail,
+      ),
+    transitionModerationCase: async (caseId, action, reason, idempotencyKey) =>
+      mapResult(
+        await request<ApiWorkflowResponse>(`${casePath(caseId)}/workflow`, {
           method: "POST",
           body: { action, reason },
           idempotencyKey,

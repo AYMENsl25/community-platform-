@@ -67,6 +67,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/moderation/cases/{case_id}/workflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Case */
+        post: operations["transitionModerationCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/moderation/targets": {
         parameters: {
             query?: never;
@@ -1406,6 +1423,8 @@ export interface components {
             reason: string;
             /** To Status */
             to_status: string;
+            /** Workflow Action */
+            workflow_action: ("acknowledge" | "dismiss") | null;
         };
         /** CasePageResponse */
         CasePageResponse: {
@@ -1463,6 +1482,27 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** CaseWorkflowRequest */
+        CaseWorkflowRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "acknowledge" | "dismiss";
+            /** Reason */
+            reason: string;
+        };
+        /** CaseWorkflowResponse */
+        CaseWorkflowResponse: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "acknowledge" | "dismiss";
+            case: components["schemas"]["CaseResponse"];
+            /** Events */
+            events: components["schemas"]["CaseEventResponse"][];
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -3219,6 +3259,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Case or target not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Moderation transition conflicted. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    transitionModerationCase: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a moderation action. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseWorkflowResponse"];
                 };
             };
             /** @description Authentication required. */

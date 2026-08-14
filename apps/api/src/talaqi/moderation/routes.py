@@ -30,13 +30,15 @@ from talaqi.moderation.schemas import (
     CaseEventResponse,
     CasePageResponse,
     CaseResponse,
+    CaseWorkflowRequest,
+    CaseWorkflowResponse,
     TargetPageResponse,
     TargetResponse,
 )
 from talaqi.moderation.service import (
     ModerationService,
     acknowledgement_deadline,
-    capabilities,
+    case_capabilities,
     emergency_notice,
     response_breached,
 )
@@ -153,6 +155,7 @@ def _event(value: ModerationCaseEvent) -> CaseEventResponse:
         id=value.id,
         actor_user_id=value.actor_user_id,
         action=value.action,
+        workflow_action=value.workflow_action,
         from_status=value.from_status,
         to_status=value.to_status,
         reason=value.reason,
@@ -354,7 +357,65 @@ async def perform_action(
     )
     result = ActionResponse(
         action=body.action,
-        case=_case(case, target, capabilities(target)),
+        case=_case(case, target, case_capabilities(case, target)),
+        events=[_event(item) for item in events],
+    )
+    await idempotency.complete(
+        acquisition.claim,
+        response_status=200,
+        response_body=result.model_dump(mode="json"),
+        completed_at=datetime.now(UTC),
+        session=session,
+    )
+    return result
+
+
+@router.post(
+    "/moderation/cases/{case_id:uuid}/workflow",
+    response_model=CaseWorkflowResponse,
+    operation_id="transitionModerationCase",
+    responses={401: _AUTH, 403: _FORBIDDEN, 404: _NOT_FOUND, 409: _CONFLICT},
+)
+async def transition_case(
+    case_id: UUID,
+    body: CaseWorkflowRequest,
+    request: Request,
+    response: Response,
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+    idempotency_key: IdempotencyKey,
+) -> CaseWorkflowResponse:
+    _private(response)
+    current = datetime.now(UTC)
+    runtime: LazySessionFactory = request.app.state.database_runtime
+    idempotency = IdempotencyRepository(runtime.resolve())
+    acquisition = await IdempotencyCoordinator(idempotency).acquire(
+        actor_id=principal.user_id,
+        http_method="POST",
+        route_fingerprint=f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+        key=idempotency_key,
+        request_hash=hash_request_body(await request.body()),
+        now=current,
+        lease_duration=timedelta(seconds=30),
+        expires_at=current + timedelta(hours=24),
+        session=session,
+    )
+    if acquisition.outcome == "replay":
+        return CaseWorkflowResponse.model_validate(acquisition.response_body)
+    if acquisition.claim is None:
+        raise RuntimeError("acquired moderation workflow operation has no claim")
+    case, target, events = await _service(session).transition_case(
+        principal,
+        case_id,
+        body.action,
+        reason=body.reason,
+        request_id=UUID(request_id_for(request)),
+        now=current,
+    )
+    result = CaseWorkflowResponse(
+        action=body.action,
+        case=_case(case, target, case_capabilities(case, target)),
         events=[_event(item) for item in events],
     )
     await idempotency.complete(

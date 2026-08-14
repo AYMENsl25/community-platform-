@@ -308,6 +308,8 @@ export const arabicDictionary: Dictionary = {
   "admin.action.suspend": "تعليق الهدف",
   "admin.action.unpublish": "إلغاء نشر النادي",
   "admin.action.restore": "استعادة الهدف",
+  "admin.action.acknowledge": "الإقرار بالبلاغ وتعيينه لي",
+  "admin.action.dismiss": "رفض البلاغ",
   "admin.action.completed": "اكتمل إجراء الإشراف.",
   "admin.audit.history": "سجل الإجراءات",
   "admin.audit.title": "تدقيق الإدارة",
@@ -318,6 +320,8 @@ export const arabicDictionary: Dictionary = {
   "admin.dialog.suspend": "تأكيد التعليق",
   "admin.dialog.unpublish": "تأكيد إلغاء النشر",
   "admin.dialog.restore": "تأكيد الاستعادة",
+  "admin.dialog.acknowledge": "تأكيد استلام البلاغ",
+  "admin.dialog.dismiss": "تأكيد رفض البلاغ",
   "admin.dialog.warning":
     "يغيّر هذا الإجراء الوصول إلى المنصة فوراً ويُسجّل في سجل التدقيق غير القابل للتغيير.",
   "admin.dialog.reason": "سبب الإجراء",

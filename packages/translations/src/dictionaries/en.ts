@@ -303,6 +303,8 @@ export const englishDictionary = {
   "admin.action.suspend": "Suspend target",
   "admin.action.unpublish": "Unpublish club",
   "admin.action.restore": "Restore target",
+  "admin.action.acknowledge": "Acknowledge and assign to me",
+  "admin.action.dismiss": "Dismiss report",
   "admin.action.completed": "The moderation action was completed.",
   "admin.audit.history": "Action history",
   "admin.audit.title": "Admin audit",
@@ -313,6 +315,8 @@ export const englishDictionary = {
   "admin.dialog.suspend": "Confirm suspension",
   "admin.dialog.unpublish": "Confirm unpublishing",
   "admin.dialog.restore": "Confirm restoration",
+  "admin.dialog.acknowledge": "Confirm acknowledgement",
+  "admin.dialog.dismiss": "Confirm dismissal",
   "admin.dialog.warning":
     "This action changes platform access immediately and is recorded in the immutable audit log.",
   "admin.dialog.reason": "Action reason",

@@ -29,7 +29,7 @@ function allowed(method: string, path: string[]): boolean {
     path.length === 7 &&
     path[4] === "cases" &&
     UUID.test(path[5] ?? "") &&
-    path[6] === "actions",
+    (path[6] === "actions" || path[6] === "workflow"),
   );
 }
 

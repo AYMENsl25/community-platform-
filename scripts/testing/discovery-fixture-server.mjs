@@ -219,6 +219,8 @@ const secondWorkspaceMembers = [
 
 const adminCaseId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 let adminTargetStatus = "published";
+let adminCaseStatus = "open";
+let adminAssignedUserId = null;
 let adminActionHistory = [];
 let adminAuditEvents = [];
 
@@ -233,24 +235,30 @@ function adminTarget() {
 }
 
 function adminCase() {
-  const actioned = adminActionHistory.length > 0;
+  const resolved = ["actioned", "dismissed"].includes(adminCaseStatus);
   return {
     id: adminCaseId,
     target: adminTarget(),
     category: "safety",
     priority: "emergency",
-    status: actioned ? "actioned" : "open",
-    assigned_admin_user_id: null,
-    resolution_reason: actioned
+    status: adminCaseStatus,
+    assigned_admin_user_id: adminAssignedUserId,
+    resolution_reason: resolved
       ? adminActionHistory[adminActionHistory.length - 1].reason
       : null,
-    acknowledged_at: actioned ? "2026-07-27T01:00:00Z" : null,
-    resolved_at: actioned ? "2026-07-27T01:00:00Z" : null,
+    acknowledged_at: adminCaseStatus === "open" ? null : "2026-07-27T01:00:00Z",
+    resolved_at: resolved ? "2026-07-27T01:00:00Z" : null,
     emergency_notice: true,
     available_actions:
-      adminTargetStatus === "published"
-        ? ["suspend", "unpublish"]
-        : ["restore"],
+      adminCaseStatus === "dismissed"
+        ? []
+        : adminCaseStatus === "actioned"
+          ? adminTargetStatus === "published"
+            ? []
+            : ["restore"]
+          : adminTargetStatus === "published"
+            ? ["suspend", "unpublish"]
+            : ["restore"],
     created_at: "2026-07-27T00:00:00Z",
     updated_at: "2026-07-27T01:00:00Z",
   };
@@ -463,7 +471,13 @@ createServer(async (request, response) => {
     return send(
       response,
       200,
-      { case: adminCase(), events: adminActionHistory },
+      {
+        case:
+          platformAdmin === "platform-admin-no-mfa"
+            ? { ...adminCase(), available_actions: ["suspend"] }
+            : adminCase(),
+        events: adminActionHistory,
+      },
       "private, no-store",
     );
   }
@@ -493,6 +507,62 @@ createServer(async (request, response) => {
       response,
       200,
       { items: [item], next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (
+    url.pathname === `/api/v1/admin/moderation/cases/${adminCaseId}/workflow` &&
+    request.method === "POST"
+  ) {
+    if (platformAdmin !== "platform-admin")
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const reason =
+      typeof payload.reason === "string" ? payload.reason.trim() : "";
+    if (reason.length < 3)
+      return send(
+        response,
+        422,
+        { error: { code: "invalid_reason" } },
+        "private, no-store",
+      );
+    adminAssignedUserId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    const previousStatus = adminCaseStatus;
+    adminCaseStatus =
+      payload.action === "acknowledge" ? "investigating" : "dismissed";
+    adminActionHistory = [
+      ...adminActionHistory,
+      {
+        id: crypto.randomUUID(),
+        actor_user_id: adminAssignedUserId,
+        action: null,
+        workflow_action: payload.action,
+        from_status: previousStatus,
+        to_status: adminCaseStatus,
+        reason,
+        created_at: "2026-07-27T01:00:00Z",
+      },
+    ];
+    return send(
+      response,
+      200,
+      {
+        action: payload.action,
+        case: adminCase(),
+        events: adminActionHistory,
+      },
       "private, no-store",
     );
   }
@@ -535,12 +605,14 @@ createServer(async (request, response) => {
       id: crypto.randomUUID(),
       actor_user_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       action: payload.action,
+      workflow_action: null,
       from_status: adminActionHistory.length ? "actioned" : "open",
       to_status: "actioned",
       reason,
       created_at: "2026-07-27T01:00:00Z",
     };
     adminActionHistory = [...adminActionHistory, record];
+    adminCaseStatus = "actioned";
     adminAuditEvents = [
       {
         id: crypto.randomUUID(),

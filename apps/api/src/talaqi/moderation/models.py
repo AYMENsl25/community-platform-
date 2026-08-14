@@ -9,6 +9,7 @@ TargetType = Literal["user", "club", "event"]
 CaseStatus = Literal["open", "investigating", "actioned", "dismissed"]
 Priority = Literal["standard", "high", "emergency"]
 ModerationAction = Literal["suspend", "unpublish", "restore"]
+CaseWorkflowAction = Literal["acknowledge", "dismiss"]
 
 REPORT_CATEGORIES = (
     "safety",
@@ -54,6 +55,7 @@ class ModerationCaseEvent:
     moderation_case_id: UUID
     actor_user_id: UUID | None
     action: str | None
+    workflow_action: CaseWorkflowAction | None
     from_status: str | None
     to_status: str
     reason: str

@@ -8,6 +8,7 @@ from talaqi.db.identifiers import validate_uuid7
 from talaqi.identity.models import AuthPrincipal
 from talaqi.moderation.models import (
     REPORT_CATEGORIES,
+    CaseWorkflowAction,
     ModerationAction,
     ModerationCase,
     ModerationCaseEvent,
@@ -79,6 +80,17 @@ def capabilities(target: ModerationTarget) -> tuple[ModerationAction, ...]:
     return values.get((target.type, target.status), ())
 
 
+def case_capabilities(
+    case: ModerationCase, target: ModerationTarget
+) -> tuple[ModerationAction, ...]:
+    target_actions = capabilities(target)
+    if case.status in {"open", "investigating"}:
+        return target_actions
+    if case.status == "actioned":
+        return tuple(action for action in target_actions if action == "restore")
+    return ()
+
+
 class ModerationService:
     def __init__(
         self,
@@ -114,7 +126,7 @@ class ModerationService:
         for case in cases:
             target = await self._repository.get_target(case.target_type, case.target_id)
             if target is not None:
-                views.append((case, target, capabilities(target)))
+                views.append((case, target, case_capabilities(case, target)))
         return views
 
     async def submit_report(
@@ -201,7 +213,7 @@ class ModerationService:
         if target is None:
             raise _not_found()
         events = await self._repository.list_case_events(case.id)
-        return case, target, events, capabilities(target)
+        return case, target, events, case_capabilities(case, target)
 
     async def search_targets(
         self,
@@ -241,7 +253,7 @@ class ModerationService:
         )
         if target is None:
             raise _not_found()
-        if action not in capabilities(target):
+        if action not in case_capabilities(case, target):
             raise _conflict()
         current = now or datetime.now(UTC)
         changed = await self._repository.apply_target_action(
@@ -271,6 +283,53 @@ class ModerationService:
         )
         return updated_case, changed, await self._repository.list_case_events(case.id)
 
+    async def transition_case(
+        self,
+        principal: AuthPrincipal,
+        case_id: UUID,
+        action: CaseWorkflowAction,
+        *,
+        reason: str,
+        request_id: UUID,
+        now: datetime | None = None,
+    ) -> tuple[ModerationCase, ModerationTarget, list[ModerationCaseEvent]]:
+        can_access_admin(principal)
+        has_active_mfa = await self._repository.has_active_mfa(principal.user_id)
+        can_moderate(principal, has_active_mfa=has_active_mfa)
+        normalized_reason = _reason(reason)
+        case = await self._case(case_id, for_update=True)
+        allowed = (action == "acknowledge" and case.status == "open") or (
+            action == "dismiss" and case.status in {"open", "investigating"}
+        )
+        if not allowed:
+            raise _conflict()
+        target = await self._repository.get_target(case.target_type, case.target_id)
+        if target is None:
+            raise _not_found()
+        current = now or datetime.now(UTC)
+        updated = await self._repository.record_case_workflow(
+            case,
+            actor_user_id=principal.user_id,
+            action=action,
+            reason=normalized_reason,
+            now=current,
+        )
+        await self._audit.record(
+            actor_user_id=principal.user_id,
+            actor_kind="admin",
+            action=f"moderation.case.{action}",
+            target_type="moderation_case",
+            target_id=case.id,
+            reason=normalized_reason,
+            safe_before={"status": case.status},
+            safe_after={
+                "status": updated.status,
+                "assigned_admin_user_id": str(principal.user_id),
+            },
+            request_id=request_id,
+        )
+        return updated, target, await self._repository.list_case_events(case.id)
+
     async def _case(self, case_id: UUID, *, for_update: bool = False) -> ModerationCase:
         try:
             identifier = validate_uuid7(case_id)
@@ -286,6 +345,7 @@ __all__ = [
     "ModerationService",
     "acknowledgement_deadline",
     "capabilities",
+    "case_capabilities",
     "emergency_notice",
     "response_breached",
 ]

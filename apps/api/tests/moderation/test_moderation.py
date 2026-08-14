@@ -276,17 +276,17 @@ async def test_authenticated_report_submission_is_private_audited_and_rate_limit
                 {"id": case_id},
             )
         ).one()
-        safe_metadata = (
+        case_event = (
             await connection.execute(
                 text(
                     """
-                    SELECT safe_metadata FROM talaqi.moderation_case_events
+                    SELECT actor_user_id, safe_metadata FROM talaqi.moderation_case_events
                     WHERE moderation_case_id = :id
                     """
                 ),
                 {"id": case_id},
             )
-        ).scalar_one()
+        ).one()
         audit = (
             await connection.execute(
                 text(
@@ -302,7 +302,7 @@ async def test_authenticated_report_submission_is_private_audited_and_rate_limit
             )
         ).one()
     assert stored == (reporter.user_id, body["description"], "emergency")
-    assert safe_metadata == {"source_path": body["source_path"]}
+    assert case_event == (None, {"source_path": body["source_path"]})
     assert audit[0] == "moderation.report.submitted"
     assert "description" not in audit[1]
     assert "source_path" not in audit[1]
@@ -546,6 +546,117 @@ async def test_action_requires_mfa_and_is_idempotent_per_case(
 
 
 @pytest.mark.asyncio
+async def test_case_workflow_assigns_acknowledges_and_dismisses_with_mfa_audit(
+    moderation_engine: AsyncEngine,
+) -> None:
+    no_mfa = await make_admin(moderation_engine, mfa=False)
+    admin = await make_admin(moderation_engine, mfa=True)
+    member = await create_user(moderation_engine)
+    target = await create_user(moderation_engine)
+    case_id = await make_case(moderation_engine, target.user_id)
+    app = app_for(moderation_engine)
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        unauthenticated = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers={"Idempotency-Key": f"unauth-{generate_uuid7()}"},
+        )
+        forbidden = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers=member.headers(idempotency_key=f"member-{generate_uuid7()}"),
+        )
+        missing_csrf = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers={
+                "cookie": admin.cookie,
+                "Idempotency-Key": f"csrf-{generate_uuid7()}",
+            },
+        )
+        injected = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={
+                "action": "acknowledge",
+                "reason": "Taking ownership",
+                "assigned_admin_user_id": str(member.user_id),
+            },
+            headers=admin.headers(idempotency_key=f"inject-{generate_uuid7()}"),
+        )
+        denied = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers=no_mfa.headers(idempotency_key=f"denied-{generate_uuid7()}"),
+        )
+        key = f"ack-{generate_uuid7()}"
+        acknowledged = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers=admin.headers(idempotency_key=key),
+        )
+        replay = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Taking ownership"},
+            headers=admin.headers(idempotency_key=key),
+        )
+        conflict = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "acknowledge", "reason": "Duplicate ownership"},
+            headers=admin.headers(idempotency_key=f"conflict-{generate_uuid7()}"),
+        )
+        dismissed = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/workflow",
+            json={"action": "dismiss", "reason": "Report not substantiated"},
+            headers=admin.headers(idempotency_key=f"dismiss-{generate_uuid7()}"),
+        )
+        action_after_dismissal = await client.post(
+            f"/api/v1/admin/moderation/cases/{case_id}/actions",
+            json={"action": "suspend", "reason": "Must remain dismissed"},
+            headers=admin.headers(idempotency_key=f"action-{generate_uuid7()}"),
+        )
+        detail = await client.get(
+            f"/api/v1/admin/moderation/cases/{case_id}", headers=admin.headers()
+        )
+    assert unauthenticated.status_code == 401
+    assert forbidden.status_code == missing_csrf.status_code == denied.status_code == 403
+    assert injected.status_code == 422
+    assert denied.status_code == 403
+    assert acknowledged.status_code == replay.status_code == 200
+    assert acknowledged.json() == replay.json()
+    assert acknowledged.json()["case"]["status"] == "investigating"
+    assert acknowledged.json()["case"]["assigned_admin_user_id"] == str(admin.user_id)
+    assert acknowledged.json()["case"]["acknowledged_at"] is not None
+    assert conflict.status_code == 409
+    assert dismissed.status_code == 200
+    assert dismissed.json()["case"]["status"] == "dismissed"
+    assert dismissed.json()["case"]["resolution_reason"] == "Report not substantiated"
+    assert dismissed.json()["events"][0]["workflow_action"] == "acknowledge"
+    assert dismissed.json()["events"][1]["workflow_action"] == "dismiss"
+    assert action_after_dismissal.status_code == 409
+    assert detail.json()["case"]["available_actions"] == []
+    async with moderation_engine.connect() as connection:
+        audit_actions = (
+            (
+                await connection.execute(
+                    text(
+                        """
+                    SELECT action FROM talaqi.audit_events
+                    WHERE target_type = 'moderation_case' AND target_id = :case_id
+                    ORDER BY created_at
+                    """
+                    ),
+                    {"case_id": case_id},
+                )
+            )
+            .scalars()
+            .all()
+        )
+    assert audit_actions == ["moderation.case.acknowledge", "moderation.case.dismiss"]
+
+
+@pytest.mark.asyncio
 async def test_action_rejects_cross_target_fields_and_invalid_reason_without_changes(
     moderation_engine: AsyncEngine,
 ) -> None:
@@ -601,7 +712,8 @@ async def test_club_and_event_actions_immediately_change_public_discovery(
         await seed_discovery_fixtures(session)
     admin = await make_admin(moderation_engine, mfa=True)
     club_id, event_id = PUBLIC_CLUB_IDS[0], PUBLIC_EVENT_IDS[0]
-    club_case = await make_case(moderation_engine, club_id, target_type="club")
+    club_suspend_case = await make_case(moderation_engine, club_id, target_type="club")
+    club_unpublish_case = await make_case(moderation_engine, club_id, target_type="club")
     event_case = await make_case(moderation_engine, event_id, target_type="event")
     async with moderation_engine.connect() as connection:
         club_slug = (
@@ -623,13 +735,13 @@ async def test_club_and_event_actions_immediately_change_public_discovery(
                 headers=admin.headers(idempotency_key=f"{action}-{generate_uuid7()}"),
             )
 
-        assert (await act(club_case, "suspend")).status_code == 200
+        assert (await act(club_suspend_case, "suspend")).status_code == 200
         assert (await client.get(f"/api/v1/clubs/{club_slug}")).status_code == 404
-        assert (await act(club_case, "restore")).status_code == 200
+        assert (await act(club_suspend_case, "restore")).status_code == 200
         assert (await client.get(f"/api/v1/clubs/{club_slug}")).status_code == 200
-        assert (await act(club_case, "unpublish")).status_code == 200
+        assert (await act(club_unpublish_case, "unpublish")).status_code == 200
         assert (await client.get(f"/api/v1/clubs/{club_slug}")).status_code == 404
-        assert (await act(club_case, "restore")).status_code == 200
+        assert (await act(club_unpublish_case, "restore")).status_code == 200
         assert (await client.get(f"/api/v1/clubs/{club_slug}")).status_code == 200
 
         event_unpublish = await act(event_case, "unpublish")

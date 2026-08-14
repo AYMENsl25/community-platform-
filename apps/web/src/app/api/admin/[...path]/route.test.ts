@@ -174,6 +174,48 @@ describe("admin API proxy", () => {
     );
   });
 
+  it("allows the bounded moderation workflow route", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ id: caseId }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const body = JSON.stringify({
+      action: "acknowledge",
+      reason: "Taking ownership",
+    });
+    const response = await POST(
+      new NextRequest(
+        `http://web.test/api/admin/api/v1/admin/moderation/cases/${caseId}/workflow`,
+        {
+          method: "POST",
+          body,
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": "workflow-action-00000001",
+            "X-CSRF-Token": "csrf",
+          },
+        },
+      ),
+      context([
+        "api",
+        "v1",
+        "admin",
+        "moderation",
+        "cases",
+        caseId,
+        "workflow",
+      ]),
+    );
+    expect(response.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledWith(
+      `http://api.test/api/v1/admin/moderation/cases/${caseId}/workflow`,
+      expect.objectContaining({ method: "POST", body }),
+    );
+  });
+
   it("maps upstream failures to a stable private 502 without leakage", async () => {
     vi.stubGlobal(
       "fetch",
