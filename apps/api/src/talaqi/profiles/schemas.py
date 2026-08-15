@@ -41,6 +41,13 @@ class ProfileResponse(BaseModel):
     avatar: None = None
 
 
+class AccountDeletionResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    requested_at: datetime
+    anonymize_after: datetime
+
+
 class Capabilities(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 

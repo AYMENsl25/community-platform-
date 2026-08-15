@@ -11,11 +11,17 @@ from talaqi.identity.dependencies import (
     CurrentPrincipal,
     DatabaseSession,
 )
+from talaqi.lifecycle import DataLifecycleRepository, DataLifecycleService
 from talaqi.platform.errors import ErrorEnvelope
 from talaqi.profiles.eligibility import CreationEligibilityService
 from talaqi.profiles.models import Profile, ProfileReplacement
 from talaqi.profiles.repository import ProfileRepository
-from talaqi.profiles.schemas import Capabilities, ProfileReplacementRequest, ProfileResponse
+from talaqi.profiles.schemas import (
+    AccountDeletionResponse,
+    Capabilities,
+    ProfileReplacementRequest,
+    ProfileResponse,
+)
 from talaqi.profiles.service import ProfileService
 from talaqi.regions.repository import RegionRepository
 from talaqi.regions.service import RegionPolicyService
@@ -143,6 +149,40 @@ async def get_my_capabilities(
 ) -> Capabilities:
     _profile_service, eligibility = _services(request, session)
     return await eligibility.evaluate(principal)
+
+
+@router.post(
+    "/account-deletion",
+    response_model=AccountDeletionResponse,
+    operation_id="requestMyAccountDeletion",
+    responses={401: _AUTH_FAILURE, 403: _CSRF_FAILURE, 409: _CONFLICT},
+)
+async def request_my_account_deletion(
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+) -> AccountDeletionResponse:
+    state = await DataLifecycleService(DataLifecycleRepository(session)).request_deletion(
+        principal.user_id
+    )
+    return AccountDeletionResponse(
+        requested_at=state.requested_at,
+        anonymize_after=state.anonymize_after,
+    )
+
+
+@router.delete(
+    "/account-deletion",
+    status_code=204,
+    operation_id="cancelMyAccountDeletion",
+    responses={401: _AUTH_FAILURE, 403: _CSRF_FAILURE, 409: _CONFLICT},
+)
+async def cancel_my_account_deletion(
+    principal: CurrentPrincipal,
+    session: DatabaseSession,
+    _csrf: CsrfProtection,
+) -> None:
+    await DataLifecycleService(DataLifecycleRepository(session)).cancel_deletion(principal.user_id)
 
 
 __all__ = ["router"]

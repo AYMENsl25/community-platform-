@@ -15,6 +15,7 @@ from talaqi.config import Settings
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.identity.csrf import CsrfService
 from talaqi.identity.sessions import AccessSessionCodec, AccessToken
+from talaqi.lifecycle import DataLifecycleRepository, DataLifecycleService
 from talaqi.main import create_app
 from talaqi.profiles.models import ProfileReplacement
 from talaqi.profiles.repository import ProfileRepository
@@ -157,6 +158,104 @@ async def delete_users(engine: AsyncEngine, *user_ids: UUID) -> None:
             text("DELETE FROM talaqi.users WHERE id = ANY(CAST(:ids AS uuid[]))"),
             identifiers,
         )
+
+
+@pytest.mark.asyncio
+async def test_account_deletion_is_csrf_protected_recoverable_and_anonymized_after_30_days(
+    profile_engine: AsyncEngine,
+) -> None:
+    user = await create_authenticated_user(
+        profile_engine, email="profile-delete@example.test", verified=True
+    )
+    factory = async_sessionmaker(profile_engine, class_=AsyncSession, expire_on_commit=False)
+    app = create_app(profile_settings(), session_factory=factory)
+    try:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+        ) as client:
+            await client.patch(
+                "/api/v1/me",
+                json=replacement("delete_member"),
+                headers={"cookie": user.cookie, "X-CSRF-Token": user.csrf},
+            )
+            denied = await client.post(
+                "/api/v1/me/account-deletion", headers={"cookie": user.cookie}
+            )
+            requested = await client.post(
+                "/api/v1/me/account-deletion",
+                headers={"cookie": user.cookie, "X-CSRF-Token": user.csrf},
+            )
+        assert denied.status_code == 403
+        assert requested.status_code == 200
+        body = requested.json()
+        assert datetime.fromisoformat(body["anonymize_after"]) - datetime.fromisoformat(
+            body["requested_at"]
+        ) == timedelta(days=30)
+
+        async with factory() as session, session.begin():
+            state = (
+                (
+                    await session.execute(
+                        text(
+                            """
+                            SELECT deletion_requested_at, status::text AS status,
+                                   (SELECT count(*) FROM talaqi.sessions
+                                    WHERE user_id = users.id AND revoked_at IS NULL)
+                                   AS active_sessions
+                            FROM talaqi.users WHERE id = :user_id
+                            """
+                        ),
+                        {"user_id": user.user_id},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+            assert state["deletion_requested_at"] is not None
+            assert state["status"] == "active"
+            assert state["active_sessions"] == 0
+            await DataLifecycleService(DataLifecycleRepository(session)).cancel_deletion(
+                user.user_id
+            )
+
+        old_request = datetime.now(UTC) - timedelta(days=31)
+        async with profile_engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "UPDATE talaqi.users SET deletion_requested_at = :requested WHERE id = :user_id"
+                ),
+                {"requested": old_request, "user_id": user.user_id},
+            )
+        async with factory() as session, session.begin():
+            anonymized = await DataLifecycleService(DataLifecycleRepository(session)).run_cleanup()
+            assert anonymized == (user.user_id,)
+        async with profile_engine.connect() as connection:
+            identity = (
+                (
+                    await connection.execute(
+                        text(
+                            """
+                            SELECT users.email, users.status::text AS status, users.anonymized_at,
+                                   profiles.username, profiles.display_name
+                            FROM talaqi.users JOIN talaqi.profiles ON profiles.user_id = users.id
+                            WHERE users.id = :user_id
+                            """
+                        ),
+                        {"user_id": user.user_id},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+        assert identity["status"] == "deleted"
+        assert identity["anonymized_at"] is not None
+        assert identity["email"].startswith("deleted+")
+        assert identity["email"].endswith("@invalid.talaqi")
+        assert identity["username"].startswith("deleted_")
+        assert identity["display_name"] == "Deleted member"
+        assert "profile-delete@example.test" not in repr(identity)
+    finally:
+        await delete_users(profile_engine, user.user_id)
 
 
 @pytest.mark.asyncio
