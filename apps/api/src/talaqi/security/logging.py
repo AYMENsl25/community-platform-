@@ -58,11 +58,13 @@ class SafeRequestLoggingMiddleware:
         app: ASGIApp,
         *,
         logger: logging.Logger,
+        metric_logger: logging.Logger,
         clock: Callable[[], float],
         timestamp: Callable[[], datetime],
     ) -> None:
         self.app = app
         self._logger = logger
+        self._metric_logger = metric_logger
         self._clock = clock
         self._timestamp = timestamp
 
@@ -102,10 +104,11 @@ class SafeRequestLoggingMiddleware:
         observed = (
             self._timestamp().astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
         )
+        method = str(scope.get("method", "")).upper()
         event = {
             "timestamp": observed,
             "event": "request.completed",
-            "method": str(scope.get("method", "")).upper(),
+            "method": method,
             "route": route,
             "status_code": status_code,
             "duration_ms": duration,
@@ -115,12 +118,36 @@ class SafeRequestLoggingMiddleware:
         }
         message = json.dumps(event, ensure_ascii=False, separators=(",", ":"))
         self._logger.log(logging.ERROR if status_code >= 500 else logging.INFO, message)
+        from talaqi.telemetry import emit_metric
+
+        metric_labels = {
+            "method": method.lower(),
+            "route": route,
+            "status_class": f"{status_code // 100}xx",
+        }
+        emit_metric(
+            self._metric_logger,
+            "http_requests_total",
+            1,
+            metric_labels,
+            trace_id=trace_id,
+            request_id=request_id,
+        )
+        emit_metric(
+            self._metric_logger,
+            "http_request_duration_ms",
+            duration,
+            {"method": metric_labels["method"], "route": route},
+            trace_id=trace_id,
+            request_id=request_id,
+        )
 
 
 def install_request_logging(
     application: FastAPI,
     *,
     logger: logging.Logger | None = None,
+    metric_logger: logging.Logger | None = None,
     clock: Callable[[], float] = time.monotonic,
     timestamp: Callable[[], datetime] | None = None,
 ) -> None:
@@ -130,6 +157,7 @@ def install_request_logging(
     application.add_middleware(
         SafeRequestLoggingMiddleware,
         logger=logger or configure_request_logger(),
+        metric_logger=metric_logger or logging.getLogger("talaqi.metric"),
         clock=clock,
         timestamp=timestamp or (lambda: datetime.now(UTC)),
     )

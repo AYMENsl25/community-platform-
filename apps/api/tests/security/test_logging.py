@@ -222,3 +222,37 @@ async def test_valid_traceparent_is_correlated_and_hostile_value_is_replaced() -
     assert replaced.headers["x-trace-id"] == events[1]["trace_id"]
     assert events[1]["trace_id"] != "Bearer private-token"
     assert "private-token" not in stream.getvalue()
+
+
+@pytest.mark.asyncio
+async def test_request_metrics_use_templates_and_bounded_labels() -> None:
+    logger, _ = logger_and_stream()
+    metric_stream = StringIO()
+    metric_logger = logging.Logger("test.safe.metrics", level=logging.INFO)
+    metric_logger.addHandler(logging.StreamHandler(metric_stream))
+    app = FastAPI()
+    register_platform_contracts(app)
+    install_request_logging(app, logger=logger, metric_logger=metric_logger)
+
+    @app.get("/items/{item_id}")
+    async def item(item_id: str) -> dict[str, str]:  # pyright: ignore[reportUnusedFunction]
+        return {"id": item_id}
+
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://localhost"
+    ) as client:
+        response = await client.get("/items/private-value?email=person@example.test")
+
+    metrics = [json.loads(line) for line in metric_stream.getvalue().splitlines()]
+    assert [item["metric"] for item in metrics] == [
+        "http_requests_total",
+        "http_request_duration_ms",
+    ]
+    assert metrics[0]["labels"] == {
+        "method": "get",
+        "route": "/items/{item_id}",
+        "status_class": "2xx",
+    }
+    assert metrics[1]["labels"] == {"method": "get", "route": "/items/{item_id}"}
+    assert all(item["trace_id"] == response.headers["x-trace-id"] for item in metrics)
+    assert not any(value in metric_stream.getvalue() for value in ("private-value", "person@"))
