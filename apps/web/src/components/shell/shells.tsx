@@ -105,10 +105,26 @@ function Navigation({
 }
 
 function ShellFooter({ locale }: { locale: LocaleCode }) {
+  const policyLabel = {
+    en: "Policies",
+    tr: "Politikalar",
+    fr: "Politiques",
+    ar: "السياسات",
+  }[locale];
+  const supportLabel = {
+    en: "Support",
+    tr: "Destek",
+    fr: "Assistance",
+    ar: "الدعم",
+  }[locale];
   return (
     <footer className="tq-shell-footer">
       <Container>
         <p>{translate(locale, "shell.footer.tagline")}</p>
+        <nav aria-label={policyLabel}>
+          <Link href="/policies/terms">{policyLabel}</Link>{" "}
+          <Link href="/policies/support">{supportLabel}</Link>
+        </nav>
       </Container>
     </footer>
   );
