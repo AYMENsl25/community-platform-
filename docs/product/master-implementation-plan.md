@@ -396,9 +396,9 @@
 
 ### Task 6.4: Security and privacy hardening review
 
-- [ ] Run threat-model review across auth, sessions, CSRF, CORS/hosts, authorization, private links, venue/attendee privacy, uploads, rate limits, worker retries, logs, and admin MFA.
-- [ ] Add dependency, secret, SAST, DAST, cookie/header, IDOR, unsafe-upload, and retention/anonymization verification; resolve all high/critical findings.
-- [ ] Gate: full `tests/security`, scans, and documented exception process; commit `security: harden Talaqi for closed beta`.
+- [x] Run threat-model review across auth, sessions, CSRF, CORS/hosts, authorization, private links, venue/attendee privacy, uploads, rate limits, worker retries, logs, and admin MFA.
+- [x] Add dependency, secret, SAST, DAST, cookie/header, IDOR, unsafe-upload, and retention/anonymization verification; resolve all high/critical findings.
+- [x] Gate: full `tests/security`, scans, and documented exception process; commit `security: harden Talaqi for closed beta`.
 
 ### Task 6.5: Deployment pipeline and migration safety
 
