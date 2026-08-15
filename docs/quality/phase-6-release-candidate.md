@@ -14,6 +14,7 @@ The repository and local disposable-environment release matrix are ready for a s
 | --- | --- |
 | Ruff format/lint, Pyright | 328 files formatted; no lint, type, warning, or information findings |
 | ESLint and TypeScript | All six-workspace checks passed |
+| Global Python gate | Exact documented `pytest -q` command passed: 717 tests |
 | API/worker tests | 710 passed in the CI application partition |
 | PostgreSQL migration/idempotency tests | 53 passed in the isolated CI partition; clean upgrade, downgrade/re-upgrade, one head, seed counts, readiness, and transaction behavior covered |
 | Repository security/deployment/operations tests | 41 passed |
@@ -24,7 +25,7 @@ The repository and local disposable-environment release matrix are ready for a s
 | Browser journeys | 53 Playwright tests passed with one Chromium worker: four locales, RTL, 320 px layouts, accessibility, visitor/member/organizer/admin authorization, registration/waitlist/cash, policies, PWA, and logout cache clearing |
 | Security/dependencies | See `phase-6-security-review.md`; the reviewed branch has no known package audit or local high/critical finding |
 
-The global one-shot `pytest -q` command is not a valid database isolation mode for this repository: suites that independently reset the same PostgreSQL schema collide on `alembic_version` creation and schema removal. The exact sequential partitions declared by `.github/workflows/ci.yml` passed (710 + 53), followed by all 41 repository contract tests. This is recorded rather than hiding the harness collision or weakening tests.
+The first release-matrix attempt incorrectly overlapped the global Python suite with other verification processes and caused shared disposable-schema collisions. Rerunning the exact documented `pytest -q` gate by itself passed all 717 tests. The sequential partitions declared by `.github/workflows/ci.yml` also passed (710 + 53), followed by all 41 repository contract tests. No fixture, assertion, expected identifier, or database safety guard was weakened.
 
 ## Release data and controls
 
