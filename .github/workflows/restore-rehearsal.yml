@@ -1,0 +1,61 @@
+name: Restore rehearsal
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_run_id:
+        description: Backup workflow run ID to restore
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    environment: staging-restore
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: talaqi_restore_test
+          POSTGRES_USER: talaqi_restore
+          POSTGRES_PASSWORD: restore-only
+        ports: ["55432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U talaqi_restore -d talaqi_restore_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Download encrypted backup and manifest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          AWS_ENDPOINT_URL: ${{ vars.BACKUP_S3_ENDPOINT }}
+        run: |
+          aws s3 cp "s3://${{ vars.BACKUP_BUCKET }}/daily/${{ inputs.backup_run_id }}/database.dump.gpg" database.dump.gpg
+          aws s3 cp "s3://${{ vars.BACKUP_BUCKET }}/daily/${{ inputs.backup_run_id }}/manifest.json" manifest.json
+      - run: python scripts/operations/backup_manifest.py verify manifest.json database.dump.gpg
+      - name: Decrypt only inside isolated runner
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: >-
+          printf '%s' "$BACKUP_PASSPHRASE" |
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0
+          --decrypt --output database.dump database.dump.gpg
+      - name: Restore isolated disposable database
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "55432"
+          PGDATABASE: talaqi_restore_test
+          PGUSER: talaqi_restore
+          PGPASSWORD: restore-only
+        run: pg_restore --exit-on-error --no-owner --no-acl --dbname "$PGDATABASE" database.dump
+      - run: psql --command "SELECT version_num FROM public.alembic_version"
+      - run: rm --force database.dump database.dump.gpg manifest.json
