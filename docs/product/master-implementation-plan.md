@@ -414,8 +414,8 @@
 
 ### Task 6.7: Legal, policy, and support readiness
 
-- [ ] Publish localized terms, privacy notice, 18+ age policy, community/organizer rules, cancellation/cash rules, moderation/reporting policy, and support contact.
-- [ ] Version acceptances and require re-consent only for materially changed policies; legal review is a human launch gate.
+- [x] Publish localized terms, privacy notice, 18+ age policy, community/organizer rules, cancellation/cash rules, moderation/reporting policy, and support contact.
+- [x] Version acceptances and require re-consent only for materially changed policies; legal review is a human launch gate.
 - [ ] Gate: link/locale/version tests and product-owner/legal approval record; commit `docs: publish beta policies and support paths`.
 
 ### Task 6.8: Closed-beta release candidate
