@@ -209,7 +209,7 @@ async def test_valid_traceparent_is_correlated_and_hostile_value_is_replaced() -
     async def trace() -> dict[str, bool]:  # pyright: ignore[reportUnusedFunction]
         return {"ok": True}
 
-    valid = "0123456789abcdef0123456789abcdef"
+    valid = "0123456789abcdef0123456789abcdef"  # pragma: allowlist secret
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app), base_url="http://localhost"
     ) as client:
