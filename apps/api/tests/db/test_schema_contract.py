@@ -3,11 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from pydantic import SecretStr
 from sqlalchemy import text
 from talaqi.db.engine import build_async_engine
 
 ROOT = Path(__file__).resolve().parents[4]
+EXPECTED_HEAD = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini"))).get_current_head()
 
 
 @pytest.mark.asyncio
@@ -231,7 +234,8 @@ async def test_enum_index_trigger_version_and_postgresql_18_invariants(
             revision = (
                 await connection.execute(text("SELECT version_num FROM public.alembic_version"))
             ).scalar_one()
-            assert revision == "0012_communications"
+            assert EXPECTED_HEAD is not None
+            assert revision == EXPECTED_HEAD
     finally:
         await engine.dispose()
 
