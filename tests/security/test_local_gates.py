@@ -77,12 +77,12 @@ def test_secret_baseline_contains_only_reviewed_preexisting_test_and_checksum_fi
     )
 
 
-def test_current_moderate_dependency_finding_has_a_concrete_tracking_record() -> None:
+def test_resolved_postcss_finding_keeps_a_patched_lock_floor_and_audit_record() -> None:
     policy = (ROOT / "docs" / "engineering" / "ci-security.md").read_text(encoding="utf-8")
+    lock = (ROOT / "pnpm-lock.yaml").read_text(encoding="utf-8")
     assert "GHSA-qx2v-qp2m-jg93" in policy
     assert "CVE-2026-41305" in policy
-    assert "Owner: Web Platform" in policy
-    assert "Affected component: `next@16.2.10` bundles `postcss@8.4.31`" in policy
-    assert "Compensating control:" in policy
-    assert "Due date: 2026-08-14" in policy
-    assert "suppression" not in policy.split("GHSA-qx2v-qp2m-jg93", maxsplit=1)[1].lower()
+    assert "`postcss@8.5.23`" in policy
+    assert "postcss@8.5.23:" in lock
+    assert "postcss@8.4.31:" not in lock
+    assert "no known vulnerabilities" in policy
