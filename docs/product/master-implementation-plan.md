@@ -402,8 +402,8 @@
 
 ### Task 6.5: Deployment pipeline and migration safety
 
-- [ ] Add preview, staging, and manually approved production pipelines; run migrations once as a release job; use backward-compatible expand/migrate/contract changes and independent app rollback.
-- [ ] Select providers only after current free/student commercial terms are checked; keep PostgreSQL, S3, email, and monitoring adapters portable.
+- [x] Add preview, staging, and manually approved production pipelines; run migrations once as a release job; use backward-compatible expand/migrate/contract changes and independent app rollback.
+- [x] Select providers only after current free/student commercial terms are checked; keep PostgreSQL, S3, email, and monitoring adapters portable.
 - [ ] Gate: clean and previous-schema migration, staging smoke/E2E, rollback rehearsal, readiness failure, and secret isolation; commit `deploy: add guarded staging and production releases`.
 
 ### Task 6.6: Backup, recovery, retention, and account deletion
