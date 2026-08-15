@@ -408,8 +408,8 @@
 
 ### Task 6.6: Backup, recovery, retention, and account deletion
 
-- [ ] Automate encrypted PostgreSQL/object-storage backups, restore validation, retention cleanup, 30-day account-deletion recovery, identity anonymization, and legally required audit preservation.
-- [ ] Write and rehearse runbooks for restore, stuck jobs, failed migration, account recovery, data export/deletion, and compromised admin/session response.
+- [x] Automate encrypted PostgreSQL/object-storage backups, restore validation, retention cleanup, 30-day account-deletion recovery, identity anonymization, and legally required audit preservation.
+- [x] Write and rehearse runbooks for restore, stuck jobs, failed migration, account recovery, data export/deletion, and compromised admin/session response.
 - [ ] Gate: representative staging restore with checksums and sampled media, deletion/retention tests, and recorded recovery times; commit `ops: establish recovery and data lifecycle`.
 
 ### Task 6.7: Legal, policy, and support readiness
