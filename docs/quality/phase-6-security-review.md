@@ -1,7 +1,9 @@
 # Phase 6 closed-beta security review
 
-**Review date:** 2026-08-15  
-**Branch:** `phase-6/operational-hardening`  
+**Review date:** 2026-08-15
+
+**Branch:** `phase-6/operational-hardening`
+
 **Scope:** Task 6.4 application and repository hardening gate
 
 ## Outcome
