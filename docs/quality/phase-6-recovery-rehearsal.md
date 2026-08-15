@@ -13,4 +13,4 @@
 
 ## External restore gate
 
-The repository has no `production-backup` or `staging-restore` GitHub environments and no provider-scoped backup credentials. A representative provider backup download, sampled media restore, database/media checksum comparison, and measured recovery time were not executed. Configure least-privilege write-only backup and read-only restore credentials, run both workflows, and attach redacted workflow/provider evidence before Task 6.8 approval.
+GitHub `production-backup` and `staging-restore` environments were created on 2026-08-15, but they contain no provider-scoped backup variables or secrets. A representative provider backup download, sampled media restore, database/media checksum comparison, and measured recovery time were not executed. Configure least-privilege write-only backup and read-only restore credentials, run both workflows, and attach redacted workflow/provider evidence before Task 6.8 approval.

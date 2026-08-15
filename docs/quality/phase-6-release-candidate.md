@@ -36,7 +36,7 @@ The first release-matrix attempt incorrectly overlapped the global Python suite 
 
 ## Required approval evidence before tagging
 
-1. Create GitHub `staging`, `production`, `production-backup`, and `staging-restore` environments with least-privilege provider credentials and reviewer protection. The repository currently reports zero environments.
+1. GitHub `staging`, `production`, `production-backup`, and `staging-restore` environments exist. Production requires review by `AYMENsl25` and prohibits self-review. Add the still-missing least-privilege provider variables and secrets; never copy their values into this record.
 2. Deploy this immutable branch SHA to staging, verify headers/hosts/CORS/readiness, exercise migration failure and application rollback, and attach redacted provider/workflow evidence.
 3. Run the encrypted provider-backup and isolated restore workflows, sample protected media, compare database/media checksums, and record measured recovery time.
 4. Have authorized people create the support and platform-admin accounts, enroll MFA without sharing seeds/recovery codes, and verify the public support inbox end to end.
