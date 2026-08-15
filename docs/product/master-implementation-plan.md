@@ -390,9 +390,9 @@
 
 ### Task 6.3: Observability and alerting
 
-- [ ] Add correlated JSON logs, traces, error reporting, request/error/latency, DB saturation, job age/failure, email failure, transition, expiry, promotion, moderation SLA, and business-funnel metrics.
-- [ ] Alert on user-impacting API outage, migration failure, stalled queue, DB/storage capacity, critical email failure, and invariant violation; exclude high-cardinality personal data.
-- [ ] Gate: telemetry contract/redaction tests and synthetic alert exercises; commit `ops: add beta observability and alerts`.
+- [x] Add correlated JSON logs, traces, error reporting, request/error/latency, DB saturation, job age/failure, email failure, transition, expiry, promotion, moderation SLA, and business-funnel metrics.
+- [x] Alert on user-impacting API outage, migration failure, stalled queue, DB/storage capacity, critical email failure, and invariant violation; exclude high-cardinality personal data.
+- [x] Gate: telemetry contract/redaction tests and synthetic alert exercises; commit `ops: add beta observability and alerts`.
 
 ### Task 6.4: Security and privacy hardening review
 

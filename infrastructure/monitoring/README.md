@@ -4,6 +4,8 @@ Talaqi emits newline-delimited JSON and derives metrics from bounded event names
 
 `apps/api/src/talaqi/telemetry.py` is the source of truth for metric names and label sets. Collection must reject extra labels. In particular, UUIDs, request/trace IDs, contact data, arbitrary error text, and deduplication keys must never become metric labels. Error reporting stores the safe error code, route template, release SHA, request ID, and trace ID only.
 
+The API emits request-count and latency observations from the same route-template boundary as the safe completion log. The worker emits bounded outbox-failure and cash-expiry outcomes. Provider adapters derive ratios, capacity gauges, oldest-job age, and dashboard series without adding application identifiers as labels.
+
 The beta dashboard must show API request/error/latency, database pool saturation, object-storage capacity, oldest outbox job and failures, email failures, registration transitions/expiry, waitlist promotions, moderation SLA breaches, and the region-level product funnel. `dashboard.json` records that reviewable contract; the deployment adapter maps these names to the selected provider.
 
 `alerts.yml` defines the release alerts: user-impacting API outage, migration failure, stalled queue, database or storage capacity, critical email failure, and invariant violation. Page only on sustained user impact; route warnings to the operations channel with a runbook link. Do not place private values in alert annotations.
@@ -11,6 +13,8 @@ The beta dashboard must show API request/error/latency, database pool saturation
 ## Synthetic exercise
 
 Run `python -m uv run pytest -q apps/api/tests/security/test_logging.py apps/api/tests/security/test_telemetry.py`. The exercise injects a firing sample for every alert and asserts all names fire, then supplies an empty healthy sample and asserts none fire. In staging, repeat after deployment by sending provider-side synthetic series with the same names, acknowledge each notification, record timestamps and screenshots in the release evidence, and remove the synthetic series. Provider delivery and paging cannot be certified by unit tests alone.
+
+The Task 6.3 local gate also runs `python -m uv run pytest -q apps/api/tests/security apps/worker/tests`, Ruff over those source and test trees, and Pyright over both application source trees.
 
 ## Incident correlation
 
