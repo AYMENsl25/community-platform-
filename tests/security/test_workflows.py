@@ -9,12 +9,12 @@ from talaqi.db.safety import validate_test_database_url
 ROOT = Path(__file__).resolve().parents[2]
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 EXPECTED_JOBS = {"changes", "web", "api", "contract", "migration", "security", "playwright"}
-CHECKOUT_SHA = "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"  # pragma: allowlist secret
-SETUP_NODE_SHA = "48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"  # pragma: allowlist secret
-SETUP_PYTHON_SHA = "ece7cb06caefa5fff74198d8649806c4678c61a1"  # pragma: allowlist secret
+CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"  # pragma: allowlist secret
+SETUP_NODE_SHA = "820762786026740c76f36085b0efc47a31fe5020"  # pragma: allowlist secret
+SETUP_PYTHON_SHA = "5fda3b95a4ea91299a34e894583c3862153e4b97"  # pragma: allowlist secret
 CACHE_SHA = "55cc8345863c7cc4c66a329aec7e433d2d1c52a9"  # pragma: allowlist secret
 DEPENDENCY_REVIEW_SHA = "a1d282b36b6f3519aa1f3fc636f609c47dddb294"  # pragma: allowlist secret
-CODEQL_SHA = "24ea975727876cf496b1eb0c5b36e96e01600b51"  # pragma: allowlist secret
+CODEQL_SHA = "99df26d4f13ea111d4ec1a7dddef6063f76b97e9"  # pragma: allowlist secret
 EXPECTED_ACTIONS = {
     "actions/checkout": CHECKOUT_SHA,
     "actions/setup-node": SETUP_NODE_SHA,
@@ -105,6 +105,7 @@ def test_ci_migration_database_url_uses_the_runtime_driver_and_safety_contract()
 def test_codeql_has_minimal_permissions_languages_and_bounded_schedule() -> None:
     workflow, text = load_workflow("codeql.yml")
     assert workflow["permissions"] == {
+        "actions": "read",
         "contents": "read",
         "packages": "read",
         "security-events": "write",
