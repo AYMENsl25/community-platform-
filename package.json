@@ -27,13 +27,13 @@
     "e2e": "playwright test"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.12.1",
-    "@playwright/test": "1.61.1",
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.62.1",
     "lighthouse": "13.4.1",
-    "prettier": "3.9.5",
+    "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "0.8.1",
     "sharp": "0.35.3",
-    "turbo": "2.10.5",
+    "turbo": "2.10.10",
     "typescript": "5.9.3"
   }
 }
