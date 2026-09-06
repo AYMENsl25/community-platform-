@@ -95,6 +95,10 @@ describe("localized home", () => {
     expect(
       screen.queryByRole("link", { name: /create (club|event)/i }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Arts Culture" })).toHaveAttribute(
+      "href",
+      "/explore?category=arts-culture",
+    );
   });
 
   it("rerenders visible content and shell direction when locale changes", () => {
