@@ -40,11 +40,13 @@ export type FilterDrawerLabels = {
   price: string;
   search: string;
   any: string;
+  clear: string;
 };
 
 function defaultLabels(locale: LocaleCode): FilterDrawerLabels {
   return {
     any: "—",
+    clear: translate(locale, "filters.clear"),
     apply: translate(locale, "filters.apply"),
     category: translate(locale, "filters.category"),
     city: translate(locale, "filters.city"),
@@ -167,6 +169,7 @@ export function FilterDrawer({
 }) {
   const labels = { ...defaultLabels(locale), ...overrides };
   const [open, setOpen] = useState(false);
+  const activeCount = Object.values(filters).filter(Boolean).length;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -177,12 +180,17 @@ export function FilterDrawer({
 
   useEffect(() => {
     if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     closeRef.current?.focus();
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
     };
     document.addEventListener("keydown", escape);
-    return () => document.removeEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("keydown", escape);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open]);
 
   const trapFocus = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -205,18 +213,21 @@ export function FilterDrawer({
   return (
     <div className="tq-filter-drawer">
       <button
+        aria-controls="discovery-filters"
+        aria-expanded={open}
         className="tq-discovery-control"
         onClick={() => setOpen(true)}
         ref={triggerRef}
         type="button"
       >
         {labels.open}
+        {activeCount ? <span aria-hidden="true"> ({activeCount})</span> : null}
       </button>
       <form
         action="/explore"
+        aria-hidden={open || undefined}
         aria-label={labels.filters}
-        className="tq-filter-form"
-        hidden={open}
+        className="tq-filter-form tq-filter-form--fallback"
         method="get"
       >
         <Fields
@@ -228,30 +239,47 @@ export function FilterDrawer({
       </form>
       {open ? (
         <div
-          aria-label={labels.filters}
-          aria-modal="true"
-          className="tq-filter-dialog"
-          onKeyDown={trapFocus}
-          ref={dialogRef}
-          role="dialog"
+          className="tq-filter-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) close();
+          }}
         >
-          <button
-            aria-label={labels.close}
-            className="tq-discovery-control tq-filter-dialog__close"
-            onClick={close}
-            ref={closeRef}
-            type="button"
+          <div
+            aria-labelledby="discovery-filters-title"
+            aria-modal="true"
+            className="tq-filter-dialog"
+            id="discovery-filters"
+            onKeyDown={trapFocus}
+            ref={dialogRef}
+            role="dialog"
           >
-            {String.fromCharCode(215)}
-          </button>
-          <form action="/explore" method="get">
-            <Fields
-              filters={filters}
-              labels={labels}
-              locale={locale}
-              metadata={metadata}
-            />
-          </form>
+            <header className="tq-filter-dialog__header">
+              <div>
+                <h2 id="discovery-filters-title">{labels.filters}</h2>
+                {activeCount ? <p>{activeCount}</p> : null}
+              </div>
+              <button
+                aria-label={labels.close}
+                className="tq-discovery-control tq-filter-dialog__close"
+                onClick={close}
+                ref={closeRef}
+                type="button"
+              >
+                {String.fromCharCode(215)}
+              </button>
+            </header>
+            <form action="/explore" method="get">
+              <a className="tq-filter-dialog__clear" href="/explore">
+                {labels.clear}
+              </a>
+              <Fields
+                filters={filters}
+                labels={labels}
+                locale={locale}
+                metadata={metadata}
+              />
+            </form>
+          </div>
         </div>
       ) : null}
     </div>

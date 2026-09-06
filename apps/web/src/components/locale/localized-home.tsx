@@ -112,7 +112,6 @@ function HomeContent({ landing }: { landing: LandingData }) {
                   key={event.id}
                   labels={eventLabels}
                   locale={locale}
-                  showFeaturedReason
                 />
               ))}
             </div>

@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogoutButton } from "@/components/pwa/logout-button";
+import { PublicNavigation } from "@/components/shell/public-navigation";
 
 type ShellProps = {
   children: ReactNode;
@@ -24,8 +25,8 @@ type NavigationItem = {
 const publicNavigation: NavigationItem[] = [
   { href: "/explore", label: "shell.navigation.explore" },
   { href: "/", label: "shell.navigation.home" },
-  { href: "#community", label: "shell.navigation.community" },
-  { href: "#about", label: "shell.navigation.about" },
+  { href: "/#community", label: "shell.navigation.community" },
+  { href: "/#about", label: "shell.navigation.about" },
 ];
 
 const workspaceNavigation = {
@@ -143,12 +144,10 @@ export function PublicShell({ children, currentHref, locale }: ShellProps) {
       <header className="tq-public-header">
         <Container className="tq-public-header__inner">
           <Brand locale={locale} />
-          <Navigation
+          <PublicNavigation
             currentHref={currentHref}
             items={publicNavigation}
-            label="shell.navigation.primary"
             locale={locale}
-            variant="public"
           />
         </Container>
       </header>

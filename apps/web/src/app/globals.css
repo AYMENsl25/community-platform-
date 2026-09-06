@@ -101,7 +101,7 @@ img {
 
 .tq-landing-sections {
   display: grid;
-  gap: clamp(2rem, 6vw, 4rem);
+  gap: clamp(2rem, 5vw, 3.5rem);
   padding-block-end: clamp(3rem, 8vw, 6rem);
 }
 
@@ -111,7 +111,7 @@ img {
 
 .tq-landing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17.5rem), 1fr));
   gap: var(--tq-space-5);
 }
 
@@ -127,6 +127,21 @@ img {
   padding-inline: var(--tq-space-4);
   border: 1px solid var(--tq-color-border);
   border-radius: var(--tq-radius-pill);
+  text-decoration: none;
+  transition:
+    background-color var(--tq-motion-fast) ease,
+    border-color var(--tq-motion-fast) ease;
+}
+
+.tq-category-links a:hover {
+  background: var(--tq-color-brand-soft);
+  border-color: var(--tq-color-brand);
+}
+
+@media (max-width: 48rem) {
+  .tq-landing-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tq-region-form {

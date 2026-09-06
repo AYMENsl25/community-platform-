@@ -12,6 +12,15 @@
   --tq-color-border: #75887f;
   --tq-color-focus: #103b33;
   --tq-color-on-brand: #ffffff;
+  --tq-color-background: var(--tq-color-canvas);
+  --tq-color-surface-elevated: #ffffff;
+  --tq-color-surface-muted: #eef3f0;
+  --tq-color-primary: var(--tq-color-brand);
+  --tq-color-primary-strong: var(--tq-color-brand-strong);
+  --tq-color-secondary: var(--tq-color-accent);
+  --tq-color-success: #287a5d;
+  --tq-color-warning: #a35a16;
+  --tq-color-destructive: #a33a43;
 
   --tq-font-sans:
     ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -39,6 +48,7 @@
   --tq-radius-lg: 1.5rem;
   --tq-radius-pill: 999rem;
   --tq-shadow-card: 0 1.25rem 3rem rgb(24 79 67 / 10%);
+  --tq-shadow-raised: 0 1rem 2.5rem rgb(24 79 67 / 14%);
   --tq-focus-ring-width: 0.1875rem;
   --tq-focus-ring-offset: 0.1875rem;
   --tq-touch-target: 2.75rem;

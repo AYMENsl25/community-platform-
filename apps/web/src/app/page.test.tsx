@@ -86,7 +86,7 @@ describe("localized home", () => {
     );
     expect(
       screen.getAllByText(translate("en", "discovery.featuredExplanation")),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(
       screen.getByRole("link", {
         name: translate("en", "home.organizer.action"),

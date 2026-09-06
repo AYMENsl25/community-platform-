@@ -10,11 +10,16 @@ export function CanonicalCover({
   mediaId: string | null;
   alt: string;
 }) {
-  if (!mediaId) return null;
+  const source = mediaId
+    ? `/api/media/${encodeURIComponent(mediaId)}`
+    : process.env.NODE_ENV === "development"
+      ? "/demo/community-gathering.png"
+      : null;
+  if (!source) return null;
   return (
     <img
       className="tq-discovery-cover"
-      src={`/api/media/${encodeURIComponent(mediaId)}`}
+      src={source}
       alt={alt}
       width={1200}
       height={675}
