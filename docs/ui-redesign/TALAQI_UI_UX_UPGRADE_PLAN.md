@@ -1,6 +1,6 @@
 # Talaqi UI/UX Upgrade Plan
 
-Status: Approved for Sprint 0 and Sprint 1 implementation  
+Status: Sprint 0/1 implemented; launch follow-through planned
 Baseline SHA: `4a36adebed19c2530427eaf917c70d40a9901efe`  
 Baseline locale/data: English, deterministic local discovery fixtures  
 Scope: Public discovery presentation only; no backend, route, permission, privacy, or business-logic changes
@@ -192,3 +192,129 @@ Existing dirty files at baseline are `apps/web/next-env.d.ts`, `apps/web/src/com
 - No backend, route, API, auth, authorization, privacy, registration, database, or protected workspace behavior changes; no new production dependency; no material client-JS increase.
 - Relevant existing and new unit, integration, build, Playwright, accessibility, privacy, localization, and responsive gates pass, with exact commands/results reported.
 - Before/after screenshots exist for the required public surfaces and representative widths, with any baseline limitation stated honestly.
+
+## 17. Launch follow-through plan
+
+This addendum converts the persona-test feedback into small, independently
+releasable slices. It intentionally expands beyond the original public-only
+Sprint 0/1 boundary, so each slice has its own authorization, privacy, and
+browser gate. It does not change the closed-beta product boundary: no online
+payments, invented social proof, public attendee data, or public exact venues.
+
+### Slice A — visitor conversion at the registration boundary
+
+**Outcome:** an anonymous visitor understands that registration needs an
+account and has a clear, safe path back to the same event after sign-in.
+
+1. Audit the existing authentication entry-point and its supported return-path
+   contract. If it has no safe return-path contract, add one that only accepts
+   same-origin, allowlisted Talaqi paths; reject external URLs and preserve the
+   selected locale.
+2. Replace the registration error-only experience with an inline, translated
+   sign-in call to action after a `401`; retain the non-JavaScript/server error
+   fallback. Do not disclose registration eligibility or private venue data to
+   an anonymous visitor.
+3. Add four-locale component coverage and Playwright coverage for: visitor
+   opens event, chooses registration, reaches sign-in, returns to that event,
+   and sees no exact venue before a confirmed registration.
+
+**Exit gate:** return navigation is allowlisted, keyboard reachable, announced
+by assistive technology, and passes the public-venue privacy assertions.
+
+### Slice B — trustworthy event-state feedback
+
+**Outcome:** members can immediately tell whether saving, registering, or
+cancelling succeeded without relying only on a changing button label.
+
+1. Give the existing save control a localized success status in addition to
+   its pressed state; keep errors distinct and preserve the current CSRF and
+   same-origin request behavior.
+2. Add a compact registration-state summary beside the event action. It must
+   use server-authoritative state after refresh and cover confirmed,
+   cash-pending, waitlisted, cancelled, and retry/error states.
+3. Make the private-venue explanation explicit with a non-sensitive lock cue
+   and translated copy such as “exact venue shared after confirmation.” The
+   cue must never imply the address, coordinates, attendee identity, or
+   capacity outcome.
+4. Validate screen-reader announcements, focus behavior, 44px mobile targets,
+   reduced motion, long translated copy, and Arabic RTL.
+
+**Exit gate:** no mutation reports success until the server refresh confirms
+it; exact venue remains absent before the approved eligibility state and
+disappears after cancellation.
+
+### Slice C — organizer lifecycle persona fixture and browser suite
+
+**Outcome:** the launch suite proves a club owner can complete an end-to-end
+organizer workflow against deterministic, authorized fixtures.
+
+1. Extend `scripts/testing/discovery-fixture-server.mjs` only with the
+allowlisted organizer responses needed by the existing organizer proxy routes:
+managed clubs/events, event create/edit/publish lifecycle, attendees, and
+one-way event updates. Keep fixture state isolated per test and do not connect
+to a real account or production API.
+2. Add a serial Playwright persona journey for a club owner: open organizer
+workspace, create or edit a draft, preview venue disclosure, publish with the
+required confirmation/audit reason, inspect attendees, and publish a targeted
+update. Add a separate negative journey proving a member cannot perform each
+owner action.
+3. Cover the existing independent-organizer workflow separately; do not make
+club ownership a proxy for independent authorization. Run desktop, 375px,
+keyboard-only, English, and Arabic RTL variants across focused tests rather
+than one oversized mutable scenario.
+
+**Exit gate:** both positive and denial paths use the local fixture, every
+organizer mutation carries existing CSRF/idempotency/revision protections, and
+the test suite is serialized to avoid shared fixture state.
+
+### Slice D — production-mode test reliability
+
+**Outcome:** a clean Windows checkout can produce the production build that
+Playwright's `next start` web server requires.
+
+1. Reproduce the missing `.next/BUILD_ID` condition in a clean worktree and
+record Node, pnpm, Next.js, command, elapsed time, and final process result.
+2. Diagnose the build interruption before changing application code. Check
+webpack-specific build behavior, antivirus/file-lock interference, available
+disk space, and stale `.next` state; do not treat a development-server result
+as production-build evidence.
+3. Add a narrow CI or local preflight assertion that fails clearly when the
+production build artifact is absent, then run the persona suite under the
+production web-server configuration.
+
+**Exit gate:** `next build --webpack` completes from a clean state and the
+visitor, member, club-owner, independent-organizer, and denial suites pass in
+production mode with one Chromium worker.
+
+### Slice E — dependency and launch governance
+
+**Outcome:** launch decisions are based on current security and operational
+evidence, not the historical release-candidate record.
+
+1. Triage the GitHub dependency alerts by reachable package, affected service,
+fixed version, upgrade compatibility, and severity. Patch or formally accept
+each finding with an owner and expiry; do not suppress alerts to make the
+count disappear.
+2. Rerun the repository's documented dependency/security checks and attach the
+exact SHA and results to the release record.
+3. Complete the existing human gates: staging deployment/readiness, backup and
+restore rehearsal, legal approval, product-owner acceptance across all five
+personas, support/MFA setup, and monitored closed-beta decision.
+
+**Exit gate:** no unresolved high-severity reachable dependency finding and no
+open external release gate remain before a launch tag or public claim.
+
+### Delivery order and release decision
+
+1. Slice D first, because it restores production-mode evidence for every
+other slice.
+2. Slice A and Slice B next; they are narrow member/visitor improvements and
+can ship as separate commits once their privacy gates pass.
+3. Slice C follows with fixture support and serial browser journeys; it is the
+evidence needed to validate the already-implemented organizer workspace.
+4. Slice E runs in parallel as a release-management track, but does not block
+implementation commits. It does block launch approval.
+
+The product remains a **release candidate**, not launch-ready, until every
+slice exit gate and the existing external approvals are recorded against the
+same immutable commit SHA.
