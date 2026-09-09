@@ -27,6 +27,7 @@ const publicNavigation: NavigationItem[] = [
   { href: "/", label: "shell.navigation.home" },
   { href: "/#community", label: "shell.navigation.community" },
   { href: "/#about", label: "shell.navigation.about" },
+  { href: "/login", label: "shell.navigation.signIn" },
 ];
 
 const workspaceNavigation = {

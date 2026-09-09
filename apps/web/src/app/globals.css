@@ -29,6 +29,39 @@ html {
   padding-block: 4rem;
 }
 
+.tq-auth-page {
+  margin-inline: auto;
+  max-inline-size: 32rem;
+  padding-block: clamp(2rem, 8vw, 5rem);
+}
+
+.tq-auth-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tq-auth-form label {
+  font-weight: 700;
+}
+
+.tq-auth-form input {
+  background: var(--tq-color-surface, #fff);
+  border: 1px solid var(--tq-color-border, #d7d0c6);
+  border-radius: var(--tq-radius-md, 0.75rem);
+  color: var(--tq-color-text, #1f2937);
+  min-block-size: 2.75rem;
+  padding-inline: 0.875rem;
+}
+
+.tq-auth-form button {
+  min-block-size: 2.75rem;
+}
+
+.tq-auth-error {
+  color: var(--tq-color-danger, #9f1239);
+  min-block-size: 1.5rem;
+}
+
 .tq-dashboard {
   padding-block: var(--tq-space-6);
 }

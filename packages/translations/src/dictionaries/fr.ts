@@ -39,9 +39,13 @@ export const frenchDictionary: Dictionary = {
   "home.preview.body":
     "Une base claire et accessible, adaptée aux langues, aux écrans et aux différents modes de navigation.",
   "auth.login.title": "Heureux de vous revoir",
+  "auth.login.description":
+    "Connectez-vous pour reprendre là où vous en étiez.",
   "auth.login.identifier": "Adresse e-mail ou nom d’utilisateur",
   "auth.login.password": "Mot de passe", // pragma: allowlist secret
   "auth.login.submit": "Se connecter en toute sécurité",
+  "auth.login.processing": "Connexion…",
+  "auth.login.error": "Vérifiez vos informations de connexion et réessayez.",
   "auth.login.forgotPassword": "Mot de passe oublié ?", // pragma: allowlist secret
   "auth.login.noAccount": "Vous découvrez Talaqi ?",
   "auth.login.registerLink": "Ouvrir un compte",
@@ -145,6 +149,7 @@ export const frenchDictionary: Dictionary = {
   "discovery.save": "Sauvegarder l’événement",
   "discovery.unsave": "Retirer des événements sauvegardés",
   "discovery.saved": "Sauvegardé",
+  "discovery.removed": "Retiré des événements sauvegardés",
   "discovery.details": "Afficher les détails",
   "discovery.organizedBy": "Organisé par",
   "discovery.meetingArea": "Zone de rendez-vous",
@@ -528,6 +533,10 @@ export const frenchDictionary: Dictionary = {
     "Votre demande a été reçue, mais l’état actuel n’a pas pu être chargé. Actualisez la page avant de réessayer.",
   "registration.authRequired":
     "Connectez-vous pour vous inscrire à cet événement.",
+  "registration.signInAction": "Se connecter pour s’inscrire",
+  "registration.cancelledNotice": "Votre inscription a été annulée.",
+  "registration.venuePrivacy":
+    "Lieu privé — l’adresse exacte est communiquée après confirmation de votre inscription.",
   "registration.tryAgain": "Veuillez réessayer.",
   "registration.venue": "Lieu confirmé",
   "registration.processing": "Mise à jour de l’inscription…",

@@ -39,9 +39,12 @@ export const turkishDictionary = {
   "home.preview.body":
     "Farklı dillerde, ekranlarda ve gezinme yöntemlerinde çalışan sade ve erişilebilir bir altyapı.",
   "auth.login.title": "Tekrar hoş geldiniz",
+  "auth.login.description": "Kaldığınız yerden devam etmek için giriş yapın.",
   "auth.login.identifier": "E-posta veya kullanıcı adı",
   "auth.login.password": "Parola", // pragma: allowlist secret
   "auth.login.submit": "Güvenli giriş yap",
+  "auth.login.processing": "Giriş yapılıyor…",
+  "auth.login.error": "Giriş bilgilerinizi kontrol edip tekrar deneyin.",
   "auth.login.forgotPassword": "Parolanızı mı unuttunuz?", // pragma: allowlist secret
   "auth.login.noAccount": "Talaqi'de yeni misiniz?",
   "auth.login.registerLink": "Hesap oluşturun",
@@ -144,6 +147,7 @@ export const turkishDictionary = {
   "discovery.save": "Etkinliği kaydet",
   "discovery.unsave": "Kaydedilenlerden kaldır",
   "discovery.saved": "Kaydedildi",
+  "discovery.removed": "Kaydedilen etkinliklerden çıkarıldı",
   "discovery.details": "Ayrıntıları görüntüle",
   "discovery.organizedBy": "Düzenleyen",
   "discovery.meetingArea": "Buluşma alanı",
@@ -519,6 +523,10 @@ export const turkishDictionary = {
   "registration.refreshFailed":
     "İsteğiniz alındı ancak güncel kayıt durumu yüklenemedi. Tekrar denemeden önce sayfayı yenileyin.",
   "registration.authRequired": "Bu etkinliğe kaydolmak için giriş yapın.",
+  "registration.signInAction": "Kaydolmak için giriş yapın",
+  "registration.cancelledNotice": "Kaydınız iptal edildi.",
+  "registration.venuePrivacy":
+    "Özel mekân — kesin adres kaydınız onaylandıktan sonra paylaşılır.",
   "registration.tryAgain": "Lütfen tekrar deneyin.",
   "registration.venue": "Onaylanmış mekan",
   "registration.processing": "Kayıt güncelleniyor…",

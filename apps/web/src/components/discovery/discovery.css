@@ -294,13 +294,38 @@
 
 .tq-registration-status {
   min-block-size: 1.5rem;
-  color: var(--tq-color-danger, #9f1239);
+  margin-block: 0;
 }
 
 .tq-discovery-save-status {
   display: block;
   min-block-size: 1.5rem;
+}
+
+.tq-registration-status[data-state="error"],
+.tq-discovery-save-status[data-state="error"] {
   color: var(--tq-color-danger, #9f1239);
+}
+
+.tq-registration-status[data-state="success"],
+.tq-discovery-save-status[data-state="success"] {
+  color: var(--tq-color-success, #166534);
+}
+
+.tq-registration-feedback {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.tq-registration-sign-in {
+  align-items: center;
+  display: inline-flex;
+  min-block-size: 2.75rem;
+  width: fit-content;
+}
+
+.tq-registration-privacy-note {
+  max-inline-size: 42ch;
 }
 
 @media (max-width: 36rem) {

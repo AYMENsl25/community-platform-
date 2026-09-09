@@ -28,6 +28,7 @@ describe("SaveEventButton", () => {
         screen.getByRole("button", { name: "Remove saved event" }),
       ).toHaveAttribute("aria-pressed", "true"),
     );
+    expect(screen.getByText("Saved")).toBeInTheDocument();
     expect(fetcher).toHaveBeenCalledWith(
       "/api/public/api/v1/events/018f0000-0000-7000-8000-000000000201/saved",
       expect.objectContaining({
@@ -36,6 +37,26 @@ describe("SaveEventButton", () => {
         cache: "no-store",
         headers: { "X-CSRF-Token": "csrf-token" },
       }),
+    );
+  });
+
+  it("announces when an event is removed from saved events", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValue(new Response(null, { status: 204 })),
+    );
+    render(<SaveEventButton eventId="event" initialSaved={true} locale="en" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove saved event" }));
+
+    expect(
+      await screen.findByText("Removed from saved events"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save event" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
     );
   });
 

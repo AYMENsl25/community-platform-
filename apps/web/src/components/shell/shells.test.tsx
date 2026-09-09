@@ -21,6 +21,10 @@ describe("public shell", () => {
     expect(
       screen.getByRole("navigation", { name: "Primary navigation" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(container.querySelectorAll("main")).toHaveLength(1);
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();

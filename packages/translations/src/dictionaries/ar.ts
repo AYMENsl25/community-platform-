@@ -39,9 +39,12 @@ export const arabicDictionary: Dictionary = {
   "home.preview.body":
     "أساس واضح ومتاح يعمل عبر اللغات والشاشات وأساليب التنقل المختلفة.",
   "auth.login.title": "مرحبًا بعودتك",
+  "auth.login.description": "سجّل الدخول للمتابعة من حيث توقفت.",
   "auth.login.identifier": "البريد الإلكتروني أو اسم المستخدم",
   "auth.login.password": "كلمة المرور",
   "auth.login.submit": "تسجيل الدخول بأمان",
+  "auth.login.processing": "جارٍ تسجيل الدخول…",
+  "auth.login.error": "تحقق من معلومات تسجيل الدخول وحاول مرة أخرى.",
   "auth.login.forgotPassword": "هل نسيت كلمة المرور؟",
   "auth.login.noAccount": "جديد في تلاقي؟",
   "auth.login.registerLink": "أنشئ حسابًا",
@@ -141,6 +144,7 @@ export const arabicDictionary: Dictionary = {
   "discovery.save": "حفظ الفعالية",
   "discovery.unsave": "إزالة الفعالية من المحفوظات",
   "discovery.saved": "محفوظة",
+  "discovery.removed": "تمت الإزالة من الفعاليات المحفوظة",
   "discovery.details": "عرض التفاصيل",
   "discovery.organizedBy": "تنظيم",
   "discovery.meetingArea": "منطقة اللقاء",
@@ -537,6 +541,10 @@ export const arabicDictionary: Dictionary = {
   "registration.refreshFailed":
     "تم استلام طلبك، لكن تعذر تحميل حالة التسجيل الحالية. حدّث الصفحة قبل المحاولة مجددًا.",
   "registration.authRequired": "سجّل الدخول للتسجيل في هذه الفعالية.",
+  "registration.signInAction": "سجّل الدخول للتسجيل",
+  "registration.cancelledNotice": "تم إلغاء تسجيلك.",
+  "registration.venuePrivacy":
+    "مكان خاص — تتم مشاركة العنوان الدقيق بعد تأكيد تسجيلك.",
   "registration.tryAgain": "يرجى المحاولة مرة أخرى.",
   "registration.venue": "المكان المؤكد",
   "registration.processing": "جارٍ تحديث التسجيل…",

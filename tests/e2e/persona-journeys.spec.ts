@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 const eventPath = "/events/11111111-1111-4111-8111-111111111111";
+const fixtureMemberPassword = "FixtureMember123!"; // pragma: allowlist secret
 
 async function signInAsFixtureMember(
   context: import("@playwright/test").BrowserContext,
@@ -49,6 +50,20 @@ test.describe("public and member persona journeys", () => {
     await expect(
       page.getByText("Sign in to register for this event."),
     ).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("link", { name: "Sign in to register" }).click();
+    await expect(page).toHaveURL(
+      /\/login\?returnTo=%2Fevents%2F11111111-1111-4111-8111-111111111111&locale=en$/,
+    );
+    await expect(
+      page.getByRole("heading", { name: "Welcome back" }),
+    ).toBeVisible();
+    await page
+      .getByRole("textbox", { name: "Email or username" })
+      .fill("member@example.test");
+    await page.getByLabel("Password").fill(fixtureMemberPassword);
+    await page.getByRole("button", { name: "Sign in securely" }).click();
+    await expect(page).toHaveURL(new RegExp(`${eventPath}$`));
+    await expect(page.getByText("Moda Community Hall, Kadikoy")).toHaveCount(0);
   });
 
   test("member can save, register, view permitted venue information, and cancel", async ({
@@ -74,5 +89,6 @@ test.describe("public and member persona journeys", () => {
     await page.getByRole("button", { name: "Cancel registration" }).click();
     await expect(page.getByRole("button", { name: "Register" })).toBeVisible();
     await expect(page.getByText("Moda Community Hall, Kadikoy")).toHaveCount(0);
+    await expect(page.getByText(/Private venue/i)).toBeVisible();
   });
 });

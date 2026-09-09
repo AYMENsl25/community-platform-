@@ -25,10 +25,12 @@ export function SaveEventButton({
   const [saved, setSaved] = useState(initialSaved);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [notice, setNotice] = useState<"saved" | "removed" | null>(null);
 
   async function toggle() {
     setPending(true);
     setFailed(false);
+    setNotice(null);
     try {
       const csrf = csrfToken();
       const response = await fetch(
@@ -41,6 +43,7 @@ export function SaveEventButton({
         },
       );
       if (!response.ok) throw new Error("save_failed");
+      setNotice(saved ? "removed" : "saved");
       setSaved((value) => !value);
     } catch {
       setFailed(true);
@@ -60,8 +63,19 @@ export function SaveEventButton({
       >
         {translate(locale, saved ? "discovery.unsave" : "discovery.save")}
       </button>
-      <span className="tq-discovery-save-status" aria-live="polite">
-        {failed ? translate(locale, "states.error") : ""}
+      <span
+        className="tq-discovery-save-status"
+        data-state={failed ? "error" : notice ? "success" : undefined}
+        aria-live="polite"
+      >
+        {failed
+          ? translate(locale, "states.error")
+          : notice
+            ? translate(
+                locale,
+                notice === "saved" ? "discovery.saved" : "discovery.removed",
+              )
+            : ""}
       </span>
     </span>
   );

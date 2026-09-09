@@ -37,9 +37,12 @@ export const englishDictionary = {
   "home.preview.body":
     "A clear, accessible foundation that works across languages, screens, and ways of navigating.",
   "auth.login.title": "Welcome back",
+  "auth.login.description": "Sign in to continue where you left off.",
   "auth.login.identifier": "Email or username",
   "auth.login.password": "Password", // pragma: allowlist secret
   "auth.login.submit": "Sign in securely",
+  "auth.login.processing": "Signing in…",
+  "auth.login.error": "Check your sign-in information and try again.",
   "auth.login.forgotPassword": "Forgot your password?", // pragma: allowlist secret
   "auth.login.noAccount": "New to Talaqi?",
   "auth.login.registerLink": "Create an account",
@@ -140,6 +143,7 @@ export const englishDictionary = {
   "discovery.save": "Save event",
   "discovery.unsave": "Remove saved event",
   "discovery.saved": "Saved",
+  "discovery.removed": "Removed from saved events",
   "discovery.details": "View details",
   "discovery.organizedBy": "Organized by",
   "discovery.meetingArea": "Meeting area",
@@ -498,6 +502,10 @@ export const englishDictionary = {
   "registration.refreshFailed":
     "Your request was received, but the latest registration state could not be loaded. Refresh this page before trying again.",
   "registration.authRequired": "Sign in to register for this event.",
+  "registration.signInAction": "Sign in to register",
+  "registration.cancelledNotice": "Your registration was cancelled.",
+  "registration.venuePrivacy":
+    "Private venue — the exact address is shared after your registration is confirmed.",
   "registration.tryAgain": "Please try again.",
   "registration.venue": "Confirmed venue",
   "registration.processing": "Updating registration…",

@@ -53,6 +53,7 @@ export function MemberRegistrationPanel({
   const [event, setEvent] = useState(initialEvent);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<TranslationKey | null>(null);
+  const [notice, setNotice] = useState<TranslationKey | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const deadline = event.registration_cash_expires_at;
 
@@ -65,6 +66,7 @@ export function MemberRegistrationPanel({
   async function mutate(method: "POST" | "DELETE") {
     setPending(true);
     setError(null);
+    setNotice(null);
     const base = `/api/public/api/v1/events/${encodeURIComponent(event.id)}`;
     const mutationPath =
       method === "POST" ? `${base}/registrations` : `${base}/registrations/me`;
@@ -98,6 +100,7 @@ export function MemberRegistrationPanel({
         return;
       }
       setEvent((await refreshed.json()) as EventDetail);
+      if (method === "DELETE") setNotice("registration.cancelledNotice");
     } catch {
       setError("registration.tryAgain");
     } finally {
@@ -174,9 +177,26 @@ export function MemberRegistrationPanel({
                     : "registration.register",
               )}
         </button>
-        <p className="tq-registration-status" aria-live="polite">
-          {error ? translate(locale, error) : ""}
-        </p>
+        <div className="tq-registration-feedback" aria-live="polite">
+          <p
+            className="tq-registration-status"
+            data-state={error ? "error" : notice ? "success" : undefined}
+          >
+            {error
+              ? translate(locale, error)
+              : notice
+                ? translate(locale, notice)
+                : ""}
+          </p>
+          {error === "registration.authRequired" ? (
+            <a
+              className="tq-registration-sign-in"
+              href={`/login?returnTo=${encodeURIComponent(`/events/${event.id}`)}&locale=${locale}`}
+            >
+              {translate(locale, "registration.signInAction")}
+            </a>
+          ) : null}
+        </div>
       </Card>
       <Card aria-label={translate(locale, "discovery.meetingArea")}>
         <h2>
@@ -184,9 +204,14 @@ export function MemberRegistrationPanel({
             ? translate(locale, "registration.venue")
             : translate(locale, "discovery.meetingArea")}
         </h2>
-        <p>
-          {event.exact_address ?? translate(locale, "discovery.privateVenue")}
-        </p>
+        {event.exact_address ? (
+          <p>{event.exact_address}</p>
+        ) : (
+          <p className="tq-registration-privacy-note">
+            <span aria-hidden="true">🔒</span>{" "}
+            {translate(locale, "registration.venuePrivacy")}
+          </p>
+        )}
         <a href={mapHref} rel="noreferrer" target="_blank">
           {translate(locale, "discovery.openMap")}
         </a>

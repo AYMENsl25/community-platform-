@@ -6,6 +6,7 @@ const memberVenue = "Moda Community Hall, Kadikoy";
 const memberRegistrations = new Map();
 const eventUpdateRecipients = new Set();
 let publishedEventUpdates = [];
+let publishedClubAnnouncements = [];
 
 const events = [
   {
@@ -390,6 +391,42 @@ function send(
 createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
   if (url.pathname === "/health") return send(response, 200, { status: "ok" });
+  if (url.pathname === "/api/v1/auth/login" && request.method === "POST") {
+    const payload = await body(request);
+    const fixtureOwnerPassword = "FixtureOwner123!"; // pragma: allowlist secret
+    const fixtureMemberPassword = "FixtureMember123!"; // pragma: allowlist secret
+    const fixtureAccounts = new Map([
+      ["owner@example.test", { password: fixtureOwnerPassword, role: "owner" }],
+      [
+        "member@example.test",
+        { password: fixtureMemberPassword, role: "member" },
+      ],
+    ]);
+    const account = fixtureAccounts.get(payload.identifier);
+    if (!account || account.password !== payload.password)
+      return send(
+        response,
+        401,
+        { error: { code: "invalid_credentials" } },
+        "private, no-store",
+      );
+    response.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Set-Cookie": [
+        `talaqi_access=fixture-${account.role}; Path=/; HttpOnly; SameSite=Lax`,
+        "talaqi_csrf=fixture-csrf; Path=/; SameSite=Lax",
+      ],
+    });
+    response.end(
+      JSON.stringify({
+        authenticated: true,
+        email_verified: true,
+        status: "active",
+      }),
+    );
+    return;
+  }
   if (url.pathname === "/api/v1/auth/logout" && request.method === "POST") {
     if (!hasCsrf(request))
       return send(
@@ -1079,6 +1116,55 @@ createServer(async (request, response) => {
       { error: { code: "upstream_unavailable" } },
       "private, no-store",
     );
+  }
+  const clubAnnouncementsPath = `/api/v1/clubs/${organizerClubId}/announcements`;
+  if (url.pathname === clubAnnouncementsPath && request.method === "GET") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: publishedClubAnnouncements },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === clubAnnouncementsPath && request.method === "POST") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    if (!request.headers["idempotency-key"])
+      return send(
+        response,
+        400,
+        { error: { code: "idempotency_key_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const announcement = {
+      id: "77777777-7777-4777-8777-777777777799",
+      title: payload.title,
+      body: payload.body,
+      audience: payload.audience,
+      published_at: "2026-08-10T12:00:00Z",
+    };
+    publishedClubAnnouncements = [announcement];
+    return send(response, 201, announcement, "private, no-store");
   }
   if (
     url.pathname.startsWith(`/api/v1/clubs/${organizerClubId}`) &&
