@@ -3,6 +3,13 @@
 
 import "./discovery.css";
 
+const demoCovers: Record<string, string> = {
+  "33333333-3333-4333-8333-333333333301": "/demo/events/pottery-workshop.webp",
+  "33333333-3333-4333-8333-333333333302": "/demo/events/balat-photo-walk.webp",
+  "33333333-3333-4333-8333-333333333303": "/demo/events/algiers-sketchbook-cafe.webp",
+  "33333333-3333-4333-8333-333333333304": "/demo/events/bosphorus-yoga.webp",
+};
+
 export function CanonicalCover({
   mediaId,
   alt,
@@ -11,7 +18,7 @@ export function CanonicalCover({
   alt: string;
 }) {
   const source = mediaId
-    ? `/api/media/${encodeURIComponent(mediaId)}`
+    ? demoCovers[mediaId] ?? `/api/media/${encodeURIComponent(mediaId)}`
     : "/demo/community-gathering.png";
   return (
     <img
