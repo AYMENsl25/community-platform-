@@ -12,10 +12,7 @@ export function CanonicalCover({
 }) {
   const source = mediaId
     ? `/api/media/${encodeURIComponent(mediaId)}`
-    : process.env.NODE_ENV === "development"
-      ? "/demo/community-gathering.png"
-      : null;
-  if (!source) return null;
+    : "/demo/community-gathering.png";
   return (
     <img
       className="tq-discovery-cover"

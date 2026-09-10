@@ -187,7 +187,7 @@
   align-items: center;
   display: grid;
   gap: clamp(var(--tq-space-5), 4vw, var(--tq-space-7));
-  grid-template-columns: minmax(0, 1.35fr) minmax(15rem, 0.65fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(19rem, 0.95fr);
   position: relative;
   z-index: 1;
 }
@@ -231,7 +231,35 @@
 
 .tq-home-preview {
   border-block-start: 0.375rem solid var(--tq-color-accent);
+  background: color-mix(in srgb, var(--tq-color-surface) 94%, transparent);
+  box-shadow: 0 1rem 2.5rem rgb(8 35 29 / 18%);
+  inset-block-end: var(--tq-space-4);
+  inset-inline: var(--tq-space-4);
   position: relative;
+  z-index: 1;
+}
+
+.tq-home-visual {
+  align-self: stretch;
+  border-radius: calc(var(--tq-radius-md) * 1.5);
+  min-block-size: 30rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.tq-home-visual::after {
+  background: linear-gradient(180deg, transparent 30%, rgb(8 35 29 / 30%));
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tq-home-visual__image {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: cover;
+  position: absolute;
 }
 
 .tq-home-preview__icon {
@@ -313,6 +341,10 @@
 
   .tq-home-preview {
     max-inline-size: 28rem;
+  }
+
+  .tq-home-visual {
+    min-block-size: 26rem;
   }
 
   .tq-workspace-frame {

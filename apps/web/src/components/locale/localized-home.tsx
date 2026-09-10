@@ -68,13 +68,24 @@ function HomeContent({ landing }: { landing: LandingData }) {
               </ActionLink>
             </div>
           </div>
-          <Card aria-labelledby="region-title" className="tq-home-preview">
-            <h2 id="region-title">{t("home.region.title")}</h2>
-            <p>{t("home.region.body")}</p>
-            {landing.metadata ? (
-              <RegionChooser metadata={landing.metadata} />
-            ) : null}
-          </Card>
+          <div className="tq-home-visual">
+            <img
+              alt=""
+              className="tq-home-visual__image"
+              decoding="async"
+              fetchPriority="high"
+              height={675}
+              src="/demo/community-gathering.png"
+              width={1200}
+            />
+            <Card aria-labelledby="region-title" className="tq-home-preview">
+              <h2 id="region-title">{t("home.region.title")}</h2>
+              <p>{t("home.region.body")}</p>
+              {landing.metadata ? (
+                <RegionChooser metadata={landing.metadata} />
+              ) : null}
+            </Card>
+          </div>
         </Container>
       </section>
 
@@ -178,7 +189,7 @@ function RegionChooser({ metadata }: { metadata: Metadata }) {
           <option value="">{t("regions.chooseCountry")}</option>
           {metadata.countries.map((country) => (
             <option key={country.code} value={country.code}>
-              {catalogLabel(country.name_key, t)}
+              {catalogLabel(country.name_key, t, country.code)}
             </option>
           ))}
         </select>
@@ -189,7 +200,7 @@ function RegionChooser({ metadata }: { metadata: Metadata }) {
           <option value="">{t("regions.chooseCity")}</option>
           {metadata.cities.map((city) => (
             <option key={city.slug} value={city.slug}>
-              {catalogLabel(city.name_key, t)}
+              {catalogLabel(city.name_key, t, city.slug)}
             </option>
           ))}
         </select>

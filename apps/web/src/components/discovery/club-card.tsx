@@ -21,24 +21,28 @@ export function ClubCard({
   const copy = { location: translate(locale, "filters.city"), ...labels };
   return (
     <article className="tq-discovery-card tq-club-card" lang={locale}>
-      <CanonicalCover mediaId={club.cover_media_id} alt="" />
-      <p className="tq-discovery-card__eyebrow">
-        {translate(
-          locale,
-          `categories.${club.category_slug}` as TranslationKey,
-        ) || humanize(club.category_slug)}
-      </p>
-      <h3>
-        <a href={`/clubs/${club.slug}`}>{club.name}</a>
-      </h3>
-      <p className="tq-discovery-card__description">{club.description}</p>
-      <p className="tq-discovery-card__location">
-        <span className="tq-visually-hidden">{copy.location}: </span>
-        {translate(
-          locale,
-          `regions.city.${club.city_slug}` as TranslationKey,
-        )}, {club.country_code.toUpperCase()}
-      </p>
+      <div className="tq-discovery-card__media">
+        <CanonicalCover mediaId={club.cover_media_id} alt="" />
+      </div>
+      <div className="tq-discovery-card__body">
+        <p className="tq-discovery-card__eyebrow">
+          {translate(
+            locale,
+            `categories.${club.category_slug}` as TranslationKey,
+          ) || humanize(club.category_slug)}
+        </p>
+        <h3>
+          <a href={`/clubs/${club.slug}`}>{club.name}</a>
+        </h3>
+        <p className="tq-discovery-card__description">{club.description}</p>
+        <p className="tq-discovery-card__location">
+          <span className="tq-visually-hidden">{copy.location}: </span>
+          {translate(
+            locale,
+            `regions.city.${club.city_slug}` as TranslationKey,
+          )}, {club.country_code.toUpperCase()}
+        </p>
+      </div>
     </article>
   );
 }
