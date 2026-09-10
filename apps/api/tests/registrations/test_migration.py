@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from talaqi.db.identifiers import generate_uuid7
@@ -82,6 +83,8 @@ async def test_registration_state_machine_schema_is_strict(
 @pytest.mark.asyncio
 async def test_registration_migration_round_trip(registration_engine: AsyncEngine) -> None:
     config = Config(str(ROOT / "alembic.ini"))
+    expected_head = ScriptDirectory.from_config(config).get_current_head()
+    assert expected_head is not None
     try:
         await asyncio.to_thread(command.downgrade, config, "0008_event_publishing")
         async with registration_engine.connect() as connection:
@@ -201,7 +204,7 @@ async def test_registration_migration_round_trip(registration_engine: AsyncEngin
             .mappings()
             .one()
         )
-    assert row["version_num"] == "0012_communications"
+    assert row["version_num"] == expected_head
     assert row["id"] == transition_id
     assert row["command_id"] is not None
     assert row["command_hash"] == bytes(32)

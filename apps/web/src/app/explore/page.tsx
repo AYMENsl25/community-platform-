@@ -3,6 +3,7 @@ import { translate, type LocaleCode } from "@talaqi/translations";
 import { Container } from "@talaqi/ui";
 import { EventCard } from "@/components/discovery/event-card";
 import { FilterDrawer } from "@/components/discovery/filter-drawer";
+import { QuickFilters } from "@/components/discovery/quick-filters";
 import {
   DiscoveryEmpty,
   DiscoveryError,
@@ -72,39 +73,56 @@ export default async function ExplorePage({
   return (
     <PublicShell currentHref="/explore" locale={locale}>
       <Container>
-        <h1>{translate(locale, "discovery.title")}</h1>
+        <header className="tq-explore-heading">
+          <p className="tq-home-eyebrow">
+            {translate(locale, "discovery.event")}
+          </p>
+          <h1>{translate(locale, "discovery.title")}</h1>
+        </header>
         {metadata.ok ? (
-          <FilterDrawer
-            filters={{
-              category: query.category ?? undefined,
-              city: query.city ?? undefined,
-              country: query.country ?? undefined,
-              date_from: query.date_from ?? undefined,
-              date_to: query.date_to ?? undefined,
-              price: query.price ?? undefined,
-              search: query.search ?? undefined,
-            }}
-            labels={{
-              apply: translate(locale, "filters.apply"),
-              category: translate(locale, "filters.category"),
-              city: translate(locale, "filters.city"),
-              close: translate(locale, "filters.close"),
-              country: translate(locale, "filters.country"),
-              filters: translate(locale, "filters.title"),
-              open: translate(locale, "filters.open"),
-              price: translate(locale, "filters.price"),
-              search: translate(locale, "filters.search"),
-            }}
-            metadata={metadata.data}
-            locale={locale}
-          />
+          <>
+            <QuickFilters
+              locale={locale}
+              metadata={metadata.data}
+              values={Object.fromEntries(
+                keys.map((key) => [key, query[key]?.toString()]),
+              )}
+            />
+            <FilterDrawer
+              filters={{
+                category: query.category ?? undefined,
+                city: query.city ?? undefined,
+                country: query.country ?? undefined,
+                date_from: query.date_from ?? undefined,
+                date_to: query.date_to ?? undefined,
+                price: query.price ?? undefined,
+                search: query.search ?? undefined,
+              }}
+              labels={{
+                apply: translate(locale, "filters.apply"),
+                category: translate(locale, "filters.category"),
+                city: translate(locale, "filters.city"),
+                close: translate(locale, "filters.close"),
+                country: translate(locale, "filters.country"),
+                filters: translate(locale, "filters.title"),
+                open: translate(locale, "filters.open"),
+                price: translate(locale, "filters.price"),
+                search: translate(locale, "filters.search"),
+              }}
+              metadata={metadata.data}
+              locale={locale}
+            />
+          </>
         ) : null}
         {!events.ok ? (
           <DiscoveryError labels={labels} locale={locale} />
         ) : events.data.items.length === 0 ? (
           <DiscoveryEmpty labels={labels} locale={locale} />
         ) : (
-          <section aria-label={translate(locale, "a11y.searchResults")}>
+          <section
+            aria-label={translate(locale, "a11y.searchResults")}
+            className="tq-discovery-grid"
+          >
             {events.data.items.map((event) => (
               <EventCard event={event} key={event.id} locale={locale} />
             ))}

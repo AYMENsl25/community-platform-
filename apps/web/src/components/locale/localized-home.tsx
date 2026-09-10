@@ -82,25 +82,6 @@ function HomeContent({ landing }: { landing: LandingData }) {
         {landing.unavailable ? (
           <DiscoveryError labels={stateLabels} locale={locale} />
         ) : null}
-        {landing.metadata ? (
-          <section aria-labelledby="categories-title">
-            <h2 id="categories-title">{t("home.categories")}</h2>
-            <nav
-              aria-label={t("home.categories")}
-              className="tq-category-links"
-            >
-              {landing.metadata.categories.map((category) => (
-                <a
-                  href={`/explore?category=${encodeURIComponent(category.slug ?? "")}`}
-                  key={category.slug}
-                >
-                  {catalogLabel(category.name_key, t)}
-                </a>
-              ))}
-            </nav>
-          </section>
-        ) : null}
-
         <section aria-labelledby="featured-title">
           <h2 id="featured-title">{t("discovery.featured")}</h2>
           <p>{t("discovery.featuredExplanation")}</p>
@@ -112,7 +93,6 @@ function HomeContent({ landing }: { landing: LandingData }) {
                   key={event.id}
                   labels={eventLabels}
                   locale={locale}
-                  showFeaturedReason
                 />
               ))}
             </div>
@@ -120,6 +100,40 @@ function HomeContent({ landing }: { landing: LandingData }) {
             <DiscoveryEmpty labels={stateLabels} locale={locale} />
           )}
         </section>
+
+        {landing.metadata ? (
+          <section aria-labelledby="categories-title">
+            <div className="tq-landing-section-heading">
+              <div>
+                <h2 id="categories-title">{t("home.categories")}</h2>
+              </div>
+              <ActionLink href="/explore" variant="secondary">
+                {t("shell.navigation.explore")}
+              </ActionLink>
+            </div>
+            <nav
+              aria-label={t("home.categories")}
+              className="tq-category-links"
+            >
+              {landing.metadata.categories.map((category) => (
+                <a
+                  href={`/explore?category=${encodeURIComponent(category.slug ?? "")}`}
+                  key={category.slug}
+                >
+                  <span aria-hidden="true" className="tq-category-links__icon">
+                    {categoryGlyph(category.slug ?? "")}
+                  </span>
+                  <span>
+                    {catalogLabel(category.name_key, t, category.slug)}
+                  </span>
+                  <span aria-hidden="true" className="tq-category-links__arrow">
+                    →
+                  </span>
+                </a>
+              ))}
+            </nav>
+          </section>
+        ) : null}
 
         <section aria-labelledby="clubs-title">
           <h2 id="clubs-title">{t("home.popularClubs")}</h2>
@@ -190,9 +204,31 @@ function RegionChooser({ metadata }: { metadata: Metadata }) {
 function catalogLabel(
   key: string | undefined,
   t: (key: TranslationKey) => string,
+  fallback?: string,
 ): string {
-  if (!key) return t("filters.category");
-  return t(key as TranslationKey) || t("filters.category");
+  if (key) {
+    const label = t(key as TranslationKey);
+    if (label && label !== t("filters.category")) return label;
+  }
+  return fallback ? humanize(fallback) : t("filters.category");
+}
+
+function categoryGlyph(slug: string): string {
+  const glyphs: Record<string, string> = {
+    "arts-culture": "✦",
+    games: "◆",
+    "language-exchange": "◌",
+    outdoors: "⌁",
+    sports: "◒",
+    technology: "⌘",
+  };
+  return glyphs[slug] ?? "✦";
+}
+
+function humanize(value: string): string {
+  return value
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function LocalizedHome({

@@ -1,0 +1,15 @@
+{
+  "title": "Talaqi closed beta operations",
+  "version": 1,
+  "panels": [
+    { "title": "API requests and errors", "metrics": ["http_requests_total", "http_5xx_ratio"] },
+    { "title": "API latency", "metrics": ["http_request_duration_ms"] },
+    { "title": "Database and storage", "metrics": ["db_pool_saturation_ratio", "object_storage_capacity_ratio"] },
+    { "title": "Outbox and email", "metrics": ["outbox_oldest_pending_seconds", "outbox_failures_total", "email_failures_total"] },
+    { "title": "Registration lifecycle", "metrics": ["registration_transitions_total", "registration_expiry_total", "waitlist_promotions_total"] },
+    { "title": "Moderation SLA", "metrics": ["moderation_sla_breaches_total"] },
+    { "title": "Product funnel", "metrics": ["business_funnel_total"] },
+    { "title": "Invariant violations", "metrics": ["invariant_violations_total"] }
+  ],
+  "privacy": { "high_cardinality_labels": false, "personal_data": false }
+}

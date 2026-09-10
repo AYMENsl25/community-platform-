@@ -23,6 +23,7 @@ from talaqi.identity.models import AuthPrincipal
 from talaqi.platform import ApiError
 from talaqi.profiles.schemas import Capabilities
 from talaqi.regions.models import RegionPolicy
+from talaqi.settings.service import PlatformSettingsService
 
 _CREATE_BLOCKERS = (
     "account_unavailable",
@@ -124,6 +125,7 @@ class EventService:
         clubs: ClubEventAccess,
         media: EventMedia,
         audit: AuditService,
+        feature_flags: PlatformSettingsService | None = None,
     ) -> None:
         self._repository = repository
         self._eligibility = eligibility
@@ -131,6 +133,7 @@ class EventService:
         self._clubs = clubs
         self._media = media
         self._audit = audit
+        self._feature_flags = feature_flags
 
     async def list_managed(self, principal: AuthPrincipal) -> list[Event]:
         return await self._repository.list_managed(principal.user_id)
@@ -440,6 +443,10 @@ class EventService:
         if principal.status != "active":
             raise _forbidden()
         if event.ownership_type == "independent":
+            if self._feature_flags is not None:
+                await self._feature_flags.require_enabled(
+                    "features.independent_event_creation_enabled"
+                )
             if not capabilities.create_independent_event:
                 blocker = next(
                     (item for item in _CREATE_BLOCKERS if item in capabilities.blockers),

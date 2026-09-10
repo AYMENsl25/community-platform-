@@ -37,9 +37,12 @@ export const englishDictionary = {
   "home.preview.body":
     "A clear, accessible foundation that works across languages, screens, and ways of navigating.",
   "auth.login.title": "Welcome back",
+  "auth.login.description": "Sign in to continue where you left off.",
   "auth.login.identifier": "Email or username",
   "auth.login.password": "Password", // pragma: allowlist secret
   "auth.login.submit": "Sign in securely",
+  "auth.login.processing": "Signing in…",
+  "auth.login.error": "Check your sign-in information and try again.",
   "auth.login.forgotPassword": "Forgot your password?", // pragma: allowlist secret
   "auth.login.noAccount": "New to Talaqi?",
   "auth.login.registerLink": "Create an account",
@@ -105,6 +108,8 @@ export const englishDictionary = {
   "blockers.club_limit_reached": "Your club ownership limit is reached.",
   "blockers.independent_event_limit_reached":
     "Your independent event limit is reached.",
+  "blockers.independent_event_creation_disabled":
+    "Independent event creation is temporarily unavailable.",
   "blockers.admin_mfa_required":
     "Multi-factor authentication is required for administration.",
   "regions.country.tr": "Turkey",
@@ -138,6 +143,7 @@ export const englishDictionary = {
   "discovery.save": "Save event",
   "discovery.unsave": "Remove saved event",
   "discovery.saved": "Saved",
+  "discovery.removed": "Removed from saved events",
   "discovery.details": "View details",
   "discovery.organizedBy": "Organized by",
   "discovery.meetingArea": "Meeting area",
@@ -303,6 +309,8 @@ export const englishDictionary = {
   "admin.action.suspend": "Suspend target",
   "admin.action.unpublish": "Unpublish club",
   "admin.action.restore": "Restore target",
+  "admin.action.acknowledge": "Acknowledge and assign to me",
+  "admin.action.dismiss": "Dismiss report",
   "admin.action.completed": "The moderation action was completed.",
   "admin.audit.history": "Action history",
   "admin.audit.title": "Admin audit",
@@ -310,9 +318,29 @@ export const englishDictionary = {
     "Review immutable evidence for protected platform actions.",
   "admin.audit.requestId": "Request ID",
   "admin.audit.empty": "There are no audit events.",
+  "shell.navigation.operations": "Operations",
+  "admin.operations.title": "Platform operations",
+  "admin.operations.lead":
+    "Preview and apply protected beta controls with an immutable audit trail.",
+  "admin.operations.reason": "Operational reason",
+  "admin.operations.flags": "Feature flags",
+  "admin.operations.enabled": "Enabled",
+  "admin.operations.disabled": "Disabled",
+  "admin.operations.preview": "Preview change",
+  "admin.operations.apply": "Apply change",
+  "admin.operations.previewReady": "Preview ready. Review it before applying.",
+  "admin.operations.updated": "The protected setting was updated.",
+  "admin.operations.region": "Regional policy",
+  "admin.operations.clubLimit": "Club ownership limit",
+  "admin.operations.outbox": "Dead-letter queue",
+  "admin.operations.attempts": "Attempts",
+  "admin.operations.retry": "Retry delivery",
+  "admin.operations.retried": "The stored event was queued for retry.",
   "admin.dialog.suspend": "Confirm suspension",
   "admin.dialog.unpublish": "Confirm unpublishing",
   "admin.dialog.restore": "Confirm restoration",
+  "admin.dialog.acknowledge": "Confirm acknowledgement",
+  "admin.dialog.dismiss": "Confirm dismissal",
   "admin.dialog.warning":
     "This action changes platform access immediately and is recorded in the immutable audit log.",
   "admin.dialog.reason": "Action reason",
@@ -355,6 +383,7 @@ export const englishDictionary = {
   "errors.unauthorized": "Authentication is required.",
   "errors.username_unavailable": "Choose a different username.",
   "errors.validation": "Check the highlighted fields.",
+  "errors.feature_disabled": "This feature is temporarily unavailable.",
   "errors.validation.invalid": "This value is invalid.",
   "errors.validation.missing": "This field is required.",
   "errors.validation.extra_forbidden": "Remove the unexpected field.",
@@ -473,6 +502,10 @@ export const englishDictionary = {
   "registration.refreshFailed":
     "Your request was received, but the latest registration state could not be loaded. Refresh this page before trying again.",
   "registration.authRequired": "Sign in to register for this event.",
+  "registration.signInAction": "Sign in to register",
+  "registration.cancelledNotice": "Your registration was cancelled.",
+  "registration.venuePrivacy":
+    "Private venue — the exact address is shared after your registration is confirmed.",
   "registration.tryAgain": "Please try again.",
   "registration.venue": "Confirmed venue",
   "registration.processing": "Updating registration…",

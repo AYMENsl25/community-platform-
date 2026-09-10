@@ -39,9 +39,13 @@ export const frenchDictionary: Dictionary = {
   "home.preview.body":
     "Une base claire et accessible, adaptée aux langues, aux écrans et aux différents modes de navigation.",
   "auth.login.title": "Heureux de vous revoir",
+  "auth.login.description":
+    "Connectez-vous pour reprendre là où vous en étiez.",
   "auth.login.identifier": "Adresse e-mail ou nom d’utilisateur",
   "auth.login.password": "Mot de passe", // pragma: allowlist secret
   "auth.login.submit": "Se connecter en toute sécurité",
+  "auth.login.processing": "Connexion…",
+  "auth.login.error": "Vérifiez vos informations de connexion et réessayez.",
   "auth.login.forgotPassword": "Mot de passe oublié ?", // pragma: allowlist secret
   "auth.login.noAccount": "Vous découvrez Talaqi ?",
   "auth.login.registerLink": "Ouvrir un compte",
@@ -110,6 +114,8 @@ export const frenchDictionary: Dictionary = {
     "Vous avez atteint le nombre maximal de clubs que vous pouvez gérer.",
   "blockers.independent_event_limit_reached":
     "Vous avez atteint la limite d’événements indépendants.",
+  "blockers.independent_event_creation_disabled":
+    "La création d’événements indépendants est temporairement indisponible.",
   "blockers.admin_mfa_required":
     "L’authentification multifacteur est obligatoire pour administrer la plateforme.",
   "regions.country.tr": "Turquie",
@@ -143,6 +149,7 @@ export const frenchDictionary: Dictionary = {
   "discovery.save": "Sauvegarder l’événement",
   "discovery.unsave": "Retirer des événements sauvegardés",
   "discovery.saved": "Sauvegardé",
+  "discovery.removed": "Retiré des événements sauvegardés",
   "discovery.details": "Afficher les détails",
   "discovery.organizedBy": "Organisé par",
   "discovery.meetingArea": "Zone de rendez-vous",
@@ -313,15 +320,38 @@ export const frenchDictionary: Dictionary = {
   "admin.action.suspend": "Suspendre la cible",
   "admin.action.unpublish": "Dépublier le club",
   "admin.action.restore": "Restaurer la cible",
+  "admin.action.acknowledge": "Accuser réception et me l’attribuer",
+  "admin.action.dismiss": "Rejeter le signalement",
   "admin.action.completed": "L’action de modération est terminée.",
   "admin.audit.history": "Historique des actions",
   "admin.audit.title": "Audit administrateur",
   "admin.audit.lead": "Consultez les preuves immuables des actions protégées.",
   "admin.audit.requestId": "Identifiant de requête",
   "admin.audit.empty": "Aucun événement d’audit.",
+  "shell.navigation.operations": "Opérations",
+  "admin.operations.title": "Opérations de la plateforme",
+  "admin.operations.lead":
+    "Prévisualisez et appliquez les contrôles bêta protégés avec une piste d’audit immuable.",
+  "admin.operations.reason": "Motif opérationnel",
+  "admin.operations.flags": "Fonctionnalités",
+  "admin.operations.enabled": "Activée",
+  "admin.operations.disabled": "Désactivée",
+  "admin.operations.preview": "Prévisualiser",
+  "admin.operations.apply": "Appliquer",
+  "admin.operations.previewReady":
+    "L’aperçu est prêt. Vérifiez-le avant d’appliquer.",
+  "admin.operations.updated": "Le paramètre protégé a été mis à jour.",
+  "admin.operations.region": "Politique régionale",
+  "admin.operations.clubLimit": "Limite de propriété des clubs",
+  "admin.operations.outbox": "File des échecs définitifs",
+  "admin.operations.attempts": "Tentatives",
+  "admin.operations.retry": "Relancer la livraison",
+  "admin.operations.retried": "L’événement stocké a été remis en attente.",
   "admin.dialog.suspend": "Confirmer la suspension",
   "admin.dialog.unpublish": "Confirmer la dépublication",
   "admin.dialog.restore": "Confirmer la restauration",
+  "admin.dialog.acknowledge": "Confirmer la prise en charge",
+  "admin.dialog.dismiss": "Confirmer le rejet",
   "admin.dialog.warning":
     "Cette action modifie immédiatement l’accès et est inscrite dans le journal d’audit immuable.",
   "admin.dialog.reason": "Motif de l’action",
@@ -374,6 +404,8 @@ export const frenchDictionary: Dictionary = {
   "errors.unauthorized": "Vous devez vous authentifier.",
   "errors.username_unavailable": "Choisissez un autre nom d’utilisateur.",
   "errors.validation": "Vérifiez les champs mis en évidence.",
+  "errors.feature_disabled":
+    "Cette fonctionnalité est temporairement indisponible.",
   "errors.validation.invalid": "Cette valeur n’est pas valide.",
   "errors.validation.missing": "Ce champ est obligatoire.",
   "errors.validation.extra_forbidden": "Supprimez le champ inattendu.",
@@ -501,6 +533,10 @@ export const frenchDictionary: Dictionary = {
     "Votre demande a été reçue, mais l’état actuel n’a pas pu être chargé. Actualisez la page avant de réessayer.",
   "registration.authRequired":
     "Connectez-vous pour vous inscrire à cet événement.",
+  "registration.signInAction": "Se connecter pour s’inscrire",
+  "registration.cancelledNotice": "Votre inscription a été annulée.",
+  "registration.venuePrivacy":
+    "Lieu privé — l’adresse exacte est communiquée après confirmation de votre inscription.",
   "registration.tryAgain": "Veuillez réessayer.",
   "registration.venue": "Lieu confirmé",
   "registration.processing": "Mise à jour de l’inscription…",

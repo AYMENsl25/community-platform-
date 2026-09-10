@@ -7,10 +7,12 @@ from typing import Protocol, cast
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from talaqi.db.identifiers import generate_uuid7
 from talaqi.moderation.models import (
+    CaseWorkflowAction,
     ModerationAction,
     ModerationCase,
     ModerationCaseEvent,
@@ -60,6 +62,19 @@ def _target(row: Mapping[str, object], target_type: TargetType) -> ModerationTar
 class ModerationRepositoryProtocol(Protocol):
     async def has_active_mfa(self, user_id: UUID) -> bool: ...
 
+    async def create_report(
+        self,
+        *,
+        reporter_user_id: UUID,
+        target_type: TargetType,
+        target_id: UUID,
+        category: str,
+        description: str,
+        priority: str,
+        source_path: str | None,
+        now: datetime,
+    ) -> ModerationCase: ...
+
     async def list_cases(
         self,
         *,
@@ -107,6 +122,16 @@ class ModerationRepositoryProtocol(Protocol):
         now: datetime,
     ) -> ModerationCase: ...
 
+    async def record_case_workflow(
+        self,
+        case: ModerationCase,
+        *,
+        actor_user_id: UUID,
+        action: CaseWorkflowAction,
+        reason: str,
+        now: datetime,
+    ) -> ModerationCase: ...
+
 
 class ModerationRepository:
     def __init__(self, session: AsyncSession) -> None:
@@ -130,6 +155,75 @@ class ModerationRepository:
                 )
             ).scalar_one()
         )
+
+    async def create_report(
+        self,
+        *,
+        reporter_user_id: UUID,
+        target_type: TargetType,
+        target_id: UUID,
+        category: str,
+        description: str,
+        priority: str,
+        source_path: str | None,
+        now: datetime,
+    ) -> ModerationCase:
+        case_id = generate_uuid7()
+        target_column = {
+            "user": "target_user_id",
+            "club": "target_club_id",
+            "event": "target_event_id",
+        }[target_type]
+        await self._session.execute(
+            text(
+                f"""
+                INSERT INTO talaqi.moderation_cases (
+                    id, reporter_user_id, target_type, {target_column}, category,
+                    description, priority, created_at
+                ) VALUES (
+                    :id, :reporter_user_id,
+                    CAST(:target_type AS talaqi.moderation_target_type),
+                    :target_id, :category, :description,
+                    CAST(:priority AS talaqi.moderation_priority), :now
+                )
+                """  # noqa: S608 -- target column comes from a fixed enum map
+            ),
+            {
+                "id": case_id,
+                "reporter_user_id": reporter_user_id,
+                "target_type": target_type,
+                "target_id": target_id,
+                "category": category,
+                "description": description,
+                "priority": priority,
+                "now": now,
+            },
+        )
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.moderation_case_events (
+                    id, moderation_case_id, actor_user_id, from_status,
+                    to_status, reason, safe_metadata, created_at
+                ) VALUES (
+                    :id, :case_id, NULL, NULL, 'open',
+                    'Report submitted', CAST(:safe_metadata AS jsonb), :now
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "case_id": case_id,
+                "safe_metadata": json.dumps(
+                    {"source_path": source_path} if source_path is not None else {}
+                ),
+                "now": now,
+            },
+        )
+        case = await self.get_case(case_id)
+        if case is None:
+            raise RuntimeError("moderation report disappeared during creation")
+        return case
 
     async def list_cases(
         self,
@@ -207,6 +301,7 @@ class ModerationRepository:
                     text(
                         """
                         SELECT id, moderation_case_id, actor_user_id, action::text AS action,
+                               safe_metadata ->> 'workflow_action' AS workflow_action,
                                from_status::text AS from_status, to_status::text AS to_status,
                                reason, created_at
                         FROM talaqi.moderation_case_events
@@ -226,6 +321,7 @@ class ModerationRepository:
                 moderation_case_id=cast(UUID, row["moderation_case_id"]),
                 actor_user_id=cast(UUID | None, row["actor_user_id"]),
                 action=cast(str | None, row["action"]),
+                workflow_action=cast(CaseWorkflowAction | None, row["workflow_action"]),
                 from_status=cast(str | None, row["from_status"]),
                 to_status=cast(str, row["to_status"]),
                 reason=cast(str, row["reason"]),
@@ -429,7 +525,7 @@ class ModerationRepository:
         target_status: str,
         now: datetime,
     ) -> ModerationCase:
-        await self._session.execute(
+        result = await self._session.execute(
             text(
                 """
                 INSERT INTO talaqi.moderation_case_events (
@@ -458,7 +554,7 @@ class ModerationRepository:
                 ),
             },
         )
-        await self._session.execute(
+        result = await self._session.execute(
             text(
                 """
                 UPDATE talaqi.moderation_cases
@@ -467,6 +563,7 @@ class ModerationRepository:
                     acknowledged_at = coalesce(acknowledged_at, :now),
                     resolved_at = :now
                 WHERE id = :case_id
+                  AND status = CAST(:from_status AS talaqi.moderation_case_status)
                 """
             ),
             {
@@ -474,8 +571,11 @@ class ModerationRepository:
                 "actor_user_id": actor_user_id,
                 "reason": reason,
                 "now": now,
+                "from_status": case.status,
             },
         )
+        if cast(CursorResult[object], result).rowcount != 1:
+            raise RuntimeError("moderation action state changed concurrently")
         updated = await self.get_case(case.id)
         if updated is None:
             raise RuntimeError("moderation case disappeared during action")
@@ -491,6 +591,72 @@ class ModerationRepository:
                 deduplication_key=f"moderation:{case.id}:action:{action}",
                 available_at=now,
             )
+        return updated
+
+    async def record_case_workflow(
+        self,
+        case: ModerationCase,
+        *,
+        actor_user_id: UUID,
+        action: CaseWorkflowAction,
+        reason: str,
+        now: datetime,
+    ) -> ModerationCase:
+        to_status = "investigating" if action == "acknowledge" else "dismissed"
+        await self._session.execute(
+            text(
+                """
+                INSERT INTO talaqi.moderation_case_events (
+                    id, moderation_case_id, actor_user_id, action,
+                    from_status, to_status, reason, safe_metadata, created_at
+                ) VALUES (
+                    :id, :case_id, :actor_user_id, NULL,
+                    CAST(:from_status AS talaqi.moderation_case_status),
+                    CAST(:to_status AS talaqi.moderation_case_status),
+                    :reason, CAST(:safe_metadata AS jsonb), :now
+                )
+                """
+            ),
+            {
+                "id": generate_uuid7(),
+                "case_id": case.id,
+                "actor_user_id": actor_user_id,
+                "from_status": case.status,
+                "to_status": to_status,
+                "reason": reason,
+                "safe_metadata": json.dumps({"workflow_action": action}),
+                "now": now,
+            },
+        )
+        result = await self._session.execute(
+            text(
+                """
+                UPDATE talaqi.moderation_cases
+                SET status = CAST(:to_status AS talaqi.moderation_case_status),
+                    assigned_admin_user_id = :actor_user_id,
+                    acknowledged_at = coalesce(acknowledged_at, :now),
+                    resolution_reason = CASE
+                        WHEN :to_status = 'dismissed' THEN :reason ELSE NULL
+                    END,
+                    resolved_at = CASE WHEN :to_status = 'dismissed' THEN :now ELSE NULL END
+                WHERE id = :case_id
+                  AND status = CAST(:from_status AS talaqi.moderation_case_status)
+                """
+            ),
+            {
+                "case_id": case.id,
+                "actor_user_id": actor_user_id,
+                "to_status": to_status,
+                "from_status": case.status,
+                "reason": reason,
+                "now": now,
+            },
+        )
+        if cast(CursorResult[object], result).rowcount != 1:
+            raise RuntimeError("moderation workflow state changed concurrently")
+        updated = await self.get_case(case.id)
+        if updated is None:
+            raise RuntimeError("moderation case disappeared during workflow transition")
         return updated
 
 

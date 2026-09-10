@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import cast
+from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +22,13 @@ class RegionRepository:
         self._session = session
 
     async def get_policy(self, country_code: str) -> RegionPolicy:
+        return await self._get_policy(country_code, for_update=False)
+
+    async def lock_policy(self, country_code: str) -> RegionPolicy:
+        return await self._get_policy(country_code, for_update=True)
+
+    async def _get_policy(self, country_code: str, *, for_update: bool) -> RegionPolicy:
+        locking = " FOR UPDATE OF p" if for_update else ""
         row = (
             (
                 await self._session.execute(
@@ -40,6 +48,7 @@ class RegionRepository:
                     JOIN talaqi.regional_policies AS p ON p.country_id = c.id
                     WHERE c.code = :country_code AND c.enabled = true
                     """
+                        + locking
                     ),
                     {"country_code": country_code.strip().upper()},
                 )
@@ -65,6 +74,81 @@ class RegionRepository:
                 row["cancellation_min_minutes"],
                 row["cancellation_max_minutes"],
             ),
+            club_limit=row["default_club_ownership_limit"],
+            independent_event_limit=row["default_active_independent_event_limit"],
+            exact_venue_public_by_default=row["exact_venue_public_by_default"],
+            revision=row["revision"],
+        )
+
+    async def has_active_mfa(self, user_id: UUID) -> bool:
+        return bool(
+            await self._session.scalar(
+                text(
+                    """SELECT EXISTS (
+                        SELECT 1 FROM talaqi.user_mfa_factors
+                        WHERE user_id = :user_id AND verified_at IS NOT NULL AND disabled_at IS NULL
+                    )"""
+                ),
+                {"user_id": user_id},
+            )
+        )
+
+    async def update_safe_policy_controls(
+        self,
+        country_code: str,
+        *,
+        expected_revision: int,
+        club_limit: int,
+        independent_event_limit: int,
+        exact_venue_public_by_default: bool,
+    ) -> RegionPolicy | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        """
+                        UPDATE talaqi.regional_policies AS p
+                        SET default_club_ownership_limit = :club_limit,
+                            default_active_independent_event_limit = :event_limit,
+                            exact_venue_public_by_default = :venue_default,
+                            revision = revision + 1
+                        FROM talaqi.countries AS c
+                        WHERE p.country_id = c.id AND c.code = :country_code
+                          AND c.enabled = true AND p.revision = :expected_revision
+                        RETURNING c.code, c.default_locale, c.default_currency,
+                                  p.allowed_registration_methods,
+                                  p.cash_expiry_default_minutes,
+                                  p.cash_expiry_min_minutes, p.cash_expiry_max_minutes,
+                                  p.cancellation_default_minutes,
+                                  p.cancellation_min_minutes, p.cancellation_max_minutes,
+                                  p.default_club_ownership_limit,
+                                  p.default_active_independent_event_limit,
+                                  p.exact_venue_public_by_default, p.revision
+                        """
+                    ),
+                    {
+                        "country_code": country_code.strip().upper(),
+                        "expected_revision": expected_revision,
+                        "club_limit": club_limit,
+                        "event_limit": independent_event_limit,
+                        "venue_default": exact_venue_public_by_default,
+                    },
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        return RegionPolicy(
+            country_code=row["code"],
+            default_locale=cast(Locale, row["default_locale"]),
+            default_currency=row["default_currency"],
+            allowed_registration_methods=tuple(row["allowed_registration_methods"]),
+            cash_default_minutes=row["cash_expiry_default_minutes"],
+            cash_bounds=(row["cash_expiry_min_minutes"], row["cash_expiry_max_minutes"]),
+            cancellation_default_minutes=row["cancellation_default_minutes"],
+            cancellation_bounds=(row["cancellation_min_minutes"], row["cancellation_max_minutes"]),
             club_limit=row["default_club_ownership_limit"],
             independent_event_limit=row["default_active_independent_event_limit"],
             exact_venue_public_by_default=row["exact_venue_public_by_default"],

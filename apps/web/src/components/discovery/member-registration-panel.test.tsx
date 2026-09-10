@@ -61,6 +61,7 @@ describe("MemberRegistrationPanel", () => {
       "018f0000-0000-7000-8000-000000000999",
     );
     render(<MemberRegistrationPanel initialEvent={event} locale="en" />);
+    expect(screen.getByText(/Private venue/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Register" }));
     await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
     expect(
@@ -150,5 +151,44 @@ describe("MemberRegistrationPanel", () => {
     expect(
       await screen.findByText("سجّل الدخول للتسجيل في هذه الفعالية."),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "سجّل الدخول للتسجيل" }),
+    ).toHaveAttribute(
+      "href",
+      "/login?returnTo=%2Fevents%2F018f0000-0000-7000-8000-000000000201&locale=ar",
+    );
+  });
+
+  it("announces cancellation after the refreshed state hides the venue", async () => {
+    const registered = {
+      ...event,
+      exact_address: "Confirmed venue address",
+      registration_id: "018f0000-0000-7000-8000-000000000301",
+      registration_method: "free" as const,
+      registration_state: "confirmed",
+      registration_confirmed_at: "2035-04-01T08:00:00Z",
+    } satisfies EventDetail;
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+        .mockResolvedValueOnce(Response.json(event)),
+    );
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(
+      "018f0000-0000-7000-8000-000000000998",
+    );
+    render(<MemberRegistrationPanel initialEvent={registered} locale="en" />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel registration" }),
+    );
+
+    expect(
+      await screen.findByText("Your registration was cancelled."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Confirmed venue address"),
+    ).not.toBeInTheDocument();
   });
 });

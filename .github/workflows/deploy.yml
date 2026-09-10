@@ -1,0 +1,68 @@
+name: Guarded deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Protected GitHub environment
+        required: true
+        type: choice
+        options: [staging, production]
+      release_sha:
+        description: Exact reviewed commit SHA
+        required: true
+        type: string
+      previous_sha:
+        description: Last known-good app SHA for rollback
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.WEB_PUBLIC_URL }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.release_sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install uv==0.11.28
+      - run: python -m uv sync --frozen
+      - name: Validate immutable release plan
+        run: >-
+          python scripts/deployment/release_contract.py
+          --environment "${{ inputs.environment }}"
+          --release-sha "${{ inputs.release_sha }}"
+          --api-url "${{ vars.API_PUBLIC_URL }}"
+          --web-url "${{ vars.WEB_PUBLIC_URL }}"
+      - name: Migrate exactly once
+        run: python -m uv run alembic upgrade head
+      - name: Trigger API, worker, and web deploys
+        env:
+          API_DEPLOY_HOOK: ${{ secrets.API_DEPLOY_HOOK }}
+          WORKER_DEPLOY_HOOK: ${{ secrets.WORKER_DEPLOY_HOOK }}
+          WEB_DEPLOY_HOOK: ${{ secrets.WEB_DEPLOY_HOOK }}
+        run: |
+          curl --fail --silent --show-error --request POST "$API_DEPLOY_HOOK&ref=${{ inputs.release_sha }}"
+          curl --fail --silent --show-error --request POST "$WORKER_DEPLOY_HOOK&ref=${{ inputs.release_sha }}"
+          curl --fail --silent --show-error --request POST "$WEB_DEPLOY_HOOK&ref=${{ inputs.release_sha }}"
+      - name: Smoke deployed readiness
+        run: python scripts/deployment/smoke.py --api-url "${{ vars.API_PUBLIC_URL }}"
+      - name: Record rollback command
+        run: >-
+          echo "Rollback apps to immutable SHA ${{ inputs.previous_sha }};
+          do not downgrade the database."

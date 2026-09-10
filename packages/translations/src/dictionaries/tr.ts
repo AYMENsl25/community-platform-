@@ -39,9 +39,12 @@ export const turkishDictionary = {
   "home.preview.body":
     "Farklı dillerde, ekranlarda ve gezinme yöntemlerinde çalışan sade ve erişilebilir bir altyapı.",
   "auth.login.title": "Tekrar hoş geldiniz",
+  "auth.login.description": "Kaldığınız yerden devam etmek için giriş yapın.",
   "auth.login.identifier": "E-posta veya kullanıcı adı",
   "auth.login.password": "Parola", // pragma: allowlist secret
   "auth.login.submit": "Güvenli giriş yap",
+  "auth.login.processing": "Giriş yapılıyor…",
+  "auth.login.error": "Giriş bilgilerinizi kontrol edip tekrar deneyin.",
   "auth.login.forgotPassword": "Parolanızı mı unuttunuz?", // pragma: allowlist secret
   "auth.login.noAccount": "Talaqi'de yeni misiniz?",
   "auth.login.registerLink": "Hesap oluşturun",
@@ -109,6 +112,8 @@ export const turkishDictionary = {
     "Sahip olabileceğiniz kulüp sınırına ulaştınız.",
   "blockers.independent_event_limit_reached":
     "Bağımsız etkinlik sınırına ulaştınız.",
+  "blockers.independent_event_creation_disabled":
+    "Bağımsız etkinlik oluşturma geçici olarak kullanılamıyor.",
   "blockers.admin_mfa_required":
     "Yönetim işlemleri için çok faktörlü kimlik doğrulama gereklidir.",
   "regions.country.tr": "Türkiye",
@@ -142,6 +147,7 @@ export const turkishDictionary = {
   "discovery.save": "Etkinliği kaydet",
   "discovery.unsave": "Kaydedilenlerden kaldır",
   "discovery.saved": "Kaydedildi",
+  "discovery.removed": "Kaydedilen etkinliklerden çıkarıldı",
   "discovery.details": "Ayrıntıları görüntüle",
   "discovery.organizedBy": "Düzenleyen",
   "discovery.meetingArea": "Buluşma alanı",
@@ -311,6 +317,8 @@ export const turkishDictionary = {
   "admin.action.suspend": "Hedefi askıya al",
   "admin.action.unpublish": "Kulübü yayından kaldır",
   "admin.action.restore": "Hedefi geri yükle",
+  "admin.action.acknowledge": "Onayla ve bana ata",
+  "admin.action.dismiss": "Bildirimi reddet",
   "admin.action.completed": "Moderasyon işlemi tamamlandı.",
   "admin.audit.history": "İşlem geçmişi",
   "admin.audit.title": "Yönetici denetimi",
@@ -318,9 +326,30 @@ export const turkishDictionary = {
     "Korumalı platform işlemlerinin değiştirilemez kayıtlarını inceleyin.",
   "admin.audit.requestId": "İstek kimliği",
   "admin.audit.empty": "Denetim olayı yok.",
+  "shell.navigation.operations": "Operasyonlar",
+  "admin.operations.title": "Platform operasyonları",
+  "admin.operations.lead":
+    "Korumalı beta kontrollerini değişmez denetim iziyle önizleyip uygulayın.",
+  "admin.operations.reason": "Operasyon gerekçesi",
+  "admin.operations.flags": "Özellik bayrakları",
+  "admin.operations.enabled": "Etkin",
+  "admin.operations.disabled": "Devre dışı",
+  "admin.operations.preview": "Değişikliği önizle",
+  "admin.operations.apply": "Değişikliği uygula",
+  "admin.operations.previewReady":
+    "Önizleme hazır. Uygulamadan önce inceleyin.",
+  "admin.operations.updated": "Korumalı ayar güncellendi.",
+  "admin.operations.region": "Bölgesel politika",
+  "admin.operations.clubLimit": "Kulüp sahipliği sınırı",
+  "admin.operations.outbox": "Kalıcı hata kuyruğu",
+  "admin.operations.attempts": "Denemeler",
+  "admin.operations.retry": "Teslimatı yeniden dene",
+  "admin.operations.retried": "Saklanan olay yeniden deneme kuyruğuna alındı.",
   "admin.dialog.suspend": "Askıya almayı onayla",
   "admin.dialog.unpublish": "Yayından kaldırmayı onayla",
   "admin.dialog.restore": "Geri yüklemeyi onayla",
+  "admin.dialog.acknowledge": "Onayı doğrula",
+  "admin.dialog.dismiss": "Reddetmeyi doğrula",
   "admin.dialog.warning":
     "Bu işlem platform erişimini hemen değiştirir ve değiştirilemez denetim günlüğüne kaydedilir.",
   "admin.dialog.reason": "İşlem nedeni",
@@ -369,6 +398,7 @@ export const turkishDictionary = {
   "errors.unauthorized": "Kimlik doğrulaması gereklidir.",
   "errors.username_unavailable": "Farklı bir kullanıcı adı seçin.",
   "errors.validation": "İşaretli alanları kontrol edin.",
+  "errors.feature_disabled": "Bu özellik geçici olarak kullanılamıyor.",
   "errors.validation.invalid": "Bu değer geçersiz.",
   "errors.validation.missing": "Bu alan zorunludur.",
   "errors.validation.extra_forbidden": "Beklenmeyen alanı kaldırın.",
@@ -493,6 +523,10 @@ export const turkishDictionary = {
   "registration.refreshFailed":
     "İsteğiniz alındı ancak güncel kayıt durumu yüklenemedi. Tekrar denemeden önce sayfayı yenileyin.",
   "registration.authRequired": "Bu etkinliğe kaydolmak için giriş yapın.",
+  "registration.signInAction": "Kaydolmak için giriş yapın",
+  "registration.cancelledNotice": "Kaydınız iptal edildi.",
+  "registration.venuePrivacy":
+    "Özel mekân — kesin adres kaydınız onaylandıktan sonra paylaşılır.",
   "registration.tryAgain": "Lütfen tekrar deneyin.",
   "registration.venue": "Onaylanmış mekan",
   "registration.processing": "Kayıt güncelleniyor…",

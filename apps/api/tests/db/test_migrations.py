@@ -56,7 +56,8 @@ REQUIRED_TABLES = {
 def test_alembic_has_exactly_one_head() -> None:
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
 
-    assert scripts.get_heads() == ["0012_communications"]
+    assert scripts.get_heads() == ["0013_feature_flags"]
+    assert scripts.get_revision("0013_feature_flags").down_revision == "0012_communications"
     assert scripts.get_revision("0012_communications").down_revision == "0011_email_intents"
     assert scripts.get_revision("0011_email_intents").down_revision == "0010_notifications"
     assert scripts.get_revision("0009_registration_state_machine").down_revision == (
@@ -582,6 +583,8 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     test_database_url: SecretStr,
 ) -> None:
     config = Config(str(ROOT / "alembic.ini"))
+    expected_head = ScriptDirectory.from_config(config).get_current_head()
+    assert expected_head is not None
     asyncio.run(_reset_safe_test_schema(test_database_url))
 
     command.upgrade(config, "0001_closed_beta_baseline")
@@ -591,7 +594,7 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0012_communications"
+    assert revision == expected_head
     assert asyncio.run(_regional_seed_counts(test_database_url)) == (2, 2, 6, 2, 1)
     assert asyncio.run(_regional_catalog_state(test_database_url)) == APPROVED_CATALOG
     assert asyncio.run(_server_uuid_version(test_database_url)) == 7
@@ -647,4 +650,4 @@ def test_clean_upgrade_downgrade_and_reupgrade_against_postgresql_18(
     command.upgrade(config, "head")
     table_names, revision = asyncio.run(_schema_state(test_database_url))
     assert table_names == REQUIRED_TABLES
-    assert revision == "0012_communications"
+    assert revision == expected_head

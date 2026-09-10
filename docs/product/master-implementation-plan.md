@@ -384,38 +384,38 @@
 
 ### Task 6.2: Regional settings and operational admin tools
 
-- [ ] Build MFA-protected policy editing, feature flags, ownership limits, search, audit review, outbox/dead-letter visibility, and safe retry actions.
-- [ ] Validate changes server-side and preview impact; prohibit destructive bulk edits or direct registration-state overrides.
-- [ ] Gate: non-MFA/role negative tests, policy-boundary tests, admin E2E, and client drift check; commit `feat: add safe platform operations console`.
+- [x] Build MFA-protected policy editing, feature flags, ownership limits, search, audit review, outbox/dead-letter visibility, and safe retry actions.
+- [x] Validate changes server-side and preview impact; prohibit destructive bulk edits or direct registration-state overrides.
+- [x] Gate: non-MFA/role negative tests, policy-boundary tests, admin E2E, and client drift check; commit `feat: add safe platform operations console`.
 
 ### Task 6.3: Observability and alerting
 
-- [ ] Add correlated JSON logs, traces, error reporting, request/error/latency, DB saturation, job age/failure, email failure, transition, expiry, promotion, moderation SLA, and business-funnel metrics.
-- [ ] Alert on user-impacting API outage, migration failure, stalled queue, DB/storage capacity, critical email failure, and invariant violation; exclude high-cardinality personal data.
-- [ ] Gate: telemetry contract/redaction tests and synthetic alert exercises; commit `ops: add beta observability and alerts`.
+- [x] Add correlated JSON logs, traces, error reporting, request/error/latency, DB saturation, job age/failure, email failure, transition, expiry, promotion, moderation SLA, and business-funnel metrics.
+- [x] Alert on user-impacting API outage, migration failure, stalled queue, DB/storage capacity, critical email failure, and invariant violation; exclude high-cardinality personal data.
+- [x] Gate: telemetry contract/redaction tests and synthetic alert exercises; commit `ops: add beta observability and alerts`.
 
 ### Task 6.4: Security and privacy hardening review
 
-- [ ] Run threat-model review across auth, sessions, CSRF, CORS/hosts, authorization, private links, venue/attendee privacy, uploads, rate limits, worker retries, logs, and admin MFA.
-- [ ] Add dependency, secret, SAST, DAST, cookie/header, IDOR, unsafe-upload, and retention/anonymization verification; resolve all high/critical findings.
-- [ ] Gate: full `tests/security`, scans, and documented exception process; commit `security: harden Talaqi for closed beta`.
+- [x] Run threat-model review across auth, sessions, CSRF, CORS/hosts, authorization, private links, venue/attendee privacy, uploads, rate limits, worker retries, logs, and admin MFA.
+- [x] Add dependency, secret, SAST, DAST, cookie/header, IDOR, unsafe-upload, and retention/anonymization verification; resolve all high/critical findings.
+- [x] Gate: full `tests/security`, scans, and documented exception process; commit `security: harden Talaqi for closed beta`.
 
 ### Task 6.5: Deployment pipeline and migration safety
 
-- [ ] Add preview, staging, and manually approved production pipelines; run migrations once as a release job; use backward-compatible expand/migrate/contract changes and independent app rollback.
-- [ ] Select providers only after current free/student commercial terms are checked; keep PostgreSQL, S3, email, and monitoring adapters portable.
+- [x] Add preview, staging, and manually approved production pipelines; run migrations once as a release job; use backward-compatible expand/migrate/contract changes and independent app rollback.
+- [x] Select providers only after current free/student commercial terms are checked; keep PostgreSQL, S3, email, and monitoring adapters portable.
 - [ ] Gate: clean and previous-schema migration, staging smoke/E2E, rollback rehearsal, readiness failure, and secret isolation; commit `deploy: add guarded staging and production releases`.
 
 ### Task 6.6: Backup, recovery, retention, and account deletion
 
-- [ ] Automate encrypted PostgreSQL/object-storage backups, restore validation, retention cleanup, 30-day account-deletion recovery, identity anonymization, and legally required audit preservation.
-- [ ] Write and rehearse runbooks for restore, stuck jobs, failed migration, account recovery, data export/deletion, and compromised admin/session response.
+- [x] Automate encrypted PostgreSQL/object-storage backups, restore validation, retention cleanup, 30-day account-deletion recovery, identity anonymization, and legally required audit preservation.
+- [x] Write and rehearse runbooks for restore, stuck jobs, failed migration, account recovery, data export/deletion, and compromised admin/session response.
 - [ ] Gate: representative staging restore with checksums and sampled media, deletion/retention tests, and recorded recovery times; commit `ops: establish recovery and data lifecycle`.
 
 ### Task 6.7: Legal, policy, and support readiness
 
-- [ ] Publish localized terms, privacy notice, 18+ age policy, community/organizer rules, cancellation/cash rules, moderation/reporting policy, and support contact.
-- [ ] Version acceptances and require re-consent only for materially changed policies; legal review is a human launch gate.
+- [x] Publish localized terms, privacy notice, 18+ age policy, community/organizer rules, cancellation/cash rules, moderation/reporting policy, and support contact.
+- [x] Version acceptances and require re-consent only for materially changed policies; legal review is a human launch gate.
 - [ ] Gate: link/locale/version tests and product-owner/legal approval record; commit `docs: publish beta policies and support paths`.
 
 ### Task 6.8: Closed-beta release candidate

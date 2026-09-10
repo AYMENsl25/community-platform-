@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { GET, POST } from "./route";
+import { GET, PATCH, POST } from "./route";
 
 const caseId = "77777777-7777-4777-8777-777777777777";
 
@@ -171,6 +171,88 @@ describe("admin API proxy", () => {
         cache: "no-store",
         body,
       },
+    );
+  });
+
+  it("allows the bounded moderation workflow route", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ id: caseId }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const body = JSON.stringify({
+      action: "acknowledge",
+      reason: "Taking ownership",
+    });
+    const response = await POST(
+      new NextRequest(
+        `http://web.test/api/admin/api/v1/admin/moderation/cases/${caseId}/workflow`,
+        {
+          method: "POST",
+          body,
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": "workflow-action-00000001",
+            "X-CSRF-Token": "csrf",
+          },
+        },
+      ),
+      context([
+        "api",
+        "v1",
+        "admin",
+        "moderation",
+        "cases",
+        caseId,
+        "workflow",
+      ]),
+    );
+    expect(response.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledWith(
+      `http://api.test/api/v1/admin/moderation/cases/${caseId}/workflow`,
+      expect.objectContaining({ method: "POST", body }),
+    );
+  });
+
+  it("allows only the bounded operations PATCH route and forwards protections", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ setting: { enabled: false } }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const body = JSON.stringify({
+      enabled: false,
+      revision: 1,
+      reason: "Beta control",
+    });
+    const path = [
+      "api",
+      "v1",
+      "admin",
+      "settings",
+      "feature-flags",
+      "features.member_reports_enabled",
+    ];
+    const response = await PATCH(
+      new NextRequest(`http://web.test/api/admin/${path.join("/")}`, {
+        method: "PATCH",
+        body,
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": "operations-change-0001",
+          "X-CSRF-Token": "csrf",
+        },
+      }),
+      context(path),
+    );
+    expect(response.status).toBe(200);
+    expect(fetcher).toHaveBeenCalledWith(
+      `http://api.test/${path.join("/")}`,
+      expect.objectContaining({ method: "PATCH", body }),
     );
   });
 

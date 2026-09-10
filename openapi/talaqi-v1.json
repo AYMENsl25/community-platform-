@@ -49,6 +49,27 @@
         "title": "AcceptedResponse",
         "type": "object"
       },
+      "AccountDeletionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "anonymize_after": {
+            "format": "date-time",
+            "title": "Anonymize After",
+            "type": "string"
+          },
+          "requested_at": {
+            "format": "date-time",
+            "title": "Requested At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requested_at",
+          "anonymize_after"
+        ],
+        "title": "AccountDeletionResponse",
+        "type": "object"
+      },
       "ActionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -626,12 +647,28 @@
           "to_status": {
             "title": "To Status",
             "type": "string"
+          },
+          "workflow_action": {
+            "anyOf": [
+              {
+                "enum": [
+                  "acknowledge",
+                  "dismiss"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Action"
           }
         },
         "required": [
           "id",
           "actor_user_id",
           "action",
+          "workflow_action",
           "from_status",
           "to_status",
           "reason",
@@ -758,6 +795,15 @@
             ],
             "title": "Resolved At"
           },
+          "response_breached": {
+            "title": "Response Breached",
+            "type": "boolean"
+          },
+          "response_due_at": {
+            "format": "date-time",
+            "title": "Response Due At",
+            "type": "string"
+          },
           "status": {
             "enum": [
               "open",
@@ -789,10 +835,67 @@
           "created_at",
           "updated_at",
           "emergency_notice",
+          "response_due_at",
+          "response_breached",
           "target",
           "available_actions"
         ],
         "title": "CaseResponse",
+        "type": "object"
+      },
+      "CaseWorkflowRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "acknowledge",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "reason"
+        ],
+        "title": "CaseWorkflowRequest",
+        "type": "object"
+      },
+      "CaseWorkflowResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "acknowledge",
+              "dismiss"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "case": {
+            "$ref": "#/components/schemas/CaseResponse"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CaseEventResponse"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "case",
+          "events"
+        ],
+        "title": "CaseWorkflowResponse",
         "type": "object"
       },
       "CategoryResponse": {
@@ -3057,6 +3160,130 @@
         "title": "EventUpdateRequest",
         "type": "object"
       },
+      "FeatureFlagChangeRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "enabled",
+          "revision",
+          "reason"
+        ],
+        "title": "FeatureFlagChangeRequest",
+        "type": "object"
+      },
+      "FeatureFlagPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureFlagResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "title": "Next Cursor",
+            "type": "null"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "FeatureFlagPageResponse",
+        "type": "object"
+      },
+      "FeatureFlagPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "current": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          },
+          "impact": {
+            "const": "blocks_new_mutations_only",
+            "default": "blocks_new_mutations_only",
+            "title": "Impact",
+            "type": "string"
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          }
+        },
+        "required": [
+          "current",
+          "proposed",
+          "changed"
+        ],
+        "title": "FeatureFlagPreviewResponse",
+        "type": "object"
+      },
+      "FeatureFlagResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key": {
+            "enum": [
+              "features.member_reports_enabled",
+              "features.organizer_announcements_enabled",
+              "features.independent_event_creation_enabled"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "enabled",
+          "revision"
+        ],
+        "title": "FeatureFlagResponse",
+        "type": "object"
+      },
+      "FeatureFlagUpdateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "setting": {
+            "$ref": "#/components/schemas/FeatureFlagResponse"
+          },
+          "status": {
+            "const": "updated",
+            "default": "updated",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "setting"
+        ],
+        "title": "FeatureFlagUpdateResponse",
+        "type": "object"
+      },
       "FieldError": {
         "additionalProperties": false,
         "properties": {
@@ -4468,6 +4695,112 @@
         "title": "OperationResponse",
         "type": "object"
       },
+      "OperationalOutboxEventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_type": {
+            "title": "Aggregate Type",
+            "type": "string"
+          },
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
+          },
+          "available_at": {
+            "format": "date-time",
+            "title": "Available At",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "locked_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locked Until"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "aggregate_type",
+          "event_type",
+          "status",
+          "attempt_count",
+          "last_error_code",
+          "available_at",
+          "created_at",
+          "processed_at",
+          "locked_until"
+        ],
+        "title": "OperationalOutboxEventResponse",
+        "type": "object"
+      },
+      "OperationalOutboxPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/OperationalOutboxEventResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "title": "Next Cursor",
+            "type": "null"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "OperationalOutboxPageResponse",
+        "type": "object"
+      },
       "OrganizerDashboardResponse": {
         "properties": {
           "alerts": {
@@ -4498,6 +4831,41 @@
           "alerts"
         ],
         "title": "OrganizerDashboardResponse",
+        "type": "object"
+      },
+      "OutboxRetryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "OutboxRetryRequest",
+        "type": "object"
+      },
+      "OutboxRetryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "$ref": "#/components/schemas/OperationalOutboxEventResponse"
+          },
+          "status": {
+            "const": "retried",
+            "default": "retried",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "title": "OutboxRetryResponse",
         "type": "object"
       },
       "OwnershipTransferRequest": {
@@ -4980,6 +5348,96 @@
         "title": "RefreshedResponse",
         "type": "object"
       },
+      "RegionPolicyChangeRequest": {
+        "additionalProperties": false,
+        "description": "Safe, prospective regional controls; active records are never rewritten.",
+        "properties": {
+          "club_limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Club Limit"
+          },
+          "exact_venue_public_by_default": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exact Venue Public By Default"
+          },
+          "independent_event_limit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Independent Event Limit"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          },
+          "revision": {
+            "minimum": 1.0,
+            "title": "Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "revision",
+          "reason"
+        ],
+        "title": "RegionPolicyChangeRequest",
+        "type": "object"
+      },
+      "RegionPolicyPreviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Changed Fields",
+            "type": "array"
+          },
+          "current": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          },
+          "impact": {
+            "default": "Changes affect future ownership and event drafts only; existing records remain unchanged.",
+            "title": "Impact",
+            "type": "string"
+          },
+          "proposed": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          }
+        },
+        "required": [
+          "current",
+          "proposed",
+          "changed_fields"
+        ],
+        "title": "RegionPolicyPreviewResponse",
+        "type": "object"
+      },
       "RegionPolicyResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5078,6 +5536,25 @@
         "title": "RegionPolicyResponse",
         "type": "object"
       },
+      "RegionPolicyUpdateResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "policy": {
+            "$ref": "#/components/schemas/RegionPolicyResponse"
+          },
+          "status": {
+            "const": "updated",
+            "default": "updated",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "title": "RegionPolicyUpdateResponse",
+        "type": "object"
+      },
       "RegistrationCreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5139,6 +5616,109 @@
           "privacy_version"
         ],
         "title": "RegistrationRequest",
+        "type": "object"
+      },
+      "ReportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": [
+              "safety",
+              "harassment",
+              "fraud",
+              "illegal_content",
+              "privacy",
+              "spam",
+              "other"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 5000,
+            "minLength": 10,
+            "title": "Description",
+            "type": "string"
+          },
+          "source_path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "pattern": "^/[A-Za-z0-9/_-]*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional query-free application path where the issue was observed.",
+            "title": "Source Path"
+          },
+          "target_id": {
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "enum": [
+              "user",
+              "club",
+              "event"
+            ],
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "category",
+          "description"
+        ],
+        "title": "ReportRequest",
+        "type": "object"
+      },
+      "ReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "emergency_notice": {
+            "title": "Emergency Notice",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "priority": {
+            "enum": [
+              "standard",
+              "high",
+              "emergency"
+            ],
+            "title": "Priority",
+            "type": "string"
+          },
+          "status": {
+            "const": "open",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "priority",
+          "emergency_notice",
+          "created_at"
+        ],
+        "title": "ReportResponse",
         "type": "object"
       },
       "RevokedResponse": {
@@ -6146,6 +6726,130 @@
         ]
       }
     },
+    "/api/v1/admin/moderation/cases/{case_id}/workflow": {
+      "post": {
+        "operationId": "transitionModerationCase",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Stable key for retrying a moderation action.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "description": "Stable key for retrying a moderation action.",
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseWorkflowRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseWorkflowResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Case or target not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Moderation transition conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Transition Case",
+        "tags": [
+          "moderation"
+        ]
+      }
+    },
     "/api/v1/admin/moderation/targets": {
       "get": {
         "operationId": "searchModerationTargets",
@@ -6241,6 +6945,639 @@
         "summary": "Search Targets",
         "tags": [
           "moderation"
+        ]
+      }
+    },
+    "/api/v1/admin/outbox-events": {
+      "get": {
+        "operationId": "listOutboxEvents",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "processing",
+                    "retryable_failed",
+                    "permanent_failed",
+                    "delivered"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalOutboxPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "List Outbox Events",
+        "tags": [
+          "outbox"
+        ]
+      }
+    },
+    "/api/v1/admin/outbox-events/{event_id}": {
+      "get": {
+        "operationId": "getOutboxEvent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalOutboxEventResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Outbox Event",
+        "tags": [
+          "outbox"
+        ]
+      }
+    },
+    "/api/v1/admin/outbox-events/{event_id}/retry": {
+      "post": {
+        "operationId": "retryOutboxEvent",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboxRetryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboxRetryResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Retry Outbox Event",
+        "tags": [
+          "outbox"
+        ]
+      }
+    },
+    "/api/v1/admin/regions/{country_code}/policy": {
+      "get": {
+        "operationId": "getAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Get Admin Region Policy",
+        "tags": [
+          "regions"
+        ]
+      },
+      "patch": {
+        "operationId": "updateAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionPolicyChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyUpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Update Admin Region Policy",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/admin/regions/{country_code}/policy/preview": {
+      "post": {
+        "operationId": "previewAdminRegionPolicy",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "country_code",
+            "required": true,
+            "schema": {
+              "title": "Country Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionPolicyChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionPolicyPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Preview Admin Region Policy",
+        "tags": [
+          "regions"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags": {
+      "get": {
+        "operationId": "listFeatureFlags",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "List Feature Flags",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags/{key}": {
+      "patch": {
+        "operationId": "updateFeatureFlag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "features.member_reports_enabled",
+                "features.organizer_announcements_enabled",
+                "features.independent_event_creation_enabled"
+              ],
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagUpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Setting not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Revision conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Update Feature Flag",
+        "tags": [
+          "settings"
+        ]
+      }
+    },
+    "/api/v1/admin/settings/feature-flags/{key}/preview": {
+      "post": {
+        "operationId": "previewFeatureFlag",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "enum": [
+                "features.member_reports_enabled",
+                "features.organizer_announcements_enabled",
+                "features.independent_event_creation_enabled"
+              ],
+              "title": "Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlagPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Platform-admin access, MFA, or CSRF denied.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Setting not found.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Revision conflicted.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Preview Feature Flag",
+        "tags": [
+          "settings"
         ]
       }
     },
@@ -11203,6 +12540,139 @@
         ]
       }
     },
+    "/api/v1/me/account-deletion": {
+      "delete": {
+        "operationId": "cancelMyAccountDeletion",
+        "responses": {
+          "204": {
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Username is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Cancel My Account Deletion",
+        "tags": [
+          "profiles"
+        ]
+      },
+      "post": {
+        "operationId": "requestMyAccountDeletion",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF validation failed.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Username is unavailable.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          }
+        },
+        "summary": "Request My Account Deletion",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
     "/api/v1/me/capabilities": {
       "get": {
         "operationId": "getMyCapabilities",
@@ -12052,6 +13522,90 @@
         "summary": "Get Region Policy",
         "tags": [
           "regions"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "operationId": "submitReport",
+        "parameters": [
+          {
+            "description": "Stable key for retrying one report submission.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "description": "Stable key for retrying one report submission.",
+              "maxLength": 200,
+              "minLength": 16,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication required.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "CSRF protection denied the report.",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/PlatformError"
+          }
+        },
+        "summary": "Submit Report",
+        "tags": [
+          "moderation"
         ]
       }
     },

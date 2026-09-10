@@ -67,6 +67,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/moderation/cases/{case_id}/workflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transition Case */
+        post: operations["transitionModerationCase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/moderation/targets": {
         parameters: {
             query?: never;
@@ -78,6 +95,143 @@ export interface paths {
         get: operations["searchModerationTargets"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/outbox-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Outbox Events */
+        get: operations["listOutboxEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/outbox-events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Outbox Event */
+        get: operations["getOutboxEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/outbox-events/{event_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Outbox Event */
+        post: operations["retryOutboxEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/regions/{country_code}/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Region Policy */
+        get: operations["getAdminRegionPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Admin Region Policy */
+        patch: operations["updateAdminRegionPolicy"];
+        trace?: never;
+    };
+    "/api/v1/admin/regions/{country_code}/policy/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Admin Region Policy */
+        post: operations["previewAdminRegionPolicy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/feature-flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Feature Flags */
+        get: operations["listFeatureFlags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/settings/feature-flags/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Feature Flag */
+        patch: operations["updateFeatureFlag"];
+        trace?: never;
+    };
+    "/api/v1/admin/settings/feature-flags/{key}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview Feature Flag */
+        post: operations["previewFeatureFlag"];
         delete?: never;
         options?: never;
         head?: never;
@@ -877,6 +1031,24 @@ export interface paths {
         patch: operations["replaceMyProfile"];
         trace?: never;
     };
+    "/api/v1/me/account-deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request My Account Deletion */
+        post: operations["requestMyAccountDeletion"];
+        /** Cancel My Account Deletion */
+        delete: operations["cancelMyAccountDeletion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/capabilities": {
         parameters: {
             query?: never;
@@ -1116,6 +1288,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Report */
+        post: operations["submitReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/search": {
         parameters: {
             query?: never;
@@ -1179,6 +1368,19 @@ export interface components {
              * @constant
              */
             accepted: true;
+        };
+        /** AccountDeletionResponse */
+        AccountDeletionResponse: {
+            /**
+             * Anonymize After
+             * Format: date-time
+             */
+            anonymize_after: string;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
         };
         /** ActionRequest */
         ActionRequest: {
@@ -1389,6 +1591,8 @@ export interface components {
             reason: string;
             /** To Status */
             to_status: string;
+            /** Workflow Action */
+            workflow_action: ("acknowledge" | "dismiss") | null;
         };
         /** CasePageResponse */
         CasePageResponse: {
@@ -1428,6 +1632,13 @@ export interface components {
             resolution_reason: string | null;
             /** Resolved At */
             resolved_at: string | null;
+            /** Response Breached */
+            response_breached: boolean;
+            /**
+             * Response Due At
+             * Format: date-time
+             */
+            response_due_at: string;
             /**
              * Status
              * @enum {string}
@@ -1439,6 +1650,27 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** CaseWorkflowRequest */
+        CaseWorkflowRequest: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "acknowledge" | "dismiss";
+            /** Reason */
+            reason: string;
+        };
+        /** CaseWorkflowResponse */
+        CaseWorkflowResponse: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "acknowledge" | "dismiss";
+            case: components["schemas"]["CaseResponse"];
+            /** Events */
+            events: components["schemas"]["CaseEventResponse"][];
         };
         /** CategoryResponse */
         CategoryResponse: {
@@ -2086,6 +2318,57 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** FeatureFlagChangeRequest */
+        FeatureFlagChangeRequest: {
+            /** Enabled */
+            enabled: boolean;
+            /** Reason */
+            reason: string;
+            /** Revision */
+            revision: number;
+        };
+        /** FeatureFlagPageResponse */
+        FeatureFlagPageResponse: {
+            /** Items */
+            items: components["schemas"]["FeatureFlagResponse"][];
+            /** Next Cursor */
+            next_cursor?: null;
+        };
+        /** FeatureFlagPreviewResponse */
+        FeatureFlagPreviewResponse: {
+            /** Changed */
+            changed: boolean;
+            current: components["schemas"]["FeatureFlagResponse"];
+            /**
+             * Impact
+             * @default blocks_new_mutations_only
+             * @constant
+             */
+            impact: "blocks_new_mutations_only";
+            proposed: components["schemas"]["FeatureFlagResponse"];
+        };
+        /** FeatureFlagResponse */
+        FeatureFlagResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            /** Revision */
+            revision: number;
+        };
+        /** FeatureFlagUpdateResponse */
+        FeatureFlagUpdateResponse: {
+            setting: components["schemas"]["FeatureFlagResponse"];
+            /**
+             * Status
+             * @default updated
+             * @constant
+             */
+            status: "updated";
+        };
         /** FieldError */
         FieldError: {
             code: string;
@@ -2511,6 +2794,45 @@ export interface components {
             /** Type Key */
             type_key: string;
         };
+        /** OperationalOutboxEventResponse */
+        OperationalOutboxEventResponse: {
+            /** Aggregate Type */
+            aggregate_type: string;
+            /** Attempt Count */
+            attempt_count: number;
+            /**
+             * Available At
+             * Format: date-time
+             */
+            available_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Locked Until */
+            locked_until: string | null;
+            /** Processed At */
+            processed_at: string | null;
+            /** Status */
+            status: string;
+        };
+        /** OperationalOutboxPageResponse */
+        OperationalOutboxPageResponse: {
+            /** Items */
+            items: components["schemas"]["OperationalOutboxEventResponse"][];
+            /** Next Cursor */
+            next_cursor?: null;
+        };
         /** OperationResponse */
         OperationResponse: {
             /**
@@ -2527,6 +2849,21 @@ export interface components {
             clubs: components["schemas"]["DashboardClub"][];
             /** Events */
             events: components["schemas"]["DashboardEvent"][];
+        };
+        /** OutboxRetryRequest */
+        OutboxRetryRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** OutboxRetryResponse */
+        OutboxRetryResponse: {
+            event: components["schemas"]["OperationalOutboxEventResponse"];
+            /**
+             * Status
+             * @default retried
+             * @constant
+             */
+            status: "retried";
         };
         /** OwnershipTransferRequest */
         OwnershipTransferRequest: {
@@ -2695,6 +3032,34 @@ export interface components {
              */
             refreshed: true;
         };
+        /**
+         * RegionPolicyChangeRequest
+         * @description Safe, prospective regional controls; active records are never rewritten.
+         */
+        RegionPolicyChangeRequest: {
+            /** Club Limit */
+            club_limit?: number | null;
+            /** Exact Venue Public By Default */
+            exact_venue_public_by_default?: boolean | null;
+            /** Independent Event Limit */
+            independent_event_limit?: number | null;
+            /** Reason */
+            reason: string;
+            /** Revision */
+            revision: number;
+        };
+        /** RegionPolicyPreviewResponse */
+        RegionPolicyPreviewResponse: {
+            /** Changed Fields */
+            changed_fields: string[];
+            current: components["schemas"]["RegionPolicyResponse"];
+            /**
+             * Impact
+             * @default Changes affect future ownership and event drafts only; existing records remain unchanged.
+             */
+            impact: string;
+            proposed: components["schemas"]["RegionPolicyResponse"];
+        };
         /** RegionPolicyResponse */
         RegionPolicyResponse: {
             /** Allowed Registration Methods */
@@ -2731,6 +3096,16 @@ export interface components {
             /** Revision */
             revision: number;
         };
+        /** RegionPolicyUpdateResponse */
+        RegionPolicyUpdateResponse: {
+            policy: components["schemas"]["RegionPolicyResponse"];
+            /**
+             * Status
+             * @default updated
+             * @constant
+             */
+            status: "updated";
+        };
         /** RegistrationCreateRequest */
         RegistrationCreateRequest: {
             /** Private Link */
@@ -2751,6 +3126,56 @@ export interface components {
             privacy_version: string;
             /** Terms Version */
             terms_version: string;
+        };
+        /** ReportRequest */
+        ReportRequest: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "safety" | "harassment" | "fraud" | "illegal_content" | "privacy" | "spam" | "other";
+            /** Description */
+            description: string;
+            /**
+             * Source Path
+             * @description Optional query-free application path where the issue was observed.
+             */
+            source_path?: string | null;
+            /**
+             * Target Id
+             * Format: uuid
+             */
+            target_id: string;
+            /**
+             * Target Type
+             * @enum {string}
+             */
+            target_type: "user" | "club" | "event";
+        };
+        /** ReportResponse */
+        ReportResponse: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Emergency Notice */
+            emergency_notice: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Priority
+             * @enum {string}
+             */
+            priority: "standard" | "high" | "emergency";
+            /**
+             * Status
+             * @constant
+             */
+            status: "open";
         };
         /** RevokedResponse */
         RevokedResponse: {
@@ -3190,6 +3615,77 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    transitionModerationCase: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying a moderation action. */
+                "Idempotency-Key": string;
+            };
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseWorkflowResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Case or target not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Moderation transition conflicted. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
     searchModerationTargets: {
         parameters: {
             query: {
@@ -3225,6 +3721,347 @@ export interface operations {
             };
             /** @description Platform-admin access, MFA, or CSRF denied. */
             403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    listOutboxEvents: {
+        parameters: {
+            query?: {
+                event_type?: string | null;
+                limit?: number;
+                status?: ("pending" | "processing" | "retryable_failed" | "permanent_failed" | "delivered") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalOutboxPageResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getOutboxEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationalOutboxEventResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    retryOutboxEvent: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutboxRetryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutboxRetryResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    getAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    updateAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionPolicyChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyUpdateResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    previewAdminRegionPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country_code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionPolicyChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegionPolicyPreviewResponse"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    listFeatureFlags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagPageResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    updateFeatureFlag: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagUpdateResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Setting not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision conflicted. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    previewFeatureFlag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: "features.member_reports_enabled" | "features.organizer_announcements_enabled" | "features.independent_event_creation_enabled";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeatureFlagChangeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureFlagPreviewResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Platform-admin access, MFA, or CSRF denied. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Setting not found. */
+            404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Revision conflicted. */
+            409: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;
@@ -6127,6 +6964,106 @@ export interface operations {
             422: components["responses"]["PlatformError"];
         };
     };
+    requestMyAccountDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletionResponse"];
+                };
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Username is unavailable. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cancelMyAccountDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authentication failed. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF validation failed. */
+            403: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Username is unavailable. */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     getMyCapabilities: {
         parameters: {
             query?: never;
@@ -6657,6 +7594,55 @@ export interface operations {
             };
             /** @description The requested enabled region does not exist. */
             404: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            422: components["responses"]["PlatformError"];
+        };
+    };
+    submitReport: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Stable key for retrying one report submission. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportResponse"];
+                };
+            };
+            /** @description Authentication required. */
+            401: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description CSRF protection denied the report. */
+            403: {
                 headers: {
                     "X-Request-ID": components["headers"]["RequestId"];
                     [name: string]: unknown;

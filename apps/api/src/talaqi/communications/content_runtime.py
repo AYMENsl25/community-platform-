@@ -8,6 +8,8 @@ from talaqi.clubs.repository import ClubRepository
 from talaqi.communications.content import OrganizerContentRepository
 from talaqi.communications.content_service import OrganizerCommunicationsService
 from talaqi.events.access_runtime import build_event_access_service
+from talaqi.settings.repository import PlatformSettingsRepository
+from talaqi.settings.service import PlatformSettingsService
 
 
 def build_organizer_communications_service(
@@ -17,6 +19,7 @@ def build_organizer_communications_service(
         OrganizerContentRepository(session),
         ClubEventAccessService(ClubRepository(session)),
         build_event_access_service(request, session),
+        PlatformSettingsService(PlatformSettingsRepository(session)),
     )
 
 

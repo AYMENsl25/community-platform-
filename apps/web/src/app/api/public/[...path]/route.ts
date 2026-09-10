@@ -20,7 +20,7 @@ function allowed(method: string, path: string[]): boolean {
     path[0] === "api" &&
     path[1] === "v1" &&
     path[2] === "auth" &&
-    path[3] === "logout"
+    ["login", "logout"].includes(path[3] ?? "")
   )
     return true;
   if (
@@ -57,22 +57,44 @@ async function forward(
   const csrf = request.headers.get("x-csrf-token");
   const idempotencyKey = request.headers.get("idempotency-key");
   const safePublicGet = isSafePublicGet(request.method, path);
-  const cookie = safePublicGet
-    ? ""
-    : [
-        access ? `talaqi_access=${access}` : undefined,
-        csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
-      ]
-        .filter(Boolean)
-        .join("; ");
+  const isLogin = path[2] === "auth" && path[3] === "login";
+  const cookie =
+    safePublicGet || isLogin
+      ? ""
+      : [
+          access ? `talaqi_access=${access}` : undefined,
+          csrfCookie ? `talaqi_csrf=${csrfCookie}` : undefined,
+        ]
+          .filter(Boolean)
+          .join("; ");
   const headers: Record<string, string> = {};
   if (cookie) headers.Cookie = cookie;
   if (csrf) headers["X-CSRF-Token"] = csrf;
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
   try {
+    let body: string | undefined;
+    if (isLogin) {
+      if (
+        !(request.headers.get("content-type") ?? "").startsWith(
+          "application/json",
+        )
+      )
+        return Response.json(
+          { error: { code: "unsupported_media_type" } },
+          { status: 415, headers: { "Cache-Control": "private, no-store" } },
+        );
+      body = await request.text();
+      if (new TextEncoder().encode(body).byteLength > 16_384)
+        return Response.json(
+          { error: { code: "payload_too_large" } },
+          { status: 413, headers: { "Cache-Control": "private, no-store" } },
+        );
+      headers["Content-Type"] = "application/json";
+    }
     const response = await fetch(`${baseUrl}/${path.join("/")}`, {
       method: request.method,
       headers,
+      ...(body === undefined ? {} : { body }),
       cache: "no-store",
     });
     const outgoingHeaders = new Headers({
@@ -82,7 +104,7 @@ async function forward(
         ? "public, max-age=60"
         : "private, no-store",
     });
-    if (path[2] === "auth" && path[3] === "logout") {
+    if (path[2] === "auth" && ["login", "logout"].includes(path[3] ?? "")) {
       for (const cookie of response.headers.getSetCookie())
         outgoingHeaders.append("Set-Cookie", cookie);
     }

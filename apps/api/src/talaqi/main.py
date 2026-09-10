@@ -20,7 +20,10 @@ from talaqi.identity.routes import router as identity_router
 from talaqi.media.routes import router as media_router
 from talaqi.media.runtime import install_media_storage
 from talaqi.media.storage import MediaStorage
+from talaqi.moderation.rate_limits import install_moderation_rate_limits
+from talaqi.moderation.report_routes import router as moderation_report_router
 from talaqi.moderation.routes import router as moderation_router
+from talaqi.outbox.routes import router as outbox_router
 from talaqi.platform import register_platform_contracts
 from talaqi.platform.openapi import install_openapi
 from talaqi.profiles.routes import router as profiles_router
@@ -28,6 +31,7 @@ from talaqi.regions.routes import router as regions_router
 from talaqi.registrations.routes import router as registrations_router
 from talaqi.runtime import SessionFactory, install_runtime
 from talaqi.security import RateLimiter, install_http_security, install_request_logging
+from talaqi.settings.routes import router as settings_router
 
 
 def create_app(
@@ -39,6 +43,7 @@ def create_app(
     storage_probe: ReadinessProbe | None = None,
     auth_rate_limiter: RateLimiter | None = None,
     event_access_rate_limiter: RateLimiter | None = None,
+    moderation_rate_limiter: RateLimiter | None = None,
     media_storage: MediaStorage | None = None,
 ) -> FastAPI:
     registry = readiness_registry or ReadinessRegistry()
@@ -82,6 +87,11 @@ def create_app(
         settings_factory,
         provider=event_access_rate_limiter,
     )
+    install_moderation_rate_limits(
+        application,
+        settings_factory,
+        provider=moderation_rate_limiter,
+    )
     install_http_security(application, settings_factory)
     install_request_logging(application)
     application.include_router(create_health_router(registry))
@@ -99,6 +109,9 @@ def create_app(
     application.include_router(discovery_router)
     application.include_router(media_router)
     application.include_router(moderation_router)
+    application.include_router(moderation_report_router)
+    application.include_router(settings_router)
+    application.include_router(outbox_router)
     install_openapi(application)
     return application
 

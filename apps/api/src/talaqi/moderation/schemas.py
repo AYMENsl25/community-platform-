@@ -6,7 +6,41 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from talaqi.moderation.models import CaseStatus, ModerationAction, Priority, TargetType
+from talaqi.moderation.models import (
+    CaseStatus,
+    CaseWorkflowAction,
+    ModerationAction,
+    Priority,
+    TargetType,
+)
+
+
+class ReportRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    target_type: TargetType
+    target_id: UUID
+    category: Literal[
+        "safety", "harassment", "fraud", "illegal_content", "privacy", "spam", "other"
+    ]
+    description: str = Field(min_length=10, max_length=5_000)
+    source_path: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+        pattern=r"^/[A-Za-z0-9/_-]*$",
+        description="Optional query-free application path where the issue was observed.",
+    )
+
+
+class ReportResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    status: Literal["open"]
+    priority: Priority
+    emergency_notice: bool
+    created_at: datetime
 
 
 class TargetResponse(BaseModel):
@@ -32,6 +66,8 @@ class CaseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     emergency_notice: bool
+    response_due_at: datetime
+    response_breached: bool
     target: TargetResponse
     available_actions: list[ModerationAction]
 
@@ -47,6 +83,7 @@ class CaseEventResponse(BaseModel):
     id: UUID
     actor_user_id: UUID | None
     action: str | None
+    workflow_action: CaseWorkflowAction | None
     from_status: str | None
     to_status: str
     reason: str
@@ -77,6 +114,19 @@ class ActionResponse(BaseModel):
     case: CaseResponse
     events: list[CaseEventResponse]
     status: Literal["actioned"] = "actioned"
+
+
+class CaseWorkflowRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    action: CaseWorkflowAction
+    reason: str = Field(min_length=3, max_length=2_000)
+
+
+class CaseWorkflowResponse(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    action: CaseWorkflowAction
+    case: CaseResponse
+    events: list[CaseEventResponse]
 
 
 class AuditResponse(BaseModel):

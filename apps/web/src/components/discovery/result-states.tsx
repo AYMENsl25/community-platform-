@@ -27,9 +27,21 @@ export function DiscoveryLoading({
   labels?: Partial<ResultStateLabels>;
 }) {
   return (
-    <p className="tq-result-state" role="status">
-      {{ ...defaultLabels(locale), ...labels }.loading}
-    </p>
+    <section className="tq-result-state tq-loading-state" role="status">
+      <span className="tq-visually-hidden">
+        {{ ...defaultLabels(locale), ...labels }.loading}
+      </span>
+      <div aria-hidden="true" className="tq-discovery-grid">
+        {[0, 1, 2].map((item) => (
+          <div className="tq-discovery-skeleton" key={item}>
+            <span className="tq-discovery-skeleton__media" />
+            <span />
+            <span />
+            <span />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

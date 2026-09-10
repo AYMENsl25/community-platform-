@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import secrets
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
@@ -7,6 +8,9 @@ from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from talaqi.outbox import OutboxEvent, OutboxRepository
+from talaqi.telemetry import emit_metric
+
+LOGGER = logging.getLogger("talaqi.worker.telemetry")
 
 
 class OutboxHandler(Protocol):
@@ -135,7 +139,7 @@ class TransactionalOutboxWorker:
         jitter_seconds = min(max(self._jitter(jitter_ceiling), 0.0), jitter_ceiling)
         retry_at = now + timedelta(seconds=bounded_seconds + jitter_seconds)
         async with self._session_factory() as session, session.begin():
-            await OutboxRepository(session).fail(
+            recorded = await OutboxRepository(session).fail(
                 event.id,
                 worker_id=self._worker_id,
                 attempt_count=event.attempt_count,
@@ -144,6 +148,16 @@ class TransactionalOutboxWorker:
                 retry_at=retry_at,
                 failed_at=failed_at,
                 permanent=permanent,
+            )
+        if recorded:
+            emit_metric(
+                LOGGER,
+                "outbox_failures_total",
+                1,
+                {
+                    "event_type": event.event_type,
+                    "failure_class": "permanent" if permanent else "retryable",
+                },
             )
 
     @staticmethod

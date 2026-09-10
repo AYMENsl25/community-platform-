@@ -13,12 +13,14 @@ import {
 import {
   createAdminClient,
   type AdminResult,
+  type CaseWorkflowAction,
   type ModerationAction,
   type ModerationCaseDetail,
 } from "@/lib/api/admin-client";
 import { useLocale } from "@/lib/locale/locale-context";
 
 type Feedback = { key: TranslationKey; requestId?: string };
+type DialogAction = ModerationAction | CaseWorkflowAction;
 
 function csrfToken(): string | undefined {
   if (typeof document === "undefined") return undefined;
@@ -42,7 +44,7 @@ export function AdminCaseDetail({
   const [moderationCase, setModerationCase] = useState(initialCase);
   const [feedback, setFeedback] = useState<Feedback | undefined>(initialError);
   const [notice, setNotice] = useState(false);
-  const [action, setAction] = useState<ModerationAction>();
+  const [action, setAction] = useState<DialogAction>();
   const [reason, setReason] = useState("");
   const [understood, setUnderstood] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -67,7 +69,7 @@ export function AdminCaseDetail({
     });
   }
 
-  function openAction(nextAction: ModerationAction, trigger: HTMLElement) {
+  function openAction(nextAction: DialogAction, trigger: HTMLElement) {
     triggerRef.current = trigger;
     idempotencyRef.current = crypto.randomUUID();
     setReason("");
@@ -111,12 +113,20 @@ export function AdminCaseDetail({
       return;
     setBusy(true);
     setFeedback(undefined);
-    const result = await client.submitModerationAction(
-      moderationCase.id,
-      action,
-      reason,
-      idempotencyRef.current,
-    );
+    const result =
+      action === "acknowledge" || action === "dismiss"
+        ? await client.transitionModerationCase(
+            moderationCase.id,
+            action,
+            reason,
+            idempotencyRef.current,
+          )
+        : await client.submitModerationAction(
+            moderationCase.id,
+            action,
+            reason,
+            idempotencyRef.current,
+          );
     setBusy(false);
     if (!result.ok) return fail(result);
     setModerationCase(result.data);
@@ -200,6 +210,30 @@ export function AdminCaseDetail({
             ))}
           </div>
         ) : null}
+        {moderationCase.status === "open" ||
+        moderationCase.status === "investigating" ? (
+          <div className="tq-admin-actions">
+            {moderationCase.status === "open" ? (
+              <button
+                data-action="acknowledge"
+                onClick={(event) =>
+                  openAction("acknowledge", event.currentTarget)
+                }
+                type="button"
+              >
+                {t("admin.action.acknowledge")}
+              </button>
+            ) : null}
+            <button
+              className="tq-admin-button--danger"
+              data-action="dismiss"
+              onClick={(event) => openAction("dismiss", event.currentTarget)}
+              type="button"
+            >
+              {t("admin.action.dismiss")}
+            </button>
+          </div>
+        ) : null}
       </section>
       <section className="tq-admin-card" aria-labelledby="action-history-title">
         <h2 id="action-history-title">{t("admin.audit.history")}</h2>
@@ -207,9 +241,17 @@ export function AdminCaseDetail({
           <ul className="tq-admin-history">
             {moderationCase.action_history.map((record) => (
               <li key={record.id}>
-                <strong>
-                  {t(`admin.action.${record.action}` as TranslationKey)}
-                </strong>
+                {record.action ? (
+                  <strong>
+                    {t(`admin.action.${record.action}` as TranslationKey)}
+                  </strong>
+                ) : record.workflow_action ? (
+                  <strong>
+                    {t(
+                      `admin.action.${record.workflow_action}` as TranslationKey,
+                    )}
+                  </strong>
+                ) : null}
                 <p>{record.reason}</p>
                 <small>
                   {record.actor_user_id ?? "system"}

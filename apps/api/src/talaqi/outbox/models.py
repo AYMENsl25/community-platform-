@@ -30,4 +30,18 @@ class DeadLetter:
     created_at: datetime
 
 
-__all__ = ["DeadLetter", "OutboxEvent"]
+@dataclass(frozen=True, slots=True)
+class OperationalOutboxEvent:
+    id: UUID
+    aggregate_type: str
+    event_type: str
+    status: str
+    attempt_count: int
+    last_error_code: str | None
+    available_at: datetime
+    created_at: datetime
+    processed_at: datetime | None
+    locked_until: datetime | None
+
+
+__all__ = ["DeadLetter", "OperationalOutboxEvent", "OutboxEvent"]

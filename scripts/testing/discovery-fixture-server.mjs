@@ -6,6 +6,7 @@ const memberVenue = "Moda Community Hall, Kadikoy";
 const memberRegistrations = new Map();
 const eventUpdateRecipients = new Set();
 let publishedEventUpdates = [];
+let publishedClubAnnouncements = [];
 
 const events = [
   {
@@ -219,8 +220,51 @@ const secondWorkspaceMembers = [
 
 const adminCaseId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 let adminTargetStatus = "published";
+let adminCaseStatus = "open";
+let adminAssignedUserId = null;
 let adminActionHistory = [];
 let adminAuditEvents = [];
+let operationalFlags = [
+  { key: "features.member_reports_enabled", enabled: true, revision: 1 },
+  {
+    key: "features.organizer_announcements_enabled",
+    enabled: true,
+    revision: 1,
+  },
+  {
+    key: "features.independent_event_creation_enabled",
+    enabled: true,
+    revision: 1,
+  },
+];
+let operationalPolicy = {
+  country_code: "TR",
+  default_locale: "tr",
+  default_currency: "TRY",
+  allowed_registration_methods: ["free", "cash_organizer_confirmed"],
+  cash_default_minutes: 1440,
+  cash_bounds: [120, 4320],
+  cancellation_default_minutes: 1440,
+  cancellation_bounds: [0, 10080],
+  club_limit: 1,
+  independent_event_limit: 3,
+  exact_venue_public_by_default: false,
+  revision: 1,
+};
+let operationalOutbox = [
+  {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    aggregate_type: "notification",
+    event_type: "notification.email",
+    status: "permanent_failed",
+    attempt_count: 4,
+    last_error_code: "provider_rejected",
+    available_at: "2026-07-27T01:00:00Z",
+    created_at: "2026-07-27T00:00:00Z",
+    processed_at: null,
+    locked_until: null,
+  },
+];
 
 function adminTarget() {
   return {
@@ -233,24 +277,30 @@ function adminTarget() {
 }
 
 function adminCase() {
-  const actioned = adminActionHistory.length > 0;
+  const resolved = ["actioned", "dismissed"].includes(adminCaseStatus);
   return {
     id: adminCaseId,
     target: adminTarget(),
     category: "safety",
     priority: "emergency",
-    status: actioned ? "actioned" : "open",
-    assigned_admin_user_id: null,
-    resolution_reason: actioned
+    status: adminCaseStatus,
+    assigned_admin_user_id: adminAssignedUserId,
+    resolution_reason: resolved
       ? adminActionHistory[adminActionHistory.length - 1].reason
       : null,
-    acknowledged_at: actioned ? "2026-07-27T01:00:00Z" : null,
-    resolved_at: actioned ? "2026-07-27T01:00:00Z" : null,
+    acknowledged_at: adminCaseStatus === "open" ? null : "2026-07-27T01:00:00Z",
+    resolved_at: resolved ? "2026-07-27T01:00:00Z" : null,
     emergency_notice: true,
     available_actions:
-      adminTargetStatus === "published"
-        ? ["suspend", "unpublish"]
-        : ["restore"],
+      adminCaseStatus === "dismissed"
+        ? []
+        : adminCaseStatus === "actioned"
+          ? adminTargetStatus === "published"
+            ? []
+            : ["restore"]
+          : adminTargetStatus === "published"
+            ? ["suspend", "unpublish"]
+            : ["restore"],
     created_at: "2026-07-27T00:00:00Z",
     updated_at: "2026-07-27T01:00:00Z",
   };
@@ -341,6 +391,42 @@ function send(
 createServer(async (request, response) => {
   const url = new URL(request.url ?? "/", `http://${request.headers.host}`);
   if (url.pathname === "/health") return send(response, 200, { status: "ok" });
+  if (url.pathname === "/api/v1/auth/login" && request.method === "POST") {
+    const payload = await body(request);
+    const fixtureOwnerPassword = "FixtureOwner123!"; // pragma: allowlist secret
+    const fixtureMemberPassword = "FixtureMember123!"; // pragma: allowlist secret
+    const fixtureAccounts = new Map([
+      ["owner@example.test", { password: fixtureOwnerPassword, role: "owner" }],
+      [
+        "member@example.test",
+        { password: fixtureMemberPassword, role: "member" },
+      ],
+    ]);
+    const account = fixtureAccounts.get(payload.identifier);
+    if (!account || account.password !== payload.password)
+      return send(
+        response,
+        401,
+        { error: { code: "invalid_credentials" } },
+        "private, no-store",
+      );
+    response.writeHead(200, {
+      "Content-Type": "application/json",
+      "Cache-Control": "private, no-store",
+      "Set-Cookie": [
+        `talaqi_access=fixture-${account.role}; Path=/; HttpOnly; SameSite=Lax`,
+        "talaqi_csrf=fixture-csrf; Path=/; SameSite=Lax",
+      ],
+    });
+    response.end(
+      JSON.stringify({
+        authenticated: true,
+        email_verified: true,
+        status: "active",
+      }),
+    );
+    return;
+  }
   if (url.pathname === "/api/v1/auth/logout" && request.method === "POST") {
     if (!hasCsrf(request))
       return send(
@@ -463,7 +549,13 @@ createServer(async (request, response) => {
     return send(
       response,
       200,
-      { case: adminCase(), events: adminActionHistory },
+      {
+        case:
+          platformAdmin === "platform-admin-no-mfa"
+            ? { ...adminCase(), available_actions: ["suspend"] }
+            : adminCase(),
+        events: adminActionHistory,
+      },
       "private, no-store",
     );
   }
@@ -493,6 +585,62 @@ createServer(async (request, response) => {
       response,
       200,
       { items: [item], next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (
+    url.pathname === `/api/v1/admin/moderation/cases/${adminCaseId}/workflow` &&
+    request.method === "POST"
+  ) {
+    if (platformAdmin !== "platform-admin")
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const reason =
+      typeof payload.reason === "string" ? payload.reason.trim() : "";
+    if (reason.length < 3)
+      return send(
+        response,
+        422,
+        { error: { code: "invalid_reason" } },
+        "private, no-store",
+      );
+    adminAssignedUserId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    const previousStatus = adminCaseStatus;
+    adminCaseStatus =
+      payload.action === "acknowledge" ? "investigating" : "dismissed";
+    adminActionHistory = [
+      ...adminActionHistory,
+      {
+        id: crypto.randomUUID(),
+        actor_user_id: adminAssignedUserId,
+        action: null,
+        workflow_action: payload.action,
+        from_status: previousStatus,
+        to_status: adminCaseStatus,
+        reason,
+        created_at: "2026-07-27T01:00:00Z",
+      },
+    ];
+    return send(
+      response,
+      200,
+      {
+        action: payload.action,
+        case: adminCase(),
+        events: adminActionHistory,
+      },
       "private, no-store",
     );
   }
@@ -535,12 +683,14 @@ createServer(async (request, response) => {
       id: crypto.randomUUID(),
       actor_user_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
       action: payload.action,
+      workflow_action: null,
       from_status: adminActionHistory.length ? "actioned" : "open",
       to_status: "actioned",
       reason,
       created_at: "2026-07-27T01:00:00Z",
     };
     adminActionHistory = [...adminActionHistory, record];
+    adminCaseStatus = "actioned";
     adminAuditEvents = [
       {
         id: crypto.randomUUID(),
@@ -581,6 +731,171 @@ createServer(async (request, response) => {
       response,
       200,
       { items: adminAuditEvents, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/settings/feature-flags") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: operationalFlags, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  const flagMatch = url.pathname.match(
+    /^\/api\/v1\/admin\/settings\/feature-flags\/(features\.[a-z_]+)(\/preview)?$/,
+  );
+  if (flagMatch) {
+    if (platformAdmin !== "platform-admin")
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const current = operationalFlags.find((item) => item.key === flagMatch[1]);
+    if (!current)
+      return send(
+        response,
+        404,
+        { error: { code: "not_found" } },
+        "private, no-store",
+      );
+    const proposed = {
+      ...current,
+      enabled: payload.enabled,
+      revision: current.revision + Number(payload.enabled !== current.enabled),
+    };
+    if (request.method === "POST" && url.pathname.endsWith("/preview"))
+      return send(
+        response,
+        200,
+        {
+          current,
+          proposed,
+          changed: current.enabled !== proposed.enabled,
+          impact: "blocks_new_mutations_only",
+        },
+        "private, no-store",
+      );
+    if (request.method === "PATCH") {
+      operationalFlags = operationalFlags.map((item) =>
+        item.key === current.key ? proposed : item,
+      );
+      return send(
+        response,
+        200,
+        { setting: proposed, status: "updated" },
+        "private, no-store",
+      );
+    }
+  }
+  if (url.pathname === "/api/v1/admin/regions/TR/policy") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (request.method === "GET")
+      return send(response, 200, operationalPolicy, "private, no-store");
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    operationalPolicy = {
+      ...operationalPolicy,
+      club_limit: payload.club_limit,
+      revision: operationalPolicy.revision + 1,
+    };
+    return send(
+      response,
+      200,
+      { policy: operationalPolicy, status: "updated" },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/regions/TR/policy/preview") {
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const proposed = {
+      ...operationalPolicy,
+      club_limit: payload.club_limit,
+      revision: operationalPolicy.revision + 1,
+    };
+    return send(
+      response,
+      200,
+      {
+        current: operationalPolicy,
+        proposed,
+        changed_fields: ["club_limit"],
+        impact: "future only",
+      },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === "/api/v1/admin/outbox-events") {
+    if (!platformAdmin)
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: operationalOutbox, next_cursor: null },
+      "private, no-store",
+    );
+  }
+  if (
+    url.pathname ===
+    "/api/v1/admin/outbox-events/dddddddd-dddd-4ddd-8ddd-dddddddddddd/retry"
+  ) {
+    if (platformAdmin !== "platform-admin" || !hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "admin_mfa_required" } },
+        "private, no-store",
+      );
+    operationalOutbox = operationalOutbox.map((item) => ({
+      ...item,
+      status: "pending",
+      last_error_code: null,
+    }));
+    return send(
+      response,
+      200,
+      { event: operationalOutbox[0], status: "retried" },
       "private, no-store",
     );
   }
@@ -801,6 +1116,55 @@ createServer(async (request, response) => {
       { error: { code: "upstream_unavailable" } },
       "private, no-store",
     );
+  }
+  const clubAnnouncementsPath = `/api/v1/clubs/${organizerClubId}/announcements`;
+  if (url.pathname === clubAnnouncementsPath && request.method === "GET") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    return send(
+      response,
+      200,
+      { items: publishedClubAnnouncements },
+      "private, no-store",
+    );
+  }
+  if (url.pathname === clubAnnouncementsPath && request.method === "POST") {
+    if (role === "member")
+      return send(
+        response,
+        403,
+        { error: { code: "forbidden" } },
+        "private, no-store",
+      );
+    if (!hasCsrf(request))
+      return send(
+        response,
+        403,
+        { error: { code: "csrf_failed" } },
+        "private, no-store",
+      );
+    if (!request.headers["idempotency-key"])
+      return send(
+        response,
+        400,
+        { error: { code: "idempotency_key_required" } },
+        "private, no-store",
+      );
+    const payload = await body(request);
+    const announcement = {
+      id: "77777777-7777-4777-8777-777777777799",
+      title: payload.title,
+      body: payload.body,
+      audience: payload.audience,
+      published_at: "2026-08-10T12:00:00Z",
+    };
+    publishedClubAnnouncements = [announcement];
+    return send(response, 201, announcement, "private, no-store");
   }
   if (
     url.pathname.startsWith(`/api/v1/clubs/${organizerClubId}`) &&

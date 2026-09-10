@@ -1,0 +1,42 @@
+name: Encrypted backup
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production-backup
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Dump PostgreSQL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL" --file database.dump
+      - name: Encrypt before upload
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: >-
+          printf '%s' "$BACKUP_PASSPHRASE" |
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0
+          --symmetric --cipher-algo AES256 --output database.dump.gpg database.dump
+      - run: rm --force database.dump
+      - run: python scripts/operations/backup_manifest.py create manifest.json database.dump.gpg
+      - name: Upload encrypted backup and manifest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_SECRET_KEY }}
+          AWS_ENDPOINT_URL: ${{ vars.BACKUP_S3_ENDPOINT }}
+        run: |
+          aws s3 cp database.dump.gpg "s3://${{ vars.BACKUP_BUCKET }}/daily/${{ github.run_id }}/database.dump.gpg" --sse AES256
+          aws s3 cp manifest.json "s3://${{ vars.BACKUP_BUCKET }}/daily/${{ github.run_id }}/manifest.json" --sse AES256

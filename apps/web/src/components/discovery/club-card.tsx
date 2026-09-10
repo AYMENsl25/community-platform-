@@ -31,8 +31,8 @@ export function ClubCard({
       <h3>
         <a href={`/clubs/${club.slug}`}>{club.name}</a>
       </h3>
-      <p>{club.description}</p>
-      <p>
+      <p className="tq-discovery-card__description">{club.description}</p>
+      <p className="tq-discovery-card__location">
         <span className="tq-visually-hidden">{copy.location}: </span>
         {translate(
           locale,

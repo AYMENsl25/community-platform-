@@ -56,7 +56,7 @@ export function EventCard({
       <h3>
         <a href={`/events/${event.id}`}>{event.title}</a>
       </h3>
-      <p>{event.description}</p>
+      <p className="tq-discovery-card__description">{event.description}</p>
       <dl className="tq-discovery-facts">
         <div>
           <dt>{translate(locale, "discovery.schedule")}</dt>
@@ -76,11 +76,13 @@ export function EventCard({
         </div>
       </dl>
       {event.club_slug && event.club_name ? (
-        <p>
+        <p className="tq-discovery-card__organizer">
           <a href={`/clubs/${event.club_slug}`}>{event.club_name}</a>
         </p>
       ) : event.organizer_display_name ? (
-        <p>{event.organizer_display_name}</p>
+        <p className="tq-discovery-card__organizer">
+          {event.organizer_display_name}
+        </p>
       ) : null}
       {showFeaturedReason ? (
         <p className="tq-discovery-note">{labels.featuredReason}</p>

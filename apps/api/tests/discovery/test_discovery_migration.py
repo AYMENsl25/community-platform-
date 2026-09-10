@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[4]
 def test_discovery_migration_remains_single_index_only_revision() -> None:
     scripts = ScriptDirectory.from_config(Config(str(ROOT / "alembic.ini")))
 
-    assert scripts.get_heads() == ["0012_communications"]
+    assert scripts.get_heads() == ["0013_feature_flags"]
+    assert scripts.get_revision("0013_feature_flags").down_revision == "0012_communications"
     assert scripts.get_revision("0008_event_publishing").down_revision == (
         "0007_moderation_priority"
     )

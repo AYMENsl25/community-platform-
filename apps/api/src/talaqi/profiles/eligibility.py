@@ -9,6 +9,7 @@ from talaqi.identity.models import AuthPrincipal, UserStatus
 from talaqi.profiles.models import EligibilityState, Profile
 from talaqi.profiles.schemas import Capabilities
 from talaqi.regions.models import ProfileRegion
+from talaqi.settings.service import PlatformSettingsService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ BLOCKER_ORDER = (
     "region_unavailable",
     "club_limit_reached",
     "independent_event_limit_reached",
+    "independent_event_creation_disabled",
     "admin_mfa_required",
 )
 
@@ -77,6 +79,7 @@ class CreationEligibilityService:
         current_organizer_rules_version: str,
         current_community_rules_version: str,
         admin_mfa_required: bool,
+        feature_flags: PlatformSettingsService | None = None,
     ) -> None:
         self._repository = repository
         self._regions = regions
@@ -85,6 +88,7 @@ class CreationEligibilityService:
         self._organizer = current_organizer_rules_version
         self._community = current_community_rules_version
         self._admin_mfa_required = admin_mfa_required
+        self._feature_flags = feature_flags
 
     async def evaluate(self, principal: EligibilitySubject) -> Capabilities:
         state = await self._repository.eligibility_state(principal.user_id)
@@ -143,6 +147,12 @@ class CreationEligibilityService:
             blockers.add("club_limit_reached")
         if event_limit_reached:
             blockers.add("independent_event_limit_reached")
+        independent_creation_enabled = (
+            self._feature_flags is None
+            or await self._feature_flags.enabled("features.independent_event_creation_enabled")
+        )
+        if not independent_creation_enabled:
+            blockers.add("independent_event_creation_disabled")
 
         access_admin = core_allowed and principal.is_platform_admin
         if access_admin and self._admin_mfa_required and not state.has_active_mfa:
@@ -151,7 +161,9 @@ class CreationEligibilityService:
 
         return Capabilities(
             create_club=core_allowed and not club_limit_reached,
-            create_independent_event=core_allowed and not event_limit_reached,
+            create_independent_event=(
+                core_allowed and not event_limit_reached and independent_creation_enabled
+            ),
             save_event=core_allowed,
             register_event=core_allowed,
             access_admin=access_admin,

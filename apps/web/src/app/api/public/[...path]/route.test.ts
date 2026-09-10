@@ -63,6 +63,60 @@ describe("public mutation proxy", () => {
     });
   });
 
+  it("forwards a bounded JSON login body and preserves session cookies", async () => {
+    const upstream = Response.json(
+      { authenticated: true },
+      {
+        headers: {
+          "Set-Cookie": "talaqi_access=session; Path=/; HttpOnly; SameSite=Lax",
+        },
+      },
+    );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(upstream);
+    vi.stubGlobal("fetch", fetcher);
+    process.env.API_PUBLIC_URL = "http://api.test";
+    const body = JSON.stringify({
+      identifier: "member@example.test",
+      password: "not-a-real-secret",
+    });
+    const response = await POST(
+      new NextRequest("http://web.test/api/public/api/v1/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: "talaqi_access=stale; talaqi_csrf=never",
+        },
+        body,
+      }),
+      context(["api", "v1", "auth", "login"]),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("set-cookie")).toContain("talaqi_access=");
+    expect(fetcher).toHaveBeenCalledWith("http://api.test/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      cache: "no-store",
+    });
+  });
+
+  it("rejects non-JSON login requests without contacting the upstream", async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetcher);
+    const response = await POST(
+      new NextRequest("http://web.test/api/public/api/v1/auth/login", {
+        method: "POST",
+        body: "identifier=member",
+      }),
+      context(["api", "v1", "auth", "login"]),
+    );
+
+    expect(response.status).toBe(415);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("forwards only minimal session cookies and CSRF", async () => {
     const fetcher = vi
       .fn<typeof fetch>()

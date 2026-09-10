@@ -112,6 +112,59 @@ describe("admin API client", () => {
     );
   });
 
+  it("posts an idempotent case workflow transition", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      json({
+        action: "acknowledge",
+        case: {
+          id: caseId,
+          target: {
+            id: "88888888-8888-4888-8888-888888888888",
+            type: "club",
+            label: "Safety Club",
+            secondary_label: "safety-club",
+            status: "published",
+          },
+          category: "safety",
+          priority: "emergency",
+          status: "investigating",
+          emergency_notice: true,
+          available_actions: ["suspend"],
+          created_at: "2026-07-27T00:00:00Z",
+          updated_at: "2026-07-27T01:00:00Z",
+        },
+        events: [],
+      }),
+    );
+    const client = createAdminClient({
+      baseUrl: "http://api.test",
+      csrfToken: "token",
+      fetch: fetcher,
+    });
+
+    await client.transitionModerationCase(
+      caseId,
+      "acknowledge",
+      "Taking ownership",
+      "workflow-action-00000001",
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      `http://api.test/api/v1/admin/moderation/cases/${caseId}/workflow`,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Idempotency-Key": "workflow-action-00000001",
+          "X-CSRF-Token": "token",
+        }),
+        body: JSON.stringify({
+          action: "acknowledge",
+          reason: "Taking ownership",
+        }),
+      }),
+    );
+  });
+
   it.each([
     [400, "errors.validation"],
     [401, "errors.authentication_required"],
