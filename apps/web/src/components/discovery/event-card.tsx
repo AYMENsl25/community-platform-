@@ -48,56 +48,52 @@ export function EventCard({
   }).format(new Date(event.start_at));
   return (
     <article className="tq-discovery-card tq-event-card" lang={locale}>
-      <div className="tq-discovery-card__media">
-        <CanonicalCover mediaId={event.cover_media_id} alt="" />
-        <p className="tq-discovery-card__badge">
-          {event.price_type === "free" ? labels.free : labels.cash}
+      <CanonicalCover mediaId={event.cover_media_id} alt="" />
+      <p className="tq-discovery-card__eyebrow">
+        {humanize(event.category_slug)} ·{" "}
+        {event.price_type === "free" ? labels.free : labels.cash}
+      </p>
+      <h3>
+        <a href={`/events/${event.id}`}>{event.title}</a>
+      </h3>
+      <p className="tq-discovery-card__description">{event.description}</p>
+      <dl className="tq-discovery-facts">
+        <div>
+          <dt>{translate(locale, "discovery.schedule")}</dt>
+          <dd>{schedule}</dd>
+        </div>
+        <div>
+          <dt>{translate(locale, "discovery.meetingArea")}</dt>
+          <dd>
+            {[event.district, event.public_meeting_area]
+              .filter(Boolean)
+              .join(" · ")}
+          </dd>
+        </div>
+        <div>
+          <dt>{translate(locale, "discovery.availability")}</dt>
+          <dd>{labels.available(event.available_places)}</dd>
+        </div>
+      </dl>
+      {event.club_slug && event.club_name ? (
+        <p className="tq-discovery-card__organizer">
+          <a href={`/clubs/${event.club_slug}`}>{event.club_name}</a>
         </p>
-        {showSave ? (
-          <SaveEventButton
-            eventId={event.id}
-            initialSaved={event.is_saved}
-            locale={locale}
-          />
-        ) : null}
-      </div>
-      <div className="tq-discovery-card__body">
-        <p className="tq-discovery-card__eyebrow">{humanize(event.category_slug)}</p>
-        <h3>
-          <a href={`/events/${event.id}`}>{event.title}</a>
-        </h3>
-        <p className="tq-discovery-card__description">{event.description}</p>
-        <dl className="tq-discovery-facts">
-          <div>
-            <dt>{translate(locale, "discovery.schedule")}</dt>
-            <dd>{schedule}</dd>
-          </div>
-          <div>
-            <dt>{translate(locale, "discovery.meetingArea")}</dt>
-            <dd>
-              {[event.district, event.public_meeting_area]
-                .filter(Boolean)
-                .join(" · ")}
-            </dd>
-          </div>
-          <div>
-            <dt>{translate(locale, "discovery.availability")}</dt>
-            <dd>{labels.available(event.available_places)}</dd>
-          </div>
-        </dl>
-        {event.club_slug && event.club_name ? (
-          <p className="tq-discovery-card__organizer">
-            <a href={`/clubs/${event.club_slug}`}>{event.club_name}</a>
-          </p>
-        ) : event.organizer_display_name ? (
-          <p className="tq-discovery-card__organizer">
-            {event.organizer_display_name}
-          </p>
-        ) : null}
-        {showFeaturedReason ? (
-          <p className="tq-discovery-note">{labels.featuredReason}</p>
-        ) : null}
-      </div>
+      ) : event.organizer_display_name ? (
+        <p className="tq-discovery-card__organizer">
+          {event.organizer_display_name}
+        </p>
+      ) : null}
+      {showFeaturedReason ? (
+        <p className="tq-discovery-note">{labels.featuredReason}</p>
+      ) : null}
+      {showSave ? (
+        <SaveEventButton
+          eventId={event.id}
+          initialSaved={event.is_saved}
+          locale={locale}
+        />
+      ) : null}
     </article>
   );
 }

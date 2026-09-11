@@ -18,8 +18,11 @@ export function CanonicalCover({
   alt: string;
 }) {
   const source = mediaId
-    ? demoCovers[mediaId] ?? `/api/media/${encodeURIComponent(mediaId)}`
-    : "/demo/community-gathering.png";
+    ? `/api/media/${encodeURIComponent(mediaId)}`
+    : process.env.NODE_ENV === "development"
+      ? "/demo/community-gathering.png"
+      : null;
+  if (!source) return null;
   return (
     <img
       className="tq-discovery-cover"

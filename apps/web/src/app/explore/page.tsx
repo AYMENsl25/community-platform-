@@ -78,37 +78,9 @@ export default async function ExplorePage({
             {translate(locale, "discovery.event")}
           </p>
           <h1>{translate(locale, "discovery.title")}</h1>
-          <form action="/explore" className="tq-explore-search" method="get">
-            {keys
-              .filter((key) => key !== "cursor" && key !== "search")
-              .map((key) =>
-                query[key] ? (
-                  <input
-                    key={key}
-                    name={key}
-                    type="hidden"
-                    value={String(query[key])}
-                  />
-                ) : null,
-              )}
-            <label htmlFor="explore-search">
-              <span className="tq-visually-hidden">{translate(locale, "filters.search")}</span>
-              <input
-                autoComplete="off"
-                defaultValue={query.search ?? ""}
-                id="explore-search"
-                name="search"
-                placeholder={translate(locale, "filters.search")}
-                type="search"
-              />
-            </label>
-            <button className="tq-discovery-control" type="submit">
-              {translate(locale, "shell.navigation.explore")}
-            </button>
-          </form>
         </header>
         {metadata.ok ? (
-          <div className="tq-explore-tools">
+          <>
             <QuickFilters
               locale={locale}
               metadata={metadata.data}
@@ -140,29 +112,21 @@ export default async function ExplorePage({
               metadata={metadata.data}
               locale={locale}
             />
-          </div>
+          </>
         ) : null}
         {!events.ok ? (
           <DiscoveryError labels={labels} locale={locale} />
         ) : events.data.items.length === 0 ? (
           <DiscoveryEmpty labels={labels} locale={locale} />
         ) : (
-          <>
-            <div className="tq-results-heading">
-              <h2>{translate(locale, "discovery.events")}</h2>
-              <p>
-                {events.data.items.length} {translate(locale, "discovery.events")}
-              </p>
-            </div>
-            <section
-              aria-label={translate(locale, "a11y.searchResults")}
-              className="tq-discovery-grid"
-            >
-              {events.data.items.map((event) => (
-                <EventCard event={event} key={event.id} locale={locale} showSave />
-              ))}
-            </section>
-          </>
+          <section
+            aria-label={translate(locale, "a11y.searchResults")}
+            className="tq-discovery-grid"
+          >
+            {events.data.items.map((event) => (
+              <EventCard event={event} key={event.id} locale={locale} />
+            ))}
+          </section>
         )}
         {events.ok && events.data.next_cursor ? (
           <a

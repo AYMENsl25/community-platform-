@@ -99,8 +99,27 @@ function HomeContent({ landing }: { landing: LandingData }) {
         {landing.unavailable ? (
           <DiscoveryError labels={stateLabels} locale={locale} />
         ) : null}
+        <section aria-labelledby="featured-title">
+          <h2 id="featured-title">{t("discovery.featured")}</h2>
+          <p>{t("discovery.featuredExplanation")}</p>
+          {landing.featuredEvents.length ? (
+            <div className="tq-landing-grid">
+              {landing.featuredEvents.map((event) => (
+                <EventCard
+                  event={event}
+                  key={event.id}
+                  labels={eventLabels}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          ) : (
+            <DiscoveryEmpty labels={stateLabels} locale={locale} />
+          )}
+        </section>
+
         {landing.metadata ? (
-          <section aria-labelledby="categories-title" className="tq-category-section">
+          <section aria-labelledby="categories-title">
             <div className="tq-landing-section-heading">
               <div>
                 <h2 id="categories-title">{t("home.categories")}</h2>
@@ -132,33 +151,6 @@ function HomeContent({ landing }: { landing: LandingData }) {
             </nav>
           </section>
         ) : null}
-
-        <section aria-labelledby="featured-title" className="tq-featured-section">
-          <div className="tq-landing-section-heading">
-            <div>
-              <h2 id="featured-title">{t("discovery.featured")}</h2>
-              <p>{t("discovery.featuredExplanation")}</p>
-            </div>
-            <ActionLink href="/explore" variant="secondary">
-              {t("shell.navigation.explore")}
-            </ActionLink>
-          </div>
-          {landing.featuredEvents.length ? (
-            <div className="tq-landing-grid">
-              {landing.featuredEvents.map((event) => (
-                <EventCard
-                  event={event}
-                  key={event.id}
-                  labels={eventLabels}
-                  locale={locale}
-                  showSave
-                />
-              ))}
-            </div>
-          ) : (
-            <DiscoveryEmpty labels={stateLabels} locale={locale} />
-          )}
-        </section>
 
         <section aria-labelledby="clubs-title">
           <h2 id="clubs-title">{t("home.popularClubs")}</h2>
