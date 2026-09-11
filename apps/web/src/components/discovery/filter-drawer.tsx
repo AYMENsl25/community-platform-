@@ -81,8 +81,10 @@ function Fields({
       <label>
         {labels.search}
         <input
+          autoComplete="off"
           defaultValue={filters.search ?? undefined}
           name="search"
+          placeholder={labels.search}
           type="search"
         />
       </label>

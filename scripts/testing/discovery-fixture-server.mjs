@@ -29,7 +29,7 @@ const events = [
     price_type: "free",
     capacity: 30,
     available_places: 12,
-    cover_media_id: null,
+    cover_media_id: "33333333-3333-4333-8333-333333333302",
     club_name: "Istanbul Neighbours",
     club_slug: "istanbul-neighbours",
     organizer_display_name: "Talaqi Fixtures",
@@ -46,10 +46,74 @@ events.push({
   ...events[0],
   id: "11111111-1111-4111-8111-111111111112",
   title: "Istanbul Park Yoga",
-  description: "A related public activity selected by city and category.",
+  description: "A gentle sunrise flow with Bosphorus views and new friends.",
+  category_slug: "outdoors",
+  district: "Uskudar",
+  public_meeting_area: "Salacak waterfront",
+  price_type: "free",
+  available_places: 8,
+  cover_media_id: "33333333-3333-4333-8333-333333333304",
+  club_name: "Move Together Istanbul",
+  club_slug: "move-together-istanbul",
   start_at: "2026-09-21T08:00:00Z",
   end_at: "2026-09-21T09:00:00Z",
 });
+
+events.push(
+  {
+    ...events[0],
+    id: "11111111-1111-4111-8111-111111111113",
+    title: "Clay, Coffee & New Connections",
+    description: "Shape a first ceramic cup in a relaxed, beginner-friendly studio session.",
+    category_slug: "arts-culture",
+    district: "Kadikoy",
+    public_meeting_area: "Yeldegirmeni arts quarter",
+    start_at: "2026-09-23T15:00:00Z",
+    end_at: "2026-09-23T17:30:00Z",
+    price_type: "cash",
+    capacity: 12,
+    available_places: 4,
+    cover_media_id: "33333333-3333-4333-8333-333333333301",
+    club_name: "Slow Sundays Studio",
+    club_slug: "slow-sundays-studio",
+  },
+  {
+    ...events[0],
+    id: "11111111-1111-4111-8111-111111111114",
+    title: "Golden Hour Photo Walk in Balat",
+    description: "Practice street photography through Balat's colorful lanes at golden hour.",
+    category_slug: "arts-culture",
+    district: "Fatih",
+    public_meeting_area: "Balat ferry stop",
+    start_at: "2026-09-25T14:30:00Z",
+    end_at: "2026-09-25T17:00:00Z",
+    capacity: 18,
+    available_places: 7,
+    cover_media_id: "33333333-3333-4333-8333-333333333302",
+    club_name: "Istanbul Creative Walks",
+    club_slug: "istanbul-creative-walks",
+  },
+  {
+    ...events[0],
+    id: "11111111-1111-4111-8111-111111111115",
+    title: "Sketchbooks & Cafe Conversations",
+    description: "Draw, share stories, and meet local creatives in a quiet courtyard cafe.",
+    category_slug: "arts-culture",
+    country_code: "DZ",
+    city_slug: "algiers",
+    district: "Hydra",
+    public_meeting_area: "Hydra arts cafe",
+    start_at: "2026-09-26T13:00:00Z",
+    end_at: "2026-09-26T15:00:00Z",
+    time_zone: "Africa/Algiers",
+    price_type: "cash",
+    capacity: 16,
+    available_places: 9,
+    cover_media_id: "33333333-3333-4333-8333-333333333303",
+    club_name: "Algiers Creative Collective",
+    club_slug: "algiers-creative-collective",
+  },
+);
 
 const clubs = [
   {
@@ -64,6 +128,51 @@ const clubs = [
     member_count: 42,
   },
 ];
+
+clubs.push(
+  {
+    ...clubs[0],
+    id: "22222222-2222-4222-8222-222222222223",
+    name: "Slow Sundays Studio",
+    slug: "slow-sundays-studio",
+    description: "Hands-on creative workshops for curious beginners.",
+    category_slug: "arts-culture",
+    cover_media_id: "33333333-3333-4333-8333-333333333301",
+    member_count: 118,
+  },
+  {
+    ...clubs[0],
+    id: "22222222-2222-4222-8222-222222222224",
+    name: "Istanbul Creative Walks",
+    slug: "istanbul-creative-walks",
+    description: "Explore Istanbul slowly through photography and conversation.",
+    category_slug: "arts-culture",
+    cover_media_id: "33333333-3333-4333-8333-333333333302",
+    member_count: 286,
+  },
+  {
+    ...clubs[0],
+    id: "22222222-2222-4222-8222-222222222225",
+    name: "Algiers Creative Collective",
+    slug: "algiers-creative-collective",
+    description: "A welcoming home for artists, sketchers, and storytellers.",
+    category_slug: "arts-culture",
+    country_code: "DZ",
+    city_slug: "algiers",
+    cover_media_id: "33333333-3333-4333-8333-333333333303",
+    member_count: 94,
+  },
+  {
+    ...clubs[0],
+    id: "22222222-2222-4222-8222-222222222226",
+    name: "Move Together Istanbul",
+    slug: "move-together-istanbul",
+    description: "Outdoor movement sessions for every level.",
+    category_slug: "outdoors",
+    cover_media_id: "33333333-3333-4333-8333-333333333304",
+    member_count: 173,
+  },
+);
 
 const organizerClubId = "77777777-7777-4777-8777-777777777777";
 const secondOrganizerClubId = "66666666-6666-4666-8666-666666666666";
@@ -336,11 +445,11 @@ function accessToken(request) {
   )?.[1];
 }
 
-function memberEvent(request) {
+function memberEvent(request, event = events[0]) {
   const token = accessToken(request);
   const registration = token ? memberRegistrations.get(token) : undefined;
   return {
-    ...events[0],
+    ...event,
     ...(token?.includes("full") ? { available_places: 0 } : {}),
     ...(token?.includes("cash") ? { price_type: "cash" } : {}),
     ...(registration ?? {}),
@@ -1234,11 +1343,19 @@ createServer(async (request, response) => {
   }
   if (url.pathname === "/api/v1/metadata") {
     return send(response, 200, {
-      countries: [{ code: "TR", name_key: "countries.TR" }],
-      cities: [{ slug: "istanbul", name_key: "cities.istanbul" }],
+      countries: [
+        { code: "TR", name_key: "regions.country.tr" },
+        { code: "DZ", name_key: "regions.country.dz" },
+      ],
+      cities: [
+        { slug: "istanbul", name_key: "regions.city.istanbul" },
+        { slug: "algiers", name_key: "regions.city.algiers" },
+      ],
       categories: [
         { slug: "sports", name_key: "categories.sports" },
         { slug: "community", name_key: "categories.community" },
+        { slug: "arts-culture", name_key: "categories.arts-culture" },
+        { slug: "outdoors", name_key: "categories.outdoors" },
       ],
       price_types: ["free", "cash"],
       sort: "featured",
@@ -1359,23 +1476,50 @@ createServer(async (request, response) => {
       );
     return send(response, 204, undefined, "private, no-store");
   }
-  if (url.pathname === "/api/v1/events")
+  if (url.pathname === "/api/v1/events") {
+    const filteredEvents = events.filter((event) => {
+      const country = url.searchParams.get("country");
+      const city = url.searchParams.get("city");
+      const category = url.searchParams.get("category");
+      const price = url.searchParams.get("price");
+      const search = url.searchParams.get("search")?.trim().toLowerCase();
+      return (
+        (!country || event.country_code === country) &&
+        (!city || event.city_slug === city) &&
+        (!category || event.category_slug === category) &&
+        (!price || event.price_type === price) &&
+        (!search ||
+          `${event.title} ${event.description} ${event.club_name ?? ""}`
+            .toLowerCase()
+            .includes(search))
+      );
+    });
     return send(response, 200, {
-      items: empty || !targetIsPublic ? [] : events,
+      items: empty || !targetIsPublic ? [] : filteredEvents,
       next_cursor: null,
     });
-  if (url.pathname === `/api/v1/events/${events[0].id}`)
+  }
+  const publicEvent = events.find(
+    (event) => url.pathname === `/api/v1/events/${event.id}`,
+  );
+  if (publicEvent)
     return targetIsPublic
-      ? send(response, 200, memberEvent(request), "private, no-store")
+      ? send(response, 200, memberEvent(request, publicEvent), "private, no-store")
       : send(response, 404, { error: { code: "not_found" } });
   if (url.pathname === "/api/v1/clubs")
     return send(response, 200, {
       items: empty || !targetIsPublic ? [] : clubs,
       next_cursor: null,
     });
-  if (url.pathname === `/api/v1/clubs/${clubs[0].slug}`)
+  const publicClub = clubs.find(
+    (club) => url.pathname === `/api/v1/clubs/${club.slug}`,
+  );
+  if (publicClub)
     return targetIsPublic
-      ? send(response, 200, { ...clubs[0], events })
+      ? send(response, 200, {
+          ...publicClub,
+          events: events.filter((event) => event.club_slug === publicClub.slug),
+        })
       : send(response, 404, { error: { code: "not_found" } });
   if (url.pathname === "/api/v1/search") {
     return send(response, 200, {

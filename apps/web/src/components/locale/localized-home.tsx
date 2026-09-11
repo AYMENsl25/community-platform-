@@ -3,6 +3,7 @@
 import type { components } from "@talaqi/api-client";
 import type { LocaleCode, TranslationKey } from "@talaqi/translations";
 import { ActionLink, Card, Container } from "@talaqi/ui";
+import Image from "next/image";
 
 import { ClubCard } from "@/components/discovery/club-card";
 import { EventCard } from "@/components/discovery/event-card";
@@ -67,14 +68,30 @@ function HomeContent({ landing }: { landing: LandingData }) {
                 {t("home.secondaryAction")}
               </ActionLink>
             </div>
-          </div>
-          <Card aria-labelledby="region-title" className="tq-home-preview">
-            <h2 id="region-title">{t("home.region.title")}</h2>
-            <p>{t("home.region.body")}</p>
             {landing.metadata ? (
-              <RegionChooser metadata={landing.metadata} />
+              <div className="tq-home-search">
+                <div>
+                  <h2>{t("home.region.title")}</h2>
+                  <p>{t("home.region.body")}</p>
+                </div>
+                <RegionChooser metadata={landing.metadata} />
+              </div>
             ) : null}
-          </Card>
+          </div>
+          <div className="tq-home-visual">
+            <Image
+              alt=""
+              className="tq-home-visual__image"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 48vw"
+              src="/demo/community-gathering.png"
+            />
+            <div className="tq-home-visual__caption">
+              <span aria-hidden="true">●</span>
+              <p>{t("home.region.body")}</p>
+            </div>
+          </div>
         </Container>
       </section>
 
@@ -153,9 +170,11 @@ function HomeContent({ landing }: { landing: LandingData }) {
           )}
         </section>
 
-        <Card aria-labelledby="organizer-title" id="about">
-          <h2 id="organizer-title">{t("home.organizer.title")}</h2>
-          <p>{t("home.organizer.body")}</p>
+        <Card aria-labelledby="organizer-title" className="tq-organizer-callout" id="about">
+          <div>
+            <h2 id="organizer-title">{t("home.organizer.title")}</h2>
+            <p>{t("home.organizer.body")}</p>
+          </div>
           <ActionLink href="/profile">{t("home.organizer.action")}</ActionLink>
         </Card>
       </Container>
@@ -178,7 +197,7 @@ function RegionChooser({ metadata }: { metadata: Metadata }) {
           <option value="">{t("regions.chooseCountry")}</option>
           {metadata.countries.map((country) => (
             <option key={country.code} value={country.code}>
-              {catalogLabel(country.name_key, t)}
+              {catalogLabel(country.name_key, t, country.code)}
             </option>
           ))}
         </select>
@@ -189,7 +208,7 @@ function RegionChooser({ metadata }: { metadata: Metadata }) {
           <option value="">{t("regions.chooseCity")}</option>
           {metadata.cities.map((city) => (
             <option key={city.slug} value={city.slug}>
-              {catalogLabel(city.name_key, t)}
+              {catalogLabel(city.name_key, t, city.slug)}
             </option>
           ))}
         </select>
