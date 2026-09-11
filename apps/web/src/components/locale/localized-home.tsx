@@ -3,6 +3,7 @@
 import type { components } from "@talaqi/api-client";
 import type { LocaleCode, TranslationKey } from "@talaqi/translations";
 import { ActionLink, Card, Container } from "@talaqi/ui";
+import Image from "next/image";
 
 import { ClubCard } from "@/components/discovery/club-card";
 import { EventCard } from "@/components/discovery/event-card";
@@ -67,24 +68,29 @@ function HomeContent({ landing }: { landing: LandingData }) {
                 {t("home.secondaryAction")}
               </ActionLink>
             </div>
+            {landing.metadata ? (
+              <div className="tq-home-search">
+                <div>
+                  <h2>{t("home.region.title")}</h2>
+                  <p>{t("home.region.body")}</p>
+                </div>
+                <RegionChooser metadata={landing.metadata} />
+              </div>
+            ) : null}
           </div>
           <div className="tq-home-visual">
-            <img
+            <Image
               alt=""
               className="tq-home-visual__image"
-              decoding="async"
-              fetchPriority="high"
-              height={675}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 48vw"
               src="/demo/community-gathering.png"
-              width={1200}
             />
-            <Card aria-labelledby="region-title" className="tq-home-preview">
-              <h2 id="region-title">{t("home.region.title")}</h2>
+            <div className="tq-home-visual__caption">
+              <span aria-hidden="true">●</span>
               <p>{t("home.region.body")}</p>
-              {landing.metadata ? (
-                <RegionChooser metadata={landing.metadata} />
-              ) : null}
-            </Card>
+            </div>
           </div>
         </Container>
       </section>
@@ -93,27 +99,8 @@ function HomeContent({ landing }: { landing: LandingData }) {
         {landing.unavailable ? (
           <DiscoveryError labels={stateLabels} locale={locale} />
         ) : null}
-        <section aria-labelledby="featured-title">
-          <h2 id="featured-title">{t("discovery.featured")}</h2>
-          <p>{t("discovery.featuredExplanation")}</p>
-          {landing.featuredEvents.length ? (
-            <div className="tq-landing-grid">
-              {landing.featuredEvents.map((event) => (
-                <EventCard
-                  event={event}
-                  key={event.id}
-                  labels={eventLabels}
-                  locale={locale}
-                />
-              ))}
-            </div>
-          ) : (
-            <DiscoveryEmpty labels={stateLabels} locale={locale} />
-          )}
-        </section>
-
         {landing.metadata ? (
-          <section aria-labelledby="categories-title">
+          <section aria-labelledby="categories-title" className="tq-category-section">
             <div className="tq-landing-section-heading">
               <div>
                 <h2 id="categories-title">{t("home.categories")}</h2>
@@ -146,6 +133,33 @@ function HomeContent({ landing }: { landing: LandingData }) {
           </section>
         ) : null}
 
+        <section aria-labelledby="featured-title" className="tq-featured-section">
+          <div className="tq-landing-section-heading">
+            <div>
+              <h2 id="featured-title">{t("discovery.featured")}</h2>
+              <p>{t("discovery.featuredExplanation")}</p>
+            </div>
+            <ActionLink href="/explore" variant="secondary">
+              {t("shell.navigation.explore")}
+            </ActionLink>
+          </div>
+          {landing.featuredEvents.length ? (
+            <div className="tq-landing-grid">
+              {landing.featuredEvents.map((event) => (
+                <EventCard
+                  event={event}
+                  key={event.id}
+                  labels={eventLabels}
+                  locale={locale}
+                  showSave
+                />
+              ))}
+            </div>
+          ) : (
+            <DiscoveryEmpty labels={stateLabels} locale={locale} />
+          )}
+        </section>
+
         <section aria-labelledby="clubs-title">
           <h2 id="clubs-title">{t("home.popularClubs")}</h2>
           {landing.popularClubs.length ? (
@@ -164,9 +178,11 @@ function HomeContent({ landing }: { landing: LandingData }) {
           )}
         </section>
 
-        <Card aria-labelledby="organizer-title" id="about">
-          <h2 id="organizer-title">{t("home.organizer.title")}</h2>
-          <p>{t("home.organizer.body")}</p>
+        <Card aria-labelledby="organizer-title" className="tq-organizer-callout" id="about">
+          <div>
+            <h2 id="organizer-title">{t("home.organizer.title")}</h2>
+            <p>{t("home.organizer.body")}</p>
+          </div>
           <ActionLink href="/profile">{t("home.organizer.action")}</ActionLink>
         </Card>
       </Container>
