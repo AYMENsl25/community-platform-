@@ -95,9 +95,9 @@ describe("localized home", () => {
     expect(
       screen.queryByRole("link", { name: /create (club|event)/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Arts Culture" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Sports" })).toHaveAttribute(
       "href",
-      "/explore?category=arts-culture",
+      "/explore?category=sports",
     );
   });
 

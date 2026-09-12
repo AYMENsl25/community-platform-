@@ -44,11 +44,12 @@
   --tq-space-8: 4rem;
 
   --tq-radius-sm: 0.5rem;
-  --tq-radius-md: 1rem;
-  --tq-radius-lg: 1.5rem;
+  --tq-radius-md: 0.75rem;
+  --tq-radius-lg: 1rem;
   --tq-radius-pill: 999rem;
   --tq-shadow-card: 0 1.25rem 3rem rgb(24 79 67 / 10%);
   --tq-shadow-raised: 0 1rem 2.5rem rgb(24 79 67 / 14%);
+  --tq-shadow-soft: 0 0.75rem 2.25rem rgb(24 79 67 / 10%);
   --tq-focus-ring-width: 0.1875rem;
   --tq-focus-ring-offset: 0.1875rem;
   --tq-touch-target: 2.75rem;
@@ -80,19 +81,21 @@
   font: 700 var(--tq-font-size-sm) / 1 var(--tq-font-sans);
   justify-content: center;
   min-block-size: var(--tq-touch-target);
-  padding-block: var(--tq-space-3);
+  padding-block: 0.75rem;
   padding-inline: var(--tq-space-5);
   text-decoration: none;
   transition:
     background-color var(--tq-motion-fast) ease,
     border-color var(--tq-motion-fast) ease,
     color var(--tq-motion-fast) ease,
+    box-shadow var(--tq-motion-fast) ease,
     transform var(--tq-motion-fast) ease;
 }
 
 .tq-button--primary,
 .tq-action-link--primary {
   background: var(--tq-color-brand);
+  box-shadow: 0 0.75rem 1.5rem rgb(24 79 67 / 14%);
   color: var(--tq-color-on-brand);
 }
 
@@ -106,6 +109,7 @@
 .tq-button--quiet,
 .tq-action-link--quiet {
   background: transparent;
+  border-color: transparent;
   color: var(--tq-color-brand);
 }
 
@@ -119,6 +123,13 @@
   background: var(--tq-color-brand-strong);
 }
 
+.tq-button--secondary:hover:not(:disabled),
+.tq-action-link--secondary:hover,
+.tq-button--quiet:hover:not(:disabled),
+.tq-action-link--quiet:hover {
+  background: var(--tq-color-brand-soft);
+}
+
 .tq-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -127,8 +138,8 @@
 .tq-card {
   background: var(--tq-color-surface);
   border: 0.0625rem solid var(--tq-color-border);
-  border-radius: var(--tq-radius-lg);
-  box-shadow: var(--tq-shadow-card);
+  border-radius: var(--tq-radius-md);
+  box-shadow: var(--tq-shadow-soft);
   padding-block: var(--tq-space-6);
   padding-inline: var(--tq-space-6);
 }
