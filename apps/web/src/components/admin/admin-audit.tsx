@@ -7,7 +7,7 @@ export function AdminAudit({ events }: { events: AdminAuditEvent[] }) {
   const { t } = useLocale();
   return (
     <section className="tq-admin" aria-labelledby="admin-audit-title">
-      <header>
+      <header className="tq-admin__header">
         <h1 id="admin-audit-title">{t("admin.audit.title")}</h1>
         <p>{t("admin.audit.lead")}</p>
       </header>

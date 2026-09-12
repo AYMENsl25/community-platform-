@@ -102,7 +102,10 @@ export function AdminReview({
                       {t(`admin.priority.${item.priority}` as TranslationKey)}
                     </span>
                   </div>
-                  <Link href={`/admin/review/${item.id}`}>
+                  <Link
+                    className="tq-admin-link"
+                    href={`/admin/review/${item.id}`}
+                  >
                     {t("admin.review.open")}
                   </Link>
                 </li>

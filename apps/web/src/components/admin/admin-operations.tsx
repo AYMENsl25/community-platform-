@@ -125,7 +125,7 @@ export function AdminOperations({
           {feedback}
         </p>
       ) : null}
-      <label>
+      <label className="tq-admin-reason">
         {t("admin.operations.reason")}
         <textarea
           value={reason}
