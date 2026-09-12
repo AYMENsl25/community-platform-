@@ -51,20 +51,41 @@ type OrganizerData = {
 function Section({
   title,
   children,
+  tone = "default",
 }: {
   title: string;
   children: React.ReactNode;
+  tone?: "default" | "accent";
 }) {
   return (
-    <Card className="tq-dashboard-card">
-      <h2>{title}</h2>
+    <Card className={`tq-dashboard-card tq-dashboard-card--${tone}`}>
+      <header className="tq-dashboard-card__header">
+        <h2>{title}</h2>
+      </header>
       {children}
     </Card>
   );
 }
 
 function Empty({ locale }: { locale: LocaleCode }) {
-  return <p>{translate(locale, "dashboard.empty")}</p>;
+  return (
+    <p className="tq-dashboard-empty">{translate(locale, "dashboard.empty")}</p>
+  );
+}
+
+function DashboardMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="tq-dashboard-metric">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </div>
+  );
 }
 
 function Events({
@@ -92,7 +113,7 @@ function Events({
                 : translate(locale, "dashboard.schedulePending")}
             </p>
             {item.registration_state ? (
-              <span>
+              <span className="tq-dashboard-pill">
                 {translate(
                   locale,
                   `dashboard.state.${item.registration_state}` as TranslationKey,
@@ -100,7 +121,7 @@ function Events({
               </span>
             ) : null}
             {organizer ? (
-              <span>
+              <span className="tq-dashboard-meta">
                 {translate(locale, "dashboard.capacity")}: {item.held ?? 0}/
                 {item.capacity ?? "—"} ·{" "}
                 {translate(locale, "dashboard.cashQueue")}:{" "}
@@ -108,7 +129,7 @@ function Events({
               </span>
             ) : null}
           </div>
-          <a href={item.action_path}>
+          <a className="tq-dashboard-action" href={item.action_path}>
             {translate(
               locale,
               item.registration_state === "confirmed"
@@ -154,13 +175,15 @@ function Clubs({
               )}
             </p>
             {organizer ? (
-              <span>
+              <span className="tq-dashboard-meta">
                 {translate(locale, "dashboard.requests")}:{" "}
                 {item.pending_requests}
               </span>
             ) : null}
           </div>
-          <a href={item.action_path}>{translate(locale, "dashboard.open")}</a>
+          <a className="tq-dashboard-action" href={item.action_path}>
+            {translate(locale, "dashboard.open")}
+          </a>
         </li>
       ))}
     </ul>
@@ -201,7 +224,7 @@ export function DashboardWorkspace({
   return (
     <Container>
       <section className="tq-dashboard" aria-labelledby="dashboard-title">
-        <header>
+        <header className="tq-dashboard-hero">
           <h1 id="dashboard-title">
             {translate(
               locale,
@@ -240,42 +263,86 @@ function MemberDashboard({
   data: MemberData;
   locale: LocaleCode;
 }) {
+  const openUpdates = data.notifications.filter((item) => !item.read_at).length;
+  const profileReady = data.profile_blockers.length === 0;
+
   return (
-    <div className="tq-dashboard-grid">
-      <Section title={translate(locale, "dashboard.upcoming")}>
-        <Events items={data.upcoming_events} locale={locale} />
-      </Section>
-      <Section title={translate(locale, "dashboard.saved")}>
-        <Events items={data.saved_events} locale={locale} />
-      </Section>
-      <Section title={translate(locale, "dashboard.clubs")}>
-        <Clubs items={data.joined_clubs} locale={locale} />
-      </Section>
-      <Section title={translate(locale, "dashboard.notifications")}>
-        {data.notifications.length ? (
-          <ul className="tq-dashboard-list">
-            {data.notifications.map((item) => (
-              <li key={item.id}>
-                <span>{translate(locale, "dashboard.notificationUpdate")}</span>
-                {item.action_path ? (
-                  <a href={item.action_path}>
-                    {translate(locale, "dashboard.open")}
-                  </a>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <Empty locale={locale} />
-        )}
-      </Section>
-      <Section title={translate(locale, "dashboard.profile")}>
-        <p>
-          {data.profile_blockers.length
-            ? translate(locale, "dashboard.profileBlocked")
-            : translate(locale, "dashboard.profileReady")}
-        </p>
-      </Section>
+    <div className="tq-dashboard-stack">
+      <div className="tq-dashboard-metrics">
+        <DashboardMetric
+          label={translate(locale, "dashboard.upcoming")}
+          value={data.upcoming_events.length}
+        />
+        <DashboardMetric
+          label={translate(locale, "dashboard.saved")}
+          value={data.saved_events.length}
+        />
+        <DashboardMetric
+          label={translate(locale, "dashboard.clubs")}
+          value={data.joined_clubs.length}
+        />
+        <DashboardMetric
+          label={translate(locale, "dashboard.notifications")}
+          value={openUpdates}
+        />
+      </div>
+
+      <div className="tq-dashboard-grid tq-dashboard-grid--member">
+        <div className="tq-dashboard-main">
+          <Section
+            title={translate(locale, "dashboard.upcoming")}
+            tone="accent"
+          >
+            <Events items={data.upcoming_events} locale={locale} />
+          </Section>
+          <Section title={translate(locale, "dashboard.saved")}>
+            <Events items={data.saved_events} locale={locale} />
+          </Section>
+          <Section title={translate(locale, "dashboard.clubs")}>
+            <Clubs items={data.joined_clubs} locale={locale} />
+          </Section>
+        </div>
+
+        <aside
+          className="tq-dashboard-side"
+          aria-label={translate(locale, "dashboard.profile")}
+        >
+          <Section title={translate(locale, "dashboard.profile")} tone="accent">
+            <p
+              className={
+                profileReady ? "tq-dashboard-ready" : "tq-dashboard-warning"
+              }
+            >
+              {profileReady
+                ? translate(locale, "dashboard.profileReady")
+                : translate(locale, "dashboard.profileBlocked")}
+            </p>
+          </Section>
+          <Section title={translate(locale, "dashboard.notifications")}>
+            {data.notifications.length ? (
+              <ul className="tq-dashboard-list">
+                {data.notifications.map((item) => (
+                  <li key={item.id}>
+                    <span>
+                      {translate(locale, "dashboard.notificationUpdate")}
+                    </span>
+                    {item.action_path ? (
+                      <a
+                        className="tq-dashboard-action"
+                        href={item.action_path}
+                      >
+                        {translate(locale, "dashboard.open")}
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty locale={locale} />
+            )}
+          </Section>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -297,10 +364,10 @@ function OrganizerDashboard({
       </Section>
       <Section title={translate(locale, "dashboard.alerts")}>
         {data.alerts.length ? (
-          <ul>
+          <ul className="tq-dashboard-list">
             {data.alerts.map((alert) => (
               <li key={alert.key}>
-                <a href={alert.action_path}>
+                <a className="tq-dashboard-action" href={alert.action_path}>
                   {translate(
                     locale,
                     `dashboard.alert.${alert.key}` as TranslationKey,
